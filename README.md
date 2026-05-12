@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 💀 Startup Graveyard AI
 
-## Getting Started
+**Professional Forensic Intelligence for the Next Generation of Founders.**
 
-First, run the development server:
+Startup Graveyard AI is a premium intelligence platform that transforms startup failures into actionable wisdom. Mirroring a classified intelligence archive, it provides deep-dive "autopsies" on failed ventures, analyzing the systemic risks that lead to billion-dollar collapses.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+![Startup Graveyard Hero](/public/images/hero-preview.png) *(Placeholder - ensure public image exists)*
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🚀 Intelligence Modules
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Forensic Case Library**: A curated archive of startup autopsies featuring "Failure DNA" mapping, evidence timelines, and tabular forensic data.
+- **AI Pre-Mortem Engine**: A multi-step interrogation system that stress-tests your venture against 1,000+ historical failure patterns to generate a risk dossier.
+- **The Graveyard Keeper**: A high-performance, streaming AI assistant for real-time forensic research into market hazards and execution errors.
+- **Intelligence Dashboard**: Aggregated data visualizations tracking "Capital Decay" and failure taxonomies across the ecosystem.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🛠️ The Stack
 
-## Learn More
+- **Framework**: Next.js 15 (App Router, ISR/SSG Optimized)
+- **Design**: "Forensic Intelligence" System (Tailwind CSS v4 + Framer Motion)
+- **AI Engine**: NVIDIA NIM (DeepSeek-V3) via AI SDK v6
+- **Database**: Supabase (PostgreSQL + pgvector for semantic search)
+- **Aesthetics**: High-contrast Dark Mode, Monospace Typography (JetBrains Mono), Glassmorphism
 
-To learn more about Next.js, take a look at the following resources:
+## 📦 Getting Started
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. **Clone & Install**:
+   ```bash
+   git clone https://github.com/patil-shubham-dev/Startup-Graveyard.git
+   cd Startup-Graveyard
+   npm install
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+2. **Configuration**:
+   Create a `.env.local` file with your credentials:
+   ```env
+   NVIDIA_API_KEY=your_nvidia_nim_key
+   AI_DEFAULT_MODEL=nvidia/deepseek-v3
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_key
+   ```
 
-## Deploy on Vercel
+3. **Development**:
+   ```bash
+   npm run dev
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📐 Design Philosophy
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The platform adheres to a strict **Forensic Aesthetic**:
+- **Borders over Shadows**: Using strong tactical lines to define data sectors.
+- **Signal Colors**: Amber for caution, Red for critical failure, Green for survival lessons.
+- **Tabular Data**: Every insight is presented as evidence, not just content.
+
+---
+
+Built for founders who prefer to learn from others' autopsies than their own. 💀
