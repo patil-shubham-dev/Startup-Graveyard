@@ -6,10 +6,7 @@ export function Footer() {
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
         <div className="col-span-1 md:col-span-2">
           <Link href="/" className="flex items-center gap-2 mb-6">
-            <span className="text-xl">💀</span>
-            <span className="font-mono font-bold tracking-tighter uppercase">
-              STARTUP GRAVEYARD <span className="text-primary">AI</span>
-            </span>
+            <img src="/logo.png" alt="Startup Graveyard AI" className="h-8 w-auto filter invert brightness-200" />
           </Link>
           <p className="text-text-muted text-sm max-w-xs leading-relaxed">
             Documenting the failures of today to build the successes of tomorrow. 

@@ -27,10 +27,7 @@ export function Navigation() {
     }`}>
       <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 group">
-          <span className="text-xl">💀</span>
-          <span className="font-mono font-bold tracking-tighter text-lg uppercase group-hover:text-violet-primary transition-colors">
-            STARTUP GRAVEYARD <span className="bg-violet-600 text-[10px] px-1.5 py-0.5 rounded-[3px] ml-1 text-white font-mono tracking-normal">AI</span>
-          </span>
+          <img src="/logo.png" alt="Startup Graveyard AI" className="h-8 w-auto filter invert brightness-200" />
         </Link>
 
         <div className="hidden md:flex items-center gap-8 h-full">

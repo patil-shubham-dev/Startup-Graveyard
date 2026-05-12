@@ -1,4 +1,8 @@
-# 💀 Startup Graveyard AI
+<p align="center">
+  <img src="public/logo.png" alt="Startup Graveyard AI" width="500px">
+</p>
+
+# Startup Graveyard AI
 
 > **"He who does not learn from history is condemned to repeat it. He who learns from failure is destined to survive."**
 

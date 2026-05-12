@@ -48,14 +48,17 @@ export function HeroSection() {
         transition={{ duration: 0.8, ease: "easeOut" }}
         className="relative z-10 max-w-[920px]"
       >
-        <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-violet-primary/10 border border-violet-primary/20 mb-10">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-primary opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-primary"></span>
-          </span>
-          <span className="font-mono text-[10px] text-violet-primary uppercase tracking-[3px] font-bold">
-            V4 PRO INTELLIGENCE ACTIVE
-          </span>
+        <div className="flex flex-col items-center mb-10">
+          <img src="/logo.png" alt="Startup Graveyard" className="h-24 w-auto mb-8 filter invert brightness-200" />
+          <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-violet-primary/10 border border-violet-primary/20">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-primary opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-primary"></span>
+            </span>
+            <span className="font-mono text-[10px] text-violet-primary uppercase tracking-[3px] font-bold">
+              V4 PRO INTELLIGENCE ACTIVE
+            </span>
+          </div>
         </div>
         
         <h1 className="font-display text-[48px] md:text-[88px] font-bold leading-[0.95] mb-8 text-text-primary tracking-tighter">
