@@ -3,62 +3,95 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { motion } from 'framer-motion';
 
 export function Navigation() {
   const [scrolled, setScrolled] = useState(false);
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const pathname = usePathname();
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
+    const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    
+    // Initial theme check
+    const savedTheme = localStorage.getItem('sg-theme') as 'dark' | 'light';
+    if (savedTheme) {
+      setTheme(savedTheme);
+      document.documentElement.classList.toggle('light', savedTheme === 'light');
+    }
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
   }, []);
 
+  const toggleTheme = () => {
+    const newTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+    localStorage.setItem('sg-theme', newTheme);
+    document.documentElement.classList.toggle('light', newTheme === 'light');
+  };
+
   const navLinks = [
-    { name: 'Explore', href: '/explore' },
-    { name: 'Insights', href: '/insights' },
-    { name: 'Pre-Mortem', href: '/pre-mortem' },
-    { name: 'Ask the Graveyard', href: '/ask' },
+    { name: 'ARCHIVES', href: '/explore' },
+    { name: 'INSIGHTS', href: '/insights' },
+    { name: 'PRE-MORTEM', href: '/pre-mortem' },
+    { name: 'INTEL', href: '/ask' },
   ];
 
   return (
-    <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${
-      scrolled ? 'backdrop-blur-md bg-bg-page/80 border-b border-border-subtle h-[60px]' : 'bg-transparent h-[72px]'
-    }`}>
-      <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 group">
-          <img src="/logo.png" alt="Startup Graveyard AI" className="h-8 w-auto filter invert brightness-200" />
+    <nav className={`fixed top-0 w-full z-[100] transition-all duration-300 ${
+      scrolled ? 'h-12 bg-bg-base/90 backdrop-blur-md border-b border-border-subtle shadow-lg' : 'h-12 bg-transparent border-b border-transparent'
+    } flex items-center`}>
+      <div className="w-full max-w-[1400px] mx-auto px-6 flex items-center justify-between relative z-10">
+        {/* Left: Wordmark Logo */}
+        <Link href="/" className="flex items-center group">
+          <img 
+            src="/assets/logo-wordmark.svg" 
+            alt="STARTUP_GRAVEYARD" 
+            className="h-[28px] w-auto object-contain transition-opacity group-hover:opacity-80"
+          />
         </Link>
 
-        <div className="hidden md:flex items-center gap-8 h-full">
+        {/* Center: Nav Links */}
+        <div className="hidden lg:flex items-center gap-8">
           {navLinks.map((link) => (
             <Link 
               key={link.name} 
               href={link.href}
-              className={`relative text-sm font-medium transition-colors hover:text-text-primary h-full flex items-center ${
-                pathname === link.href ? 'text-text-primary' : 'text-text-secondary'
+              className={`relative font-mono text-[10px] tracking-[0.25em] transition-all duration-300 ${
+                pathname === link.href ? 'text-text-primary' : 'text-text-ghost hover:text-text-primary'
               }`}
             >
               {link.name}
               {pathname === link.href && (
-                <div className="absolute bottom-0 left-0 w-full h-[2px] bg-violet-primary" />
+                <motion.div 
+                  layoutId="nav-glow"
+                  className="absolute -bottom-1 left-0 w-full h-[1px] bg-violet-600" 
+                />
               )}
             </Link>
           ))}
         </div>
 
+        {/* Right: Actions */}
         <div className="flex items-center gap-4">
+          <button 
+            onClick={toggleTheme}
+            className="flex items-center gap-2 font-mono text-[9px] text-text-ghost hover:text-violet-500 transition-colors uppercase tracking-widest border border-border-subtle px-2 py-1 rounded-[2px] bg-white/[0.02]"
+            title="Toggle Visual Mode"
+          >
+            <span>{theme === 'dark' ? '◐' : '◑'}</span>
+            <span className="hidden xl:inline">{theme === 'dark' ? 'DARK' : 'LIGHT'}</span>
+          </button>
+
           <Link 
             href="/pre-mortem" 
-            className="hidden sm:block px-5 py-2 bg-violet-primary hover:bg-violet-hover text-white text-[14px] font-medium rounded-md shadow-violet-glow transition-all"
+            className="flex items-center gap-2 bg-text-primary text-bg-base px-4 py-1.5 rounded-[2px] font-mono text-[10px] font-bold tracking-widest transition-all hover:bg-violet-600 hover:text-white active:scale-95 group"
           >
-            Run Pre-Mortem →
+            <span>RUN_SCAN</span>
           </Link>
-          <button className="text-text-secondary hover:text-text-primary transition-colors">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          </button>
         </div>
       </div>
     </nav>

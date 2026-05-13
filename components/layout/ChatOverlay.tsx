@@ -6,7 +6,9 @@ import { useChat } from '@ai-sdk/react';
 
 export function ChatOverlay() {
   const [isOpen, setIsOpen] = useState(false);
-  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat();
+  const { messages, sendMessage, status } = useChat();
+  const [input, setInput] = useState('');
+  const isLoading = status === 'submitted' || status === 'streaming';
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -19,65 +21,98 @@ export function ChatOverlay() {
 
   return (
     <>
+      {/* Clinical Toggle Button */}
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-violet-primary text-white rounded-full shadow-violet-glow flex items-center justify-center hover:scale-110 active:scale-95 transition-all"
+        className={`fixed bottom-10 right-10 z-50 w-14 h-14 border border-white/10 flex items-center justify-center transition-all duration-500 group ${
+          isOpen ? 'bg-white text-black' : 'bg-bg-page/80 backdrop-blur-xl text-text-primary hover:border-amber-500/50'
+        }`}
         aria-label="Toggle Intelligence Chat"
       >
+        <div className={`absolute inset-0 bg-noise opacity-[0.05] pointer-events-none`} />
         {isOpen ? (
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          <svg className="w-5 h-5 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+          </svg>
         ) : (
-          <div className="relative">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-signal rounded-full animate-pulse" />
+          <div className="relative z-10 flex flex-col items-center">
+            <div className="w-4 h-4 mb-0.5 border-2 border-current rounded-sm flex items-center justify-center">
+               <div className="w-1.5 h-1.5 bg-amber-500 animate-pulse" />
+            </div>
+            <span className="font-mono text-[7px] font-black tracking-tighter">INTEL</span>
           </div>
+        )}
+        
+        {/* Radar Ping Effect */}
+        {!isOpen && (
+          <span className="absolute inset-0 border border-amber-500/30 animate-ping rounded-none opacity-20" />
         )}
       </button>
 
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95, filter: 'blur(10px)' }}
-            animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
-            exit={{ opacity: 0, y: 20, scale: 0.95, filter: 'blur(10px)' }}
-            className="fixed bottom-24 right-6 z-50 w-full max-w-[420px] h-[600px] bg-bg-surface-1 border border-border-medium flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-xl overflow-hidden"
+            initial={{ opacity: 0, scale: 0.98, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.98, y: 20 }}
+            className="fixed bottom-28 right-10 z-50 w-[calc(100%-5rem)] max-w-[420px] h-[600px] glass-dossier flex flex-col border-border-strong shadow-[0_32px_64px_-12px_rgba(0,0,0,0.8)] overflow-hidden"
           >
-            <div className="p-4 border-b border-border-subtle flex items-center justify-between bg-bg-surface-2/50 backdrop-blur-md">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">💀</span>
-                <span className="font-mono text-[10px] font-bold uppercase tracking-[3px] text-text-primary">GRAVEYARD KEEPER</span>
+            <div className="absolute inset-0 bg-noise opacity-[0.02] pointer-events-none" />
+            
+            {/* Clinical Header */}
+            <div className="px-8 py-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02] relative z-10">
+              <div className="flex items-center gap-4">
+                <div className="flex flex-col">
+                  <span className="font-mono text-[9px] font-bold text-amber-500 tracking-[0.4em] uppercase leading-none mb-1">INTEL_CHANNEL</span>
+                  <div className="flex items-center gap-2">
+                    <span className={`w-1.5 h-1.5 rounded-full ${isLoading ? 'bg-amber-500 animate-pulse' : 'bg-green-500'}`} />
+                    <span className="font-mono text-[8px] text-text-ghost uppercase tracking-widest">
+                      {isLoading ? 'ANALYZING_QUERY_STREAM' : 'SYSTEM_READY_01'}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-2 bg-bg-page/50 px-2 py-1 rounded-md border border-border-subtle">
-                <div className={`w-1.5 h-1.5 rounded-full ${isLoading ? 'bg-amber-signal animate-pulse' : 'bg-green-lesson'}`} />
-                <span className="text-[9px] font-mono text-text-muted uppercase tracking-tighter">
-                  {isLoading ? 'ANALYZING...' : 'ONLINE'}
-                </span>
-              </div>
+              <div className="font-mono text-[8px] text-text-ghost/40">SECURE_LINK::V.04</div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-5 space-y-6 scrollbar-hide bg-bg-page/30">
+            {/* Message Stream */}
+            <div className="flex-1 overflow-y-auto p-8 space-y-8 scrollbar-hide relative z-10">
               {messages.length === 0 && (
-                <div className="h-full flex flex-col items-center justify-center text-center p-8 space-y-4">
-                  <div className="w-12 h-12 bg-bg-surface-2 rounded-full flex items-center justify-center border border-border-subtle">
-                    <span className="text-xl">📜</span>
+                <div className="h-full flex flex-col items-center justify-center text-center p-6">
+                  <div className="w-12 h-12 border border-white/5 flex items-center justify-center mb-6">
+                    <span className="font-mono text-[10px] text-amber-500">?</span>
                   </div>
-                  <p className="text-xs text-text-secondary font-mono leading-relaxed">
-                    "I hold the records of every failed dream in this valley. What knowledge do you seek?"
+                  <p className="font-mono text-[10px] text-text-ghost uppercase tracking-[0.2em] max-w-[200px] leading-relaxed">
+                    ENTER_QUERY_FOR_GRAVEYARD_CORE_INTELLIGENCE.
                   </p>
                 </div>
               )}
 
               {messages.map((m, i) => (
-                <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[85%] ${m.role === 'user' ? 'text-right' : 'text-left'}`}>
-                    <div className={`inline-block p-4 text-sm leading-relaxed ${
+                <div 
+                  key={m.id} 
+                  className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div className={`max-w-[90%] relative ${m.role === 'user' ? 'w-full' : ''}`}>
+                    <div className="flex items-center gap-3 mb-2">
+                       <span className="font-mono text-[7px] text-text-ghost tracking-widest uppercase">
+                          {m.role === 'user' ? 'OPERATOR' : 'GRAVEYARD_CORE'}
+                       </span>
+                       <div className="flex-1 h-[1px] bg-white/5" />
+                    </div>
+                    
+                    <div className={`p-5 text-[13px] leading-relaxed font-sans ${
                       m.role === 'user' 
-                        ? 'bg-violet-primary text-white rounded-2xl rounded-tr-none shadow-violet-glow' 
-                        : 'bg-bg-surface-2 border border-border-subtle text-text-primary rounded-2xl rounded-tl-none'
+                        ? 'bg-white text-black' 
+                        : 'bg-white/[0.03] border-l-2 border-amber-500/40 text-text-secondary italic'
                     }`}>
-                      <p className="whitespace-pre-wrap">{m.content}</p>
+                      <div className="whitespace-pre-wrap">
+                        {m.parts.map((part, idx) => (
+                          part.type === 'text' ? <span key={idx}>{part.text}</span> : null
+                        ))}
+                      </div>
                       {m.role === 'assistant' && isLoading && i === messages.length - 1 && (
-                        <span className="inline-block w-1.5 h-4 bg-violet-primary animate-pulse ml-1 align-middle" />
+                        <span className="inline-block w-2 h-4 bg-amber-500/50 animate-pulse ml-2 align-middle" />
                       )}
                     </div>
                   </div>
@@ -86,26 +121,38 @@ export function ChatOverlay() {
               <div ref={messagesEndRef} />
             </div>
 
-            <div className="p-4 border-t border-border-subtle bg-bg-surface-1">
-              <form onSubmit={handleSubmit} className="relative group">
+            {/* Input Vector */}
+            <div className="p-8 bg-white/[0.02] border-t border-white/5 relative z-10">
+              <form 
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!input.trim()) return;
+                  sendMessage({ text: input });
+                  setInput('');
+                }} 
+                className="relative"
+              >
                 <input 
                   type="text" 
                   value={input}
-                  onChange={handleInputChange}
-                  placeholder="Consult the archives..."
-                  className="w-full bg-bg-surface-2 border border-border-subtle px-5 py-3.5 pr-12 text-sm focus:outline-none focus:border-violet-primary transition-all rounded-lg text-text-primary placeholder:text-text-muted shadow-inner"
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="EXECUTE_QUERY..."
+                  className="w-full bg-black/40 border border-white/10 px-6 py-4 pr-16 font-mono text-[11px] tracking-wider focus:outline-none focus:border-amber-500/50 transition-all text-text-primary placeholder:text-text-ghost"
                   disabled={isLoading}
                 />
                 <button 
                   type="submit" 
                   disabled={isLoading || !input?.trim()}
-                  className="absolute right-2 top-2 p-2 text-violet-primary hover:text-white hover:bg-violet-primary rounded-md disabled:opacity-30 transition-all z-10"
+                  className="absolute right-0 top-0 h-full w-14 flex items-center justify-center hover:text-amber-500 disabled:opacity-30 transition-all border-l border-white/10"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                  </svg>
                 </button>
               </form>
-              <div className="mt-3 flex justify-center">
-                <span className="font-mono text-[8px] text-text-muted uppercase tracking-[2px]">SECURE FORENSIC LINK ESTABLISHED</span>
+              <div className="mt-4 flex justify-between">
+                 <span className="font-mono text-[7px] text-text-ghost/40 uppercase">STATUS: ENCRYPTED</span>
+                 <span className="font-mono text-[7px] text-text-ghost/40 uppercase">BUFFER: 1024KB</span>
               </div>
             </div>
           </motion.div>

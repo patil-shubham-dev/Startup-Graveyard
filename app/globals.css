@@ -2,164 +2,124 @@
 
 @theme inline {
   --font-display: var(--font-display);
+  --font-header: var(--font-header);
   --font-body: var(--font-body);
   --font-mono: var(--font-mono);
 
-  /* Backgrounds */
-  --color-bg-page: #08080D;
-  --color-bg-surface-1: #111118;
-  --color-bg-surface-2: #1A1A24;
-  --color-bg-surface-3: #22222E;
+  /* Refined Intelligence Palette */
+  --color-bg-base: #050505;
+  --color-bg-surface: #0a0a0a;
+  --color-border-subtle: #121212;
+  --color-border-default: #1a1a1a;
+  --color-border-strong: #242424;
 
-  /* Borders */
-  --color-border-subtle: #1F1F2E;
-  --color-border-medium: #2E2E42;
-  --color-border-strong: #3D3D54;
+  --color-text-primary: #fcfcfc;
+  --color-text-muted: #888888;
+  --color-text-ghost: #333333;
 
-  /* Brand */
-  --color-violet-primary: #7C3AED;
-  --color-violet-hover: #6D28D9;
-  --color-violet-dim: #4C1D95;
-
-  /* Signals */
-  --color-amber-signal: #F59E0B;
-  --color-red-critical: #EF4444;
-  --color-green-lesson: #10B981;
-
-  /* Text */
-  --color-text-primary: #F1F5F9;
-  --color-text-secondary: #94A3B8;
-  --color-text-muted: #475569;
-
-  /* Transitions */
-  --transition-default: all 200ms ease-out;
+  --color-violet-500: #7c3aed;
+  --color-violet-600: #6d28d9;
 }
 
 :root {
-  --background: #08080D;
-  --foreground: #F1F5F9;
+  --bg-base: #050505;
+  --bg-surface: #0a0a0a;
+  --text-primary: #fcfcfc;
+  --text-muted: #888888;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-feature-settings: "cv02", "cv03", "cv04", "cv11", "tnum";
+html, body {
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Typography Overrides */
-.font-mono {
-  font-variant-numeric: tabular-nums;
-}
-
-/* Forensic Intelligence Design System Utilities */
-
-.forensic-card {
-  background: var(--color-bg-surface-1);
-  border: 1px solid var(--color-border-subtle);
-  border-top: 2px solid var(--color-amber-signal);
-  border-radius: 8px;
-  padding: 20px;
-  transition: var(--transition-default);
-}
-
-.forensic-card:hover {
-  background: var(--color-bg-surface-3);
-  border-color: var(--color-border-medium);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(124, 58, 237, 0.12);
-}
-
-.redacted {
-  position: relative;
-  cursor: pointer;
-  display: inline-block;
-  color: transparent;
-  user-select: none;
-}
-
-.redacted::after {
-  content: "";
-  position: absolute;
-  inset: -1px -2px;
-  background: var(--color-amber-signal);
-  opacity: 0.85;
-  transition: opacity 200ms ease-out;
-}
-
-.redacted:hover::after {
-  opacity: 0;
-}
-
-.redacted:hover {
-  color: inherit;
-  user-select: auto;
-}
-
-.hero-gradient {
-  background: linear-gradient(135deg, #FFFFFF 0%, #CBD5E1 50%, #94A3B8 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-/* Verdict Box Aesthetic */
-.verdict-box {
-  background: transparent;
-  border: 1px solid var(--color-border-medium);
-  border-left: 3px solid var(--color-amber-signal);
-  border-radius: 0;
-  padding: 20px 24px;
-  font-family: var(--font-mono);
-}
-
-/* Custom Scrollbar for Intelligence Archive feel */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 2px;
+  height: 2px;
 }
-
 ::-webkit-scrollbar-track {
-  background: var(--color-bg-page);
+  background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border-medium);
-  border-radius: 3px;
+  background: #242424;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-border-strong);
+/* Typography Scale (Open Design Pacing) */
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(40px, 6vw, 64px);
+  font-weight: 700;
+  line-height: 1.0;
+  letter-spacing: -0.04em;
 }
 
-@utility animate-progress {
-  animation: progress 2s ease-out infinite;
+.section-header {
+  font-family: var(--font-header);
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
 }
 
-@utility animate-scan {
-  animation: scan 3s linear infinite;
+.label-text {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.4em;
+  color: var(--color-text-muted);
+  font-weight: 600;
 }
 
-@utility animate-spin-slow {
-  animation: spin 8s linear infinite;
+/* Spacing & Layout Posture (Premium Spacing) */
+.editorial-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 40px;
 }
 
-@keyframes progress {
-  0% { transform: translateX(-100%); }
-  50% { transform: translateX(-20%); }
-  100% { transform: translateX(0); }
+.glass-dossier {
+  background: rgba(10, 10, 10, 0.4);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--color-border-default);
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@keyframes scan {
-  0% { transform: translateY(0); }
-  50% { transform: translateY(300px); }
-  100% { transform: translateY(0); }
+.glass-dossier:hover {
+  border-color: var(--color-violet-500);
+  background: rgba(12, 12, 12, 0.6);
+  box-shadow: 0 0 40px rgba(124, 58, 237, 0.05);
 }
 
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+.glass-nav {
+  background: rgba(5, 5, 5, 0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--color-border-subtle);
 }
 
-.shadow-violet-glow {
-  box-shadow: 0 0 15px rgba(124, 58, 237, 0.5);
+/* Texture Layers */
+.bg-grid-fine {
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.bg-grid-dots {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.bg-vignette {
+  background: radial-gradient(circle at center, transparent 20%, rgba(0, 0, 0, 0.8) 100%);
+  pointer-events: none;
+}
+
+/* Utilities */
+.text-glow-violet {
+  text-shadow: 0 0 15px rgba(124, 58, 237, 0.4);
 }

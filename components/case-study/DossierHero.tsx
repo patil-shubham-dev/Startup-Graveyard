@@ -1,4 +1,9 @@
+'use client';
+
 import { CaseStudy } from '@/lib/db/case-studies';
+import { IntelKicker } from '@/components/ui/IntelKicker';
+import { DataBadge } from '@/components/ui/DataBadge';
+import { StatBlock } from '@/components/ui/StatBlock';
 
 export function DossierHero({ study }: { study: CaseStudy }) {
   const formatFunding = (raised: number | null) => {
@@ -8,56 +13,47 @@ export function DossierHero({ study }: { study: CaseStudy }) {
   };
 
   return (
-    <section className="pt-32 pb-16 px-6 relative overflow-hidden">
-      {/* Background forensic watermark */}
-      <div className="absolute top-0 right-0 p-10 font-mono text-[120px] text-border-subtle opacity-5 pointer-events-none select-none font-bold rotate-12">
-        DEEP-DIVE
+    <section className="pt-32 pb-24 px-6 relative overflow-hidden border-b border-border-subtle">
+      {/* Background Watermark */}
+      <div className="absolute top-10 right-10 font-mono text-[140px] text-white/[0.02] select-none pointer-events-none font-bold rotate-12">
+        DEEP_DIVE
       </div>
+      <div className="absolute inset-0 bg-grid-fine opacity-10 pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto relative z-10">
-        <nav className="flex items-center gap-2 font-mono text-[10px] text-text-muted uppercase tracking-[3px] mb-12">
-          <span className="hover:text-text-primary cursor-pointer transition-colors">ARCHIVE</span>
-          <span>/</span>
-          <span className="hover:text-text-primary cursor-pointer transition-colors">CASE FILES</span>
-          <span>/</span>
-          <span className="text-amber-signal">{study.case_number}</span>
-          <span>/</span>
-          <span className="text-red-critical font-bold">[CLOSED — SHUTDOWN {study.shutdown_year}]</span>
+      <div className="max-w-[1400px] mx-auto relative z-10">
+        <nav className="flex items-center gap-4 mb-16">
+          <IntelKicker label="CASE_FILE" figure={study.case_number || 'N/A'} />
+          <DataBadge label="STATUS: CLOSED" variant="red" />
+          <DataBadge label={`YEAR: ${study.shutdown_year}`} variant="amber" />
         </nav>
 
-        <div className="flex flex-col lg:flex-row items-start justify-between gap-12 mb-16">
-          <div className="flex-1">
-            <h1 className="font-display text-5xl md:text-8xl font-bold mb-8 text-text-primary tracking-tight">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-20 items-end">
+          <div>
+            <h1 className="hero-title mb-8">
               {study.company_name}
             </h1>
-            <p className="text-amber-signal text-xl md:text-2xl font-body italic leading-relaxed max-w-2xl border-l-2 border-amber-signal/30 pl-6 py-2">
+            <p className="text-text-muted text-xl italic font-serif leading-relaxed max-w-2xl border-l-2 border-amber-500/30 pl-8 py-2">
               "{study.summary}"
             </p>
           </div>
-          
-          <div className="w-full lg:w-auto grid grid-cols-2 md:grid-cols-4 lg:grid-cols-2 gap-4 lg:gap-10 bg-bg-surface-1 p-8 border border-border-subtle rounded-xl shadow-2xl min-w-[320px]">
-            {[
-              { label: 'FOUNDED', value: study.founded_year },
-              { label: 'SHUTDOWN', value: study.shutdown_year },
-              { label: 'TOTAL FUNDING', value: formatFunding(study.funding_raised) },
-              { label: 'PEAK SIZE', value: study.employees_peak ? `${study.employees_peak}+` : 'N/A' },
-            ].map((stat) => (
-              <div key={stat.label} className="space-y-1">
-                <div className="font-mono text-[10px] text-text-muted uppercase tracking-[2px]">{stat.label}</div>
-                <div className="font-mono text-xl font-bold text-text-primary">{stat.value}</div>
-              </div>
-            ))}
+
+          <div className="grid grid-cols-2 gap-8 glass-dossier p-10 rounded-[4px] border-border-strong relative">
+            <StatBlock label="FOUNDED" value={study.founded_year?.toString() || 'N/A'} />
+            <StatBlock label="SHUTDOWN" value={study.shutdown_year?.toString() || 'N/A'} />
+            <StatBlock label="TOTAL_FUNDING" value={formatFunding(study.funding_raised)} accent />
+            <StatBlock label="PEAK_HEADCOUNT" value={study.employees_peak ? `${study.employees_peak}+` : 'N/A'} />
+            
+            {/* Corner Decor */}
+            <div className="absolute -top-1 -left-1 w-3 h-3 border-t border-l border-amber-500/40" />
+            <div className="absolute -bottom-1 -right-1 w-3 h-3 border-b border-r border-amber-500/40" />
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-3">
-          <span className="bg-violet-primary/10 text-violet-primary border border-violet-primary/20 px-4 py-1.5 rounded-md text-[10px] font-mono uppercase tracking-[2px] font-bold">
-            {study.industry}
-          </span>
-          {(study.failure_reasons || []).map((reason) => (
-            <span key={reason} className="bg-amber-signal/10 text-amber-signal border border-amber-signal/20 px-4 py-1.5 rounded-md text-[10px] font-mono uppercase tracking-[2px] font-bold">
-              {reason}
-            </span>
+        <div className="mt-16 flex flex-wrap gap-4">
+          <span className="font-mono text-[10px] text-text-ghost uppercase tracking-[0.2em] mr-4 self-center">CLASSIFICATIONS:</span>
+          <DataBadge label={study.industry || 'TECH'} variant="violet" />
+          {(study.failure_reasons || []).slice(0, 3).map((reason) => (
+            <DataBadge key={reason} label={reason.replace('_', ' ')} variant="amber" />
           ))}
         </div>
       </div>

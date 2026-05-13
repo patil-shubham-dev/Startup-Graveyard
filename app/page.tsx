@@ -1,52 +1,40 @@
 import { HeroSection } from '@/components/home/HeroSection';
-import { StatsBar } from '@/components/home/StatsBar';
 import { FeaturedCases } from '@/components/home/FeaturedCases';
 import { TaxonomyGrid } from '@/components/home/TaxonomyGrid';
 import { PreMortemCTA } from '@/components/home/PreMortemCTA';
+import { MarketIntelligence } from '@/components/home/MarketIntelligence';
+import { getGlobalStats, getInsightsData } from '@/lib/db/case-studies';
 
-export default function Home() {
+export default async function Home() {
+  const stats = await getGlobalStats();
+  const insights = await getInsightsData();
+
   return (
-    <main className="min-h-screen">
-      <HeroSection />
-      <StatsBar />
-      <FeaturedCases />
-      <TaxonomyGrid />
+    <main className="flex flex-col h-full overflow-y-auto snap-y snap-mandatory scrollbar-thin">
+      {/* Section 1: Hero (55/45 Split) */}
+      <div className="snap-start min-h-[calc(100vh-88px)] flex flex-col justify-center">
+        <HeroSection stats={stats} />
+      </div>
       
-      {/* Quick Insights Section */}
-      <section className="py-24 px-6 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12">
-        <div className="bg-surface/50 border border-border p-8 rounded-sm">
-          <h3 className="font-display text-2xl font-bold mb-6">Failure Distribution</h3>
-          <div className="h-64 flex items-center justify-center text-text-dim border border-dashed border-border/50">
-            {/* Placeholder for Recharts Donut */}
-            <p className="font-mono text-xs uppercase tracking-widest">Charts initializing...</p>
-          </div>
-        </div>
-        <div className="bg-surface/50 border border-border p-8 rounded-sm">
-          <h3 className="font-display text-2xl font-bold mb-6">Most Expensive Failures</h3>
-          <div className="space-y-4">
-            {[
-              { name: 'Quibi', amount: '$1.75B', reason: 'Product-Market Fit' },
-              { name: 'Theranos', amount: '$945M', reason: 'Fraud' },
-              { name: 'Better Place', amount: '$850M', reason: 'Timing' },
-              { name: 'Katerra', amount: '$800M', reason: 'Execution' },
-              { name: 'Jawbone', amount: '$590M', reason: 'Competition' },
-            ].map((item, i) => (
-              <div key={item.name} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
-                <div className="flex items-center gap-4">
-                  <span className="font-mono text-text-dim text-xs">0{i+1}</span>
-                  <span className="font-bold">{item.name}</span>
-                </div>
-                <div className="text-right">
-                  <div className="font-mono text-amber-500 text-sm font-bold">{item.amount}</div>
-                  <div className="text-[10px] text-text-muted uppercase tracking-wider">{item.reason}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Section 2: Featured Cases */}
+      <div className="snap-start min-h-[calc(100vh-88px)] flex flex-col justify-center bg-bg-base border-t border-border-subtle">
+        <FeaturedCases />
+      </div>
 
-      <PreMortemCTA />
+      {/* Section 3: Taxonomy Grid */}
+      <div className="snap-start min-h-[calc(100vh-88px)] flex flex-col justify-center bg-bg-base border-t border-border-subtle">
+        <TaxonomyGrid failureData={insights.failureData} />
+      </div>
+      
+      {/* Section 4: Market Intelligence */}
+      <div className="snap-start min-h-[calc(100vh-88px)] flex flex-col justify-center bg-bg-base border-t border-border-subtle">
+        <MarketIntelligence />
+      </div>
+
+      {/* Section 5: Pre-Mortem CTA */}
+      <div className="snap-start min-h-[calc(100vh-88px)] flex flex-col justify-center bg-bg-base border-t border-border-subtle pb-10">
+        <PreMortemCTA />
+      </div>
     </main>
   );
 }

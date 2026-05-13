@@ -1,46 +1,44 @@
-import Link from 'next/link';
+'use client';
 
-export function Footer() {
+import { GlobalMetadata } from './GlobalMetadata';
+
+interface FooterProps {
+  stats?: {
+    totalCases: number;
+    totalBurned: number;
+  };
+}
+
+export function Footer({ stats }: FooterProps) {
+  const currentYear = new Date().getFullYear();
+  
   return (
-    <footer className="bg-surface border-t border-border py-12 px-6 mt-24">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
-        <div className="col-span-1 md:col-span-2">
-          <Link href="/" className="flex items-center gap-2 mb-6">
-            <img src="/logo.png" alt="Startup Graveyard AI" className="h-8 w-auto filter invert brightness-200" />
-          </Link>
-          <p className="text-text-muted text-sm max-w-xs leading-relaxed">
-            Documenting the failures of today to build the successes of tomorrow. 
-            Open-source and AI-powered forensic intelligence.
-          </p>
-        </div>
-        
-        <div>
-          <h4 className="font-mono text-[10px] text-amber-500 tracking-[0.2em] uppercase mb-6">RESOURCES</h4>
-          <ul className="space-y-4 text-sm text-text-muted">
-            <li><Link href="/explore" className="hover:text-primary transition-colors">Explore Library</Link></li>
-            <li><Link href="/insights" className="hover:text-primary transition-colors">Failure Insights</Link></li>
-            <li><Link href="/pre-mortem" className="hover:text-primary transition-colors">Pre-Mortem Engine</Link></li>
-            <li><Link href="/submit" className="hover:text-primary transition-colors">Submit a Case</Link></li>
-          </ul>
-        </div>
-
-        <div>
-          <h4 className="font-mono text-[10px] text-amber-500 tracking-[0.2em] uppercase mb-6">CONNECT</h4>
-          <ul className="space-y-4 text-sm text-text-muted">
-            <li><a href="https://github.com" className="hover:text-primary transition-colors">GitHub</a></li>
-            <li><a href="https://twitter.com" className="hover:text-primary transition-colors">Twitter / X</a></li>
-            <li><a href="#" className="hover:text-primary transition-colors">RSS Feed</a></li>
-          </ul>
-        </div>
+    <footer className="fixed bottom-0 left-0 right-0 h-10 bg-bg-base border-t border-border-subtle z-[100] px-6 flex items-center justify-between pointer-events-auto">
+      {/* Left: Copyright */}
+      <div className="flex items-center gap-4">
+        <img src="/assets/logo-icon.svg" alt="Icon" className="h-4 w-4 opacity-50" />
+        <span className="font-mono text-[10px] text-text-muted tracking-wider">
+          © {currentYear} STARTUP_GRAVEYARD // FORENSIC_INTEL
+        </span>
       </div>
 
-      <div className="max-w-7xl mx-auto pt-12 mt-12 border-t border-border/50 flex flex-col md:flex-row justify-between items-center gap-4">
-        <p className="text-[10px] text-text-dim uppercase tracking-widest">
-          OPEN-SOURCE UNDER MIT LICENSE
-        </p>
-        <p className="text-[10px] text-text-dim uppercase tracking-widest">
-          BUILT WITH NEXT.JS + SUPABASE
-        </p>
+      {/* Center: Global Metadata */}
+      <div className="hidden md:block">
+        <GlobalMetadata 
+          totalCases={stats?.totalCases || 0} 
+          totalBurned={stats?.totalBurned || 0} 
+        />
+      </div>
+
+      {/* Right: Version & Status */}
+      <div className="flex items-center gap-6 font-mono text-[10px] tracking-widest text-text-muted uppercase">
+        <div className="flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+          <span>SYSTEM_OPERATIONAL</span>
+        </div>
+        <div className="hidden sm:block">
+          V.2.0.4-LOCKED
+        </div>
       </div>
     </footer>
   );

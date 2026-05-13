@@ -1,6 +1,7 @@
 'use client';
 
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts';
+import { motion } from 'framer-motion';
 
 export function FailureDNA({ scores }: { scores: Record<string, number> }) {
   const data = [
@@ -13,44 +14,47 @@ export function FailureDNA({ scores }: { scores: Record<string, number> }) {
   ];
 
   return (
-    <div className="bg-bg-surface-1 border border-border-subtle p-8 h-fit rounded-md">
-      <h3 className="font-mono text-[10px] tracking-[3px] text-text-muted uppercase mb-8">FAILURE DNA — RISK MAP</h3>
-      <div className="h-64 w-full">
+    <div className="glass-dossier p-10 border-border-strong rounded-[4px] relative overflow-hidden h-fit">
+      <div className="absolute top-0 left-0 w-[2px] h-full bg-amber-500/40" />
+      
+      <h3 className="font-mono text-[10px] tracking-[0.2em] text-text-ghost uppercase mb-12">FAILURE_DNA // RISK_MAP</h3>
+      
+      <div className="h-64 w-full mb-12">
         <ResponsiveContainer width="100%" height="100%">
           <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
-            <PolarGrid stroke="#1F1F2E" strokeWidth={0.5} />
+            <PolarGrid stroke="rgba(255,255,255,0.05)" strokeWidth={0.5} />
             <PolarAngleAxis 
               dataKey="subject" 
-              tick={{ fill: '#475569', fontSize: 10, fontFamily: 'var(--font-mono)' }} 
+              tick={{ fill: '#64748B', fontSize: 9, fontFamily: 'var(--font-mono)', letterSpacing: '0.1em' }} 
             />
             <Radar
               name="Risk"
               dataKey="A"
-              stroke="#EF4444"
-              strokeWidth={1.5}
-              fill="#EF4444"
-              fillOpacity={0.15}
-              dot={{ fill: '#EF4444', r: 4 }}
-              animationDuration={600}
-              animationEasing="ease-out"
+              stroke="#F59E0B"
+              strokeWidth={1}
+              fill="#F59E0B"
+              fillOpacity={0.05}
+              dot={{ fill: '#F59E0B', r: 2 }}
+              animationDuration={1000}
             />
           </RadarChart>
         </ResponsiveContainer>
       </div>
-      <div className="mt-8 grid grid-cols-2 gap-x-6 gap-y-4">
+
+      <div className="grid grid-cols-2 gap-x-8 gap-y-6">
         {data.map((item) => (
           <div key={item.subject} className="flex flex-col">
-            <div className="flex justify-between items-baseline mb-1">
-              <span className="font-mono text-[9px] text-text-muted uppercase">{item.subject}</span>
-              <span className="font-mono text-[10px] text-text-primary">{item.A}%</span>
+            <div className="flex justify-between items-baseline mb-2">
+              <span className="font-mono text-[9px] text-text-ghost uppercase tracking-wider">{item.subject}</span>
+              <span className="font-mono text-[10px] text-text-primary font-bold">{item.A}%</span>
             </div>
-            <div className="h-[4px] bg-bg-surface-2 rounded-full overflow-hidden">
-              <motion_div 
+            <div className="h-[2px] bg-white/[0.03] overflow-hidden">
+              <motion.div 
                 initial={{ width: 0 }}
                 whileInView={{ width: `${item.A}%` }}
-                transition={{ duration: 0.6, ease: "easeOut" }}
-                className={`h-full rounded-full ${
-                  item.A > 70 ? 'bg-red-critical' : item.A > 40 ? 'bg-amber-signal' : 'bg-green-lesson'
+                transition={{ duration: 1, ease: "easeOut" }}
+                className={`h-full ${
+                  item.A > 70 ? 'bg-red-500' : item.A > 40 ? 'bg-amber-500' : 'bg-green-500'
                 }`} 
               />
             </div>
@@ -60,6 +64,3 @@ export function FailureDNA({ scores }: { scores: Record<string, number> }) {
     </div>
   );
 }
-
-import { motion } from 'framer-motion';
-const motion_div = motion.div;

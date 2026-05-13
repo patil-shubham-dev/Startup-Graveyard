@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ai } from '@/lib/ai';
 import { z } from 'zod';
+import { getGlobalStats } from '@/lib/db/case-studies';
 
 const QuestionsSchema = z.object({
   questions: z.array(z.object({
@@ -26,6 +27,7 @@ const ReportSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    const stats = await getGlobalStats();
     
     if (body.action === 'GET_QUESTIONS') {
       const prompt = `
@@ -45,7 +47,7 @@ export async function POST(req: NextRequest) {
         Pitch: ${pitch}
         Interrogation Answers: ${JSON.stringify(answers)}
 
-        Identify the most likely causes of failure based on historical patterns of 1,000+ failed startups.
+        Identify the most likely causes of failure based on historical patterns of ${stats.totalCases} failed startups in your archive.
         Return a JSON object following this schema:
         {
           "risk_score": number (0-100),

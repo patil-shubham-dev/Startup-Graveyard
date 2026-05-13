@@ -1,26 +1,30 @@
-import { createOpenAI } from '@ai-sdk/openai';
 import { streamText } from 'ai';
-
-// Configure the NVIDIA provider
-const nvidia = createOpenAI({
-  apiKey: process.env.NVIDIA_API_KEY || '',
-  baseURL: 'https://integrate.api.nvidia.com/v1',
-});
+import { nvidia } from '@/lib/ai';
+import { getGlobalStats } from '@/lib/db/case-studies';
 
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
-  const { messages } = await req.json();
+  try {
+    const { messages } = await req.json();
+    const stats = await getGlobalStats();
 
-  const result = streamText({
-    model: nvidia('nvidia/deepseek-v3'),
-    system: `You are the Graveyard Keeper AI. You are a forensic startup researcher. 
-    Your tone is professional, analytical, and slightly grim. 
-    You have access to 1,024 historical startup autopsies.
-    When discussing failures, be specific about burn rates, PMF, and execution errors.
-    Always maintain the "Forensic Intelligence" persona.`,
-    messages,
-  });
+    const result = streamText({
+      model: nvidia.chat(process.env.AI_DEFAULT_MODEL || 'deepseek-ai/deepseek-v4-pro'),
+      system: `You are the Graveyard Keeper AI. You are a forensic startup researcher. 
+      Your tone is professional, analytical, and slightly grim. 
+      You have access to ${stats.totalCases} historical startup autopsies in the archive.
+      When discussing failures, be specific about burn rates, PMF, and execution errors.
+      Always maintain the "Forensic Intelligence" persona.`,
+      messages,
+    });
 
-  return result.toDataStreamResponse();
+    return result.toUIMessageStreamResponse();
+  } catch (error) {
+    console.error('AI Route Error:', error);
+    return new Response(JSON.stringify({ error: (error as Error).message }), { 
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
 }
