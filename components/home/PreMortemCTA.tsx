@@ -1,29 +1,136 @@
-'use client';
-
-import { IntelKicker } from '@/components/ui/IntelKicker';
-import { ScanButton } from '@/components/ui/ScanButton';
+import Link from 'next/link';
 
 export function PreMortemCTA() {
   return (
-    <section className="w-full max-w-[1400px] mx-auto px-6 py-6 border-t border-border-subtle flex justify-center">
-      <div className="w-full max-w-[400px] bg-bg-surface border border-border-subtle p-8 rounded-[2px] text-center relative overflow-hidden group">
-        <div className="relative z-10">
-          <span className="font-mono text-[10px] text-red-500 tracking-widest uppercase block mb-4">CRITICAL_WARNING</span>
-          
-          <h2 className="font-header text-[36px] leading-[0.9] text-text-primary mb-6">
-            YOUR_STARTUP_IS_NOT <br/>
-            <span className="text-red-600 italic">IMMORTAL.</span>
-          </h2>
-
-          <p className="text-text-muted text-[12px] mb-8 leading-relaxed">
-            Simulate your collapse. Identify fatal contradictions in your unit economics before the market executes them.
-          </p>
-
-          <ScanButton href="/pre-mortem" label="INITIATE DIAGNOSTIC" className="w-full" />
+    <section
+      style={{
+        backgroundColor: 'var(--ink-black)',
+        width: '100%',
+      }}
+    >
+      <div
+        className="sg-container"
+        style={{
+          paddingTop: '100px',
+          paddingBottom: '100px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          textAlign: 'center',
+          gap: '0',
+        }}
+      >
+        {/* Kicker */}
+        <div
+          style={{
+            fontFamily: 'var(--font-dm-mono), monospace',
+            fontSize: '10px',
+            fontWeight: '500',
+            textTransform: 'uppercase',
+            letterSpacing: '0.16em',
+            color: 'var(--rust-accent)',
+            marginBottom: '32px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+          }}
+        >
+          <span
+            style={{
+              display: 'inline-block',
+              width: '24px',
+              height: '1px',
+              backgroundColor: 'var(--rust-accent)',
+            }}
+          />
+          FORENSIC DIAGNOSTIC ENGINE
+          <span
+            style={{
+              display: 'inline-block',
+              width: '24px',
+              height: '1px',
+              backgroundColor: 'var(--rust-accent)',
+            }}
+          />
         </div>
 
-        {/* Subtle Hazard Border */}
-        <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-red-600/20 via-red-600/40 to-red-600/20" />
+        {/* Headline */}
+        <h2
+          className="t-pullquote"
+          style={{
+            color: 'var(--cream-base)',
+            maxWidth: '18ch',
+            marginBottom: '20px',
+          }}
+        >
+          &quot;Test the idea while it is still cheap to change.&quot;
+        </h2>
+
+        {/* Subtext */}
+        <p
+          style={{
+            fontFamily: 'var(--font-source-serif), Georgia, serif',
+            fontSize: '16px',
+            lineHeight: 1.75,
+            color: 'var(--cream-dark)',
+            maxWidth: '44ch',
+            marginBottom: '48px',
+          }}
+        >
+          Most startups commit avoidable mistakes. Our AI diagnostic surfaces the failure
+          vectors in your venture before you scale into them.
+        </p>
+
+        {/* Pulse CTA */}
+        <Link
+          href="/pre-mortem"
+          className="pulse-border"
+          style={{
+            fontFamily: 'var(--font-dm-mono), monospace',
+            fontSize: '12px',
+            fontWeight: '500',
+            textTransform: 'uppercase',
+            letterSpacing: '0.14em',
+            color: 'var(--cream-base)',
+            backgroundColor: 'var(--rust-accent)',
+            border: '1px solid var(--rust-accent)',
+            padding: '16px 36px',
+            borderRadius: '2px',
+            textDecoration: 'none',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '10px',
+            transition: 'background-color 0.2s ease',
+          }}
+        >
+          INITIATE DIAGNOSTIC →
+        </Link>
+
+        {/* Archive note */}
+        <div
+          style={{
+            marginTop: '40px',
+            fontFamily: 'var(--font-dm-mono), monospace',
+            fontSize: '9px',
+            textTransform: 'uppercase',
+            letterSpacing: '0.14em',
+            color: 'var(--ink-muted)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}
+        >
+          <span
+            style={{
+              display: 'inline-block',
+              width: '5px',
+              height: '5px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--sage-neutral)',
+            }}
+          />
+          AI-POWERED / PATTERN-MATCHED AGAINST THE ARCHIVE / NO SIGNUP REQUIRED
+        </div>
       </div>
     </section>
   );

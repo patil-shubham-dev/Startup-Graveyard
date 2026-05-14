@@ -1,22 +1,134 @@
 'use client';
 
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+} from 'recharts';
 
-interface InsightsChartsProps {
-  failureData: any[];
-  fundingTrends: any[];
+interface FailureItem {
+  name: string;
+  value: number;
+  color?: string;
 }
 
-const CustomTooltip = ({ active, payload }: any) => {
+interface FundingTrend {
+  year: string;
+  amount: number;
+}
+
+interface InsightsChartsProps {
+  failureData: FailureItem[];
+  fundingTrends: FundingTrend[];
+}
+
+const PIE_COLORS = [
+  'var(--rust-accent)',
+  'var(--ochre-signal)',
+  'var(--sage-neutral)',
+  'var(--ink-muted)',
+  '#8B7355',
+  '#5C4A3A',
+];
+
+function formatBig(n: number): string {
+  if (n >= 1_000_000_000) return `$${(n / 1_000_000_000).toFixed(1)}B`;
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(0)}M`;
+  return `$${n.toLocaleString()}`;
+}
+
+const CustomBarTooltip = ({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: Array<{ value: number }>;
+  label?: string;
+}) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-bg-surface p-3 border border-violet-500/30 rounded-[1px] shadow-2xl">
-        <p className="font-mono text-[9px] text-text-muted uppercase tracking-widest mb-1">
-          {payload[0].name || 'DATA_POINT'}
-        </p>
-        <p className="font-mono text-[12px] text-violet-500 font-bold">
-          {payload[0].value}{payload[0].unit || ''}
-        </p>
+      <div
+        style={{
+          backgroundColor: 'var(--paper-white)',
+          border: '1px solid var(--cream-dark)',
+          borderRadius: '2px',
+          padding: '8px 12px',
+        }}
+      >
+        <div
+          style={{
+            fontFamily: 'var(--font-dm-mono), monospace',
+            fontSize: '9px',
+            textTransform: 'uppercase',
+            letterSpacing: '0.1em',
+            color: 'var(--ink-muted)',
+            marginBottom: '4px',
+          }}
+        >
+          {label}
+        </div>
+        <div
+          style={{
+            fontFamily: 'var(--font-cormorant), Georgia, serif',
+            fontSize: '18px',
+            fontWeight: '700',
+            color: 'var(--ink-black)',
+          }}
+        >
+          {formatBig(payload[0].value)}
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
+const CustomPieTooltip = ({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: Array<{ name: string; value: number }>;
+}) => {
+  if (active && payload && payload.length) {
+    return (
+      <div
+        style={{
+          backgroundColor: 'var(--paper-white)',
+          border: '1px solid var(--cream-dark)',
+          borderRadius: '2px',
+          padding: '8px 12px',
+        }}
+      >
+        <div
+          style={{
+            fontFamily: 'var(--font-dm-mono), monospace',
+            fontSize: '9px',
+            textTransform: 'uppercase',
+            letterSpacing: '0.1em',
+            color: 'var(--ink-muted)',
+            marginBottom: '4px',
+          }}
+        >
+          {payload[0].name}
+        </div>
+        <div
+          style={{
+            fontFamily: 'var(--font-cormorant), Georgia, serif',
+            fontSize: '20px',
+            fontWeight: '700',
+            color: 'var(--ink-black)',
+          }}
+        >
+          {payload[0].value} cases
+        </div>
       </div>
     );
   }
@@ -24,74 +136,163 @@ const CustomTooltip = ({ active, payload }: any) => {
 };
 
 export function InsightsCharts({ failureData, fundingTrends }: InsightsChartsProps) {
+  const chartFailureData = failureData.length
+    ? failureData
+    : [
+        { name: 'No Market Need', value: 42 },
+        { name: 'Cash Exhaustion', value: 29 },
+        { name: 'Team Fracture', value: 23 },
+        { name: 'Competition', value: 19 },
+        { name: 'Pricing Failure', value: 18 },
+        { name: 'Regulatory', value: 16 },
+      ];
+
+  const chartFundingData = fundingTrends.length
+    ? fundingTrends
+    : [
+        { year: '2018', amount: 2_400_000_000 },
+        { year: '2019', amount: 3_200_000_000 },
+        { year: '2020', amount: 5_100_000_000 },
+        { year: '2021', amount: 8_700_000_000 },
+        { year: '2022', amount: 6_300_000_000 },
+        { year: '2023', amount: 4_100_000_000 },
+      ];
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-10">
-      {/* Primary Cause Distribution */}
-      <div className="bg-bg-surface p-6 border border-border-subtle rounded-[2px] relative overflow-hidden">
-        <h3 className="font-mono text-[10px] text-text-muted tracking-widest uppercase mb-6">PRIMARY_CAUSE_DISTRIBUTION</h3>
-        <div className="h-48 w-full mb-6">
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: '24px',
+        marginBottom: '48px',
+      }}
+      className="lg:grid-cols-2 grid-cols-1"
+    >
+      {/* Donut Chart — Failure distribution */}
+      <div className="chart-card" style={{ padding: '28px' }}>
+        <div
+          style={{
+            fontFamily: 'var(--font-dm-mono), monospace',
+            fontSize: '9px',
+            textTransform: 'uppercase',
+            letterSpacing: '0.14em',
+            color: 'var(--ink-muted)',
+            marginBottom: '24px',
+          }}
+        >
+          PRIMARY CAUSE DISTRIBUTION
+        </div>
+
+        <div style={{ height: '220px' }}>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={failureData}
+                data={chartFailureData}
                 cx="50%"
                 cy="50%"
-                innerRadius={60}
-                outerRadius={85}
+                innerRadius="52%"
+                outerRadius="78%"
                 paddingAngle={2}
                 dataKey="value"
-                stroke="none"
+                strokeWidth={0}
               >
-                {failureData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} fillOpacity={0.7} />
+                {chartFailureData.map((entry, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={PIE_COLORS[index % PIE_COLORS.length]}
+                  />
                 ))}
               </Pie>
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
+              <Tooltip content={<CustomPieTooltip />} />
             </PieChart>
           </ResponsiveContainer>
         </div>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-2 pt-4 border-t border-border-subtle">
-          {failureData.map((item) => (
-            <div key={item.name} className="flex items-center gap-3 group">
-              <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: item.color }} />
-              <div className="flex flex-col">
-                <span className="text-[9px] text-text-muted font-mono uppercase tracking-wider">{item.name}</span>
-                <span className="text-[11px] text-text-primary font-mono font-bold">{item.value}%</span>
-              </div>
+
+        {/* Legend */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '8px',
+            marginTop: '16px',
+          }}
+        >
+          {chartFailureData.slice(0, 6).map((item, i) => (
+            <div
+              key={item.name}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              <span
+                style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '1px',
+                  backgroundColor: PIE_COLORS[i % PIE_COLORS.length],
+                  flexShrink: 0,
+                }}
+              />
+              <span
+                style={{
+                  fontFamily: 'var(--font-dm-mono), monospace',
+                  fontSize: '8px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                  color: 'var(--ink-muted)',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {item.name}
+              </span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Capital Burn Trend */}
-      <div className="bg-bg-surface p-6 border border-border-subtle rounded-[2px] relative overflow-hidden">
-        <h3 className="font-mono text-[10px] text-text-muted tracking-widest uppercase mb-6">CAPITAL_LOST_PER_YEAR_($B)</h3>
-        <div className="h-80 w-full">
+      {/* Bar Chart — Capital lost by year */}
+      <div className="chart-card" style={{ padding: '28px' }}>
+        <div
+          style={{
+            fontFamily: 'var(--font-dm-mono), monospace',
+            fontSize: '9px',
+            textTransform: 'uppercase',
+            letterSpacing: '0.14em',
+            color: 'var(--ink-muted)',
+            marginBottom: '24px',
+          }}
+        >
+          CAPITAL LOST BY YEAR
+        </div>
+
+        <div style={{ height: '260px' }}>
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={fundingTrends} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.03)" />
-              <XAxis 
-                dataKey="year" 
-                stroke="rgba(255,255,255,0.2)" 
-                fontSize={9} 
-                fontFamily="var(--font-mono)" 
-                axisLine={false}
-                tickLine={false}
-                dy={10}
-              />
-              <YAxis 
-                stroke="rgba(255,255,255,0.2)" 
-                fontSize={9} 
-                fontFamily="var(--font-mono)" 
+            <BarChart
+              data={chartFundingData}
+              barCategoryGap="32%"
+            >
+              <XAxis
+                dataKey="year"
+                tick={{
+                  fontFamily: 'var(--font-dm-mono), monospace',
+                  fontSize: 9,
+                  fill: 'var(--ink-muted)',
+                  letterSpacing: '0.1em',
+                }}
                 axisLine={false}
                 tickLine={false}
               />
-              <Tooltip content={<CustomTooltip unit="B" />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-              <Bar 
-                dataKey="amount" 
-                fill="#7C3AED" 
-                radius={[1, 1, 0, 0]} 
-                fillOpacity={0.6}
+              <YAxis hide />
+              <Tooltip content={<CustomBarTooltip />} />
+              <Bar
+                dataKey="amount"
+                fill="var(--ochre-signal)"
+                radius={[1, 1, 0, 0]}
+                background={{ fill: 'var(--cream-dark)', radius: 1 }}
               />
             </BarChart>
           </ResponsiveContainer>

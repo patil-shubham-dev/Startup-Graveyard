@@ -1,39 +1,98 @@
-import { IntelKicker } from '@/components/ui/IntelKicker';
+'use client';
 
 export function VerdictBox({ reasons }: { reasons: string[] }) {
   return (
-    <div className="my-20 relative overflow-hidden glass-dossier p-12 rounded-[4px] border-border-strong">
-      <div className="absolute top-4 right-6 font-mono text-[9px] text-text-ghost opacity-40 select-none">
-        ARCHIVE_REF: DG-882-X // CONFIDENTIAL
-      </div>
-      
-      <div className="mb-12">
-        <IntelKicker label="VERDICT" figure="PRIMARY_CAUSES" />
-        <div className="h-[1px] w-full bg-gradient-to-r from-amber-500/30 to-transparent mt-4" />
+    <div
+      style={{
+        backgroundColor: 'var(--ink-black)',
+        padding: '48px 40px',
+        borderRadius: '2px',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Decorative vertical line */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '4px',
+          height: '100%',
+          backgroundColor: 'var(--rust-accent)',
+        }}
+      />
+
+      <div
+        style={{
+          fontFamily: 'var(--font-dm-mono), monospace',
+          fontSize: '10px',
+          textTransform: 'uppercase',
+          letterSpacing: '0.16em',
+          color: 'var(--rust-accent)',
+          marginBottom: '24px',
+        }}
+      >
+        FORENSIC_VERDICT
       </div>
 
-      <div className="space-y-6">
-        {(reasons || []).map((reason, i) => (
-          <div key={reason} className="flex items-start gap-6 group">
-            <span className="font-mono text-amber-500 font-bold mt-1 text-xs">0{i + 1}</span>
-            <div className="flex-1">
-              <span className="font-mono text-[15px] text-text-primary uppercase tracking-tight group-hover:text-amber-500 transition-colors duration-300">
-                {reason.replace('_', ' ')}
-              </span>
-              <div className="h-[1px] w-0 group-hover:w-full bg-amber-500/20 transition-all duration-700 mt-2" />
-            </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+        {reasons.map((reason, i) => (
+          <div key={i} style={{ display: 'flex', gap: '24px' }}>
+            <span
+              style={{
+                fontFamily: 'var(--font-cormorant), Georgia, serif',
+                fontSize: '32px',
+                fontWeight: '700',
+                color: 'var(--rust-accent)',
+                lineHeight: 1,
+                opacity: 0.8,
+              }}
+            >
+              0{i + 1}
+            </span>
+            <p
+              style={{
+                fontFamily: 'var(--font-source-serif), Georgia, serif',
+                fontSize: '18px',
+                lineHeight: 1.6,
+                color: 'var(--cream-base)',
+                maxWidth: '32ch',
+                fontStyle: 'italic',
+              }}
+            >
+              {reason}
+            </p>
           </div>
         ))}
       </div>
 
-      <div className="mt-12 flex justify-between items-center">
-        <div className="h-[1px] flex-1 bg-border-subtle" />
-        <span className="font-mono text-[8px] text-text-ghost uppercase tracking-[0.4em] mx-6">END_OF_INVESTIGATION</span>
-        <div className="h-[1px] flex-1 bg-border-subtle" />
+      {/* Rubber stamp effect */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: '32px',
+          right: '40px',
+          transform: 'rotate(-12deg)',
+          opacity: 0.3,
+          pointerEvents: 'none',
+        }}
+      >
+        <div
+          style={{
+            border: '2px solid var(--rust-accent)',
+            padding: '8px 16px',
+            fontFamily: 'var(--font-dm-mono), monospace',
+            fontSize: '14px',
+            fontWeight: '700',
+            color: 'var(--rust-accent)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.2em',
+          }}
+        >
+          FINAL_JUDGMENT
+        </div>
       </div>
-
-      {/* Forensic Decoration */}
-      <div className="absolute -bottom-8 -left-8 w-24 h-24 border border-white/[0.02] rounded-full" />
     </div>
   );
 }

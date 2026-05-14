@@ -1,11 +1,8 @@
 import { createOpenAI } from '@ai-sdk/openai';
-import { generateObject, embed, streamText } from 'ai';
+import { ModelMessage, generateObject, embed, streamText } from 'ai';
 import { ZodSchema } from 'zod';
 
-export interface Message {
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-}
+export type Message = ModelMessage;
 
 // Default provider configuration
 const DEFAULT_MODEL = process.env.AI_DEFAULT_MODEL || 'deepseek-ai/deepseek-v4-pro';
@@ -16,7 +13,6 @@ const DEFAULT_MODEL = process.env.AI_DEFAULT_MODEL || 'deepseek-ai/deepseek-v4-p
 export const nvidia = createOpenAI({
   apiKey: process.env.NVIDIA_API_KEY || '',
   baseURL: 'https://integrate.api.nvidia.com/v1',
-  compatibility: 'strict',
 });
 
 /**
@@ -43,7 +39,7 @@ export class AIService {
     const result = streamText({
       model: nvidia.chat(DEFAULT_MODEL),
       system,
-      messages: messages as any,
+      messages,
     });
 
     return result.toUIMessageStreamResponse().body!;

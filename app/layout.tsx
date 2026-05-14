@@ -1,39 +1,40 @@
+export const dynamic = 'force-dynamic';
 import type { Metadata } from "next";
-import { Playfair_Display, DM_Serif_Display, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
+import { Cormorant_Garamond, DM_Mono, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 import { Navigation } from "@/components/layout/Navigation";
 import { Footer } from "@/components/layout/Footer";
 import { AuthProvider } from "@/context/AuthContext";
-import { ChatOverlay } from "@/components/layout/ChatOverlay";
 import { ProgressBar } from "@/components/layout/ProgressBar";
 import { PageWrapper } from "@/components/layout/PageWrapper";
 
-const playfair = Playfair_Display({
-  variable: "--font-display",
+const cormorant = Cormorant_Garamond({
+  variable: "--font-cormorant",
   subsets: ["latin"],
+  weight: ["300", "400", "600", "700"],
+  style: ["normal", "italic"],
+  display: "swap",
 });
 
-const dmSerif = DM_Serif_Display({
-  variable: "--font-header",
-  weight: "400",
+const dmMono = DM_Mono({
+  variable: "--font-dm-mono",
+  weight: ["300", "400", "500"],
   subsets: ["latin"],
+  display: "swap",
 });
 
-const ibmPlexSans = IBM_Plex_Sans({
-  variable: "--font-body",
-  weight: ["400", "500", "600"],
+const sourceSerif = Source_Serif_4({
+  variable: "--font-source-serif",
   subsets: ["latin"],
-});
-
-const ibmPlexMono = IBM_Plex_Mono({
-  variable: "--font-mono",
-  weight: ["400", "500"],
-  subsets: ["latin"],
+  weight: ["300", "400", "600"],
+  style: ["normal", "italic"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
   title: "Startup Graveyard | Forensic Intelligence Archive",
-  description: "The world's most comprehensive forensic database of startup failures. Analyze the billion-dollar mistakes.",
+  description:
+    "The world's most comprehensive forensic database of startup failures. Analyze the billion-dollar mistakes.",
   icons: {
     icon: "/assets/logo-icon.svg",
     shortcut: "/assets/logo-icon.svg",
@@ -60,26 +61,18 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
-      className={`${playfair.variable} ${dmSerif.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable} h-screen overflow-hidden antialiased`}
+      className={`${cormorant.variable} ${dmMono.variable} ${sourceSerif.variable} antialiased`}
       suppressHydrationWarning
     >
-      <body className="h-screen overflow-hidden bg-bg-base text-text-primary font-body selection:bg-violet-500/30">
+      <body style={{ backgroundColor: "var(--cream-base)", color: "var(--ink-black)" }}>
         <AuthProvider>
-          <div className="flex h-screen flex-col relative overflow-hidden">
-            {/* Global Texture Overlays */}
-            <div className="fixed inset-0 pointer-events-none z-[9999] opacity-[0.035] bg-noise" />
-            <div className="fixed inset-0 pointer-events-none z-[9998] opacity-[0.01] bg-grid-fine" />
-            <div className="fixed inset-0 pointer-events-none z-[9997] bg-vignette" />
-            
+          <div className="relative flex min-h-screen flex-col">
             <ProgressBar />
             <Navigation />
-            <main className="flex-1 relative overflow-hidden">
-              <PageWrapper>
-                {children}
-              </PageWrapper>
+            <main className="relative flex-1">
+              <PageWrapper>{children}</PageWrapper>
             </main>
             <Footer stats={stats} />
-            <ChatOverlay />
           </div>
         </AuthProvider>
       </body>

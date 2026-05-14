@@ -1,9 +1,10 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useState } from 'react';
 import { supabase } from '@/lib/db/config';
 import { motion } from 'framer-motion';
-import Link from 'next/link';
 
 export default function AuthPage() {
   const [email, setEmail] = useState('');
@@ -27,8 +28,8 @@ export default function AuthPage() {
         if (error) throw error;
         window.location.href = '/';
       }
-    } catch (error: any) {
-      setMessage(error.message);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'An unknown error occurred');
     } finally {
       setLoading(false);
     }

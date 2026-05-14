@@ -1,40 +1,56 @@
+export const dynamic = 'force-dynamic';
+
 import { HeroSection } from '@/components/home/HeroSection';
+import { StatsBar } from '@/components/home/StatsBar';
 import { FeaturedCases } from '@/components/home/FeaturedCases';
 import { TaxonomyGrid } from '@/components/home/TaxonomyGrid';
+import { InsightsPreview } from '@/components/home/InsightsPreview';
 import { PreMortemCTA } from '@/components/home/PreMortemCTA';
-import { MarketIntelligence } from '@/components/home/MarketIntelligence';
-import { getGlobalStats, getInsightsData } from '@/lib/db/case-studies';
+import { getGlobalStats, getInsightsData, getTopCasesByFunding } from '@/lib/db/case-studies';
 
 export default async function Home() {
-  const stats = await getGlobalStats();
-  const insights = await getInsightsData();
+  const [stats, insights, liveCases] = await Promise.all([
+    getGlobalStats(),
+    getInsightsData(),
+    getTopCasesByFunding(2),
+  ]);
 
   return (
-    <main className="flex flex-col h-full overflow-y-auto snap-y snap-mandatory scrollbar-thin">
-      {/* Section 1: Hero (55/45 Split) */}
-      <div className="snap-start min-h-[calc(100vh-88px)] flex flex-col justify-center">
-        <HeroSection stats={stats} />
-      </div>
-      
-      {/* Section 2: Featured Cases */}
-      <div className="snap-start min-h-[calc(100vh-88px)] flex flex-col justify-center bg-bg-base border-t border-border-subtle">
-        <FeaturedCases />
-      </div>
+    <main>
+      {/* 1. Hero — Split screen */}
+      <HeroSection
+        stats={{
+          totalCases: stats.totalCases,
+          totalBurned: stats.totalBurned,
+          avgLifespan: String(insights.avgLifespan),
+          patternCount: insights.patternCount,
+          totalLessons: insights.totalLessons,
+        }}
+        liveCases={liveCases}
+      />
 
-      {/* Section 3: Taxonomy Grid */}
-      <div className="snap-start min-h-[calc(100vh-88px)] flex flex-col justify-center bg-bg-base border-t border-border-subtle">
-        <TaxonomyGrid failureData={insights.failureData} />
-      </div>
-      
-      {/* Section 4: Market Intelligence */}
-      <div className="snap-start min-h-[calc(100vh-88px)] flex flex-col justify-center bg-bg-base border-t border-border-subtle">
-        <MarketIntelligence />
-      </div>
+      {/* 2. Stats bar — count-up animation */}
+      <StatsBar
+        totalCases={stats.totalCases}
+        totalBurned={stats.totalBurned}
+        avgLifespan={insights.avgLifespan}
+        patternCount={insights.patternCount}
+      />
 
-      {/* Section 5: Pre-Mortem CTA */}
-      <div className="snap-start min-h-[calc(100vh-88px)] flex flex-col justify-center bg-bg-base border-t border-border-subtle pb-10">
-        <PreMortemCTA />
-      </div>
+      {/* 3. Featured cases archive */}
+      <FeaturedCases />
+
+      {/* 4. Failure pattern taxonomy */}
+      <TaxonomyGrid failureData={insights.failureData} />
+
+      {/* 5. Insights preview — charts + liquidations */}
+      <InsightsPreview
+        failureData={insights.failureData}
+        topLiquidations={insights.topLiquidations}
+      />
+
+      {/* 6. Pre-mortem CTA — only dark section */}
+      <PreMortemCTA />
     </main>
   );
 }

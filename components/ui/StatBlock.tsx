@@ -9,11 +9,11 @@ interface StatBlockProps {
 
 export function StatBlock({ value, label, accent = false, className = '' }: StatBlockProps) {
   return (
-    <div className={`flex flex-col ${className}`}>
-      <span className={`font-sans text-[32px] font-bold leading-none mb-2 ${accent ? 'text-violet-600' : 'text-text-primary'}`}>
+    <div className={`flex min-w-0 flex-col ${className}`}>
+      <span className={`metric-value mb-2 font-sans text-[clamp(28px,3vw,40px)] font-semibold leading-none ${accent ? 'text-[#d8b17b]' : 'text-text-primary'}`}>
         {value}
       </span>
-      <span className="font-mono text-[10px] text-text-muted tracking-widest uppercase">
+      <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-text-muted">
         {label.replace(/\s+/g, '_')}
       </span>
     </div>

@@ -1,116 +1,216 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import { IntelKicker } from '@/components/ui/IntelKicker';
-
-const CATEGORIES = [
-  { 
-    name: 'Product-Market Fit', 
-    stat: '38% OF FAILURES', 
-    desc: 'Building something the market does not fundamentally require.', 
-    severity: 'red',
-    icon: '⊘'
+const PATTERNS = [
+  {
+    name: 'No Market Need',
+    desc: 'Building solutions for problems that don\'t exist at scale. The cardinal failure.',
+    stat: '42% OF FAILURES',
+    id: 'PAT-001',
   },
-  { 
-    name: 'Burn Rate', 
-    stat: '29% OF FAILURES', 
-    desc: 'Unsustainable capital deployment vs. revenue velocity.', 
-    severity: 'red',
-    icon: '⚡'
+  {
+    name: 'Cash Exhaustion',
+    desc: 'Runway miscalculated. Burn rate outpaced growth. The most preventable collapse.',
+    stat: '29% OF FAILURES',
+    id: 'PAT-002',
   },
-  { 
-    name: 'Competition', 
-    stat: '19% OF FAILURES', 
-    desc: 'Strategic displacement by incumbents or rapid-movers.', 
-    severity: 'amber',
-    icon: '◈'
+  {
+    name: 'Team Fracture',
+    desc: 'Co-founder conflict, talent exodus, and cultural breakdown compound over time.',
+    stat: '23% OF FAILURES',
+    id: 'PAT-003',
   },
-  { 
-    name: 'Regulatory', 
-    stat: '12% OF FAILURES', 
-    desc: 'Legal non-compliance and structural oversight barriers.', 
-    severity: 'amber',
-    icon: '⚖'
+  {
+    name: 'Competition Crush',
+    desc: 'Underestimating incumbent response and failing to establish defensible moats.',
+    stat: '19% OF FAILURES',
+    id: 'PAT-004',
   },
-  { 
-    name: 'Team Conflict', 
-    stat: '9% OF FAILURES', 
-    desc: 'Internal leadership collapse and vision misalignment.', 
-    severity: 'amber',
-    icon: '⧖'
+  {
+    name: 'Pricing Failure',
+    desc: 'Monetization models that repel customers or capture insufficient value.',
+    stat: '18% OF FAILURES',
+    id: 'PAT-005',
   },
-  { 
-    name: 'Timing', 
-    stat: '7% OF FAILURES', 
-    desc: 'Premature market entry or post-trend obsolescence.', 
-    severity: 'green',
-    icon: '◔'
+  {
+    name: 'Regulatory Blindness',
+    desc: 'Ignoring compliance requirements until enforcement action forces shutdown.',
+    stat: '16% OF FAILURES',
+    id: 'PAT-006',
   },
-  { 
-    name: 'Fraud', 
-    stat: '4% OF FAILURES', 
-    desc: 'Deliberate deception and unethical resource diversion.', 
-    severity: 'red',
-    icon: '⚠'
+  {
+    name: 'Premature Scaling',
+    desc: 'Blitzscaling before product-market fit is confirmed. Capital burn without foundation.',
+    stat: '14% OF FAILURES',
+    id: 'PAT-007',
   },
-  { 
-    name: 'Tech Debt', 
-    stat: '3% OF FAILURES', 
-    desc: 'Infrastructure collapse under rapid scaling pressure.', 
-    severity: 'green',
-    icon: '⌨'
+  {
+    name: 'Pivot Paralysis',
+    desc: 'More than 3 pivots without $1M ARR predicts failure by year four.',
+    stat: '12% OF FAILURES',
+    id: 'PAT-008',
   },
 ];
 
-export function TaxonomyGrid({ failureData }: { failureData?: { name: string, value: number }[] }) {
-  const severityColors = {
-    red: 'border-red-500',
-    amber: 'border-amber-500',
-    green: 'border-green-500',
-  };
-
-  const total = failureData?.reduce((acc, curr) => acc + curr.value, 0) || 1;
+export function TaxonomyGrid({ failureData }: { failureData?: Array<{ name: string; value: number }> }) {
+  // Merge real data percentages into pattern cards where names match
+  const enrichedPatterns = PATTERNS.map((p) => {
+    const match = failureData?.find((f) =>
+      f.name.toLowerCase().includes(p.name.toLowerCase().split(' ')[0].toLowerCase())
+    );
+    return { ...p, realStat: match ? `${match.value} CASES` : null };
+  });
 
   return (
-    <section className="w-full max-w-[1400px] mx-auto px-6 py-6 border-t border-border-subtle">
-      <div className="mb-6">
-        <span className="font-mono text-[10px] text-violet-500 tracking-widest uppercase block mb-1">SYSTEMIC_TAXONOMY // V.02</span>
-        <h2 className="section-header">Systemic Vulnerabilities</h2>
-      </div>
-      
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-[1px] bg-border-subtle border border-border-subtle">
-        {CATEGORIES.map((cat, i) => {
-          const realStat = failureData?.find(d => d.name === cat.name);
-          const percentage = realStat ? Math.round((realStat.value / total) * 100) : null;
-          const displayStat = percentage !== null ? `${percentage}%_FAILURE` : cat.stat;
+    <section style={{ backgroundColor: 'var(--cream-deep)' }}>
+      <div className="sg-container section-pad">
+        {/* Section label */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            marginBottom: '12px',
+          }}
+        >
+          <span
+            style={{
+              fontFamily: 'var(--font-dm-mono), monospace',
+              fontSize: '10px',
+              fontWeight: '500',
+              textTransform: 'uppercase',
+              letterSpacing: '0.14em',
+              color: 'var(--rust-accent)',
+            }}
+          >
+            SYSTEMIC TAXONOMY / 002
+          </span>
+          <div style={{ height: '1px', flex: 1, background: 'var(--cream-dark)' }} />
+        </div>
 
-          return (
-            <div 
-              key={cat.name} 
-              className="group bg-bg-base p-4 hover:bg-bg-surface transition-colors relative overflow-hidden h-[120px]"
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-violet-500 text-sm opacity-60">{cat.icon}</span>
-                <span className="font-mono text-[9px] text-text-muted tracking-widest">{displayStat}</span>
-              </div>
-              
-              <h4 className="font-sans text-[14px] font-bold text-text-primary mb-1">
-                {cat.name}
-              </h4>
-              
-              <p className="text-text-muted text-[11px] leading-tight line-clamp-2">
-                {cat.desc}
-              </p>
+        <h2 className="t-h2" style={{ maxWidth: '20ch', marginBottom: '48px' }}>
+          The patterns that keep repeating.
+        </h2>
 
-              {/* Status Indicator */}
-              <div className={`absolute bottom-0 left-0 w-full h-[2px] ${
-                cat.severity === 'red' ? 'bg-red-500/30' : 
-                cat.severity === 'amber' ? 'bg-amber-500/30' : 'bg-green-500/30'
-              }`} />
-            </div>
-          );
-        })}
+        {/* 4×2 grid */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            gap: '16px',
+          }}
+          className="sm:grid-cols-4"
+        >
+          {enrichedPatterns.map((pattern) => (
+            <PatternCard key={pattern.id} {...pattern} />
+          ))}
+        </div>
       </div>
     </section>
+  );
+}
+
+function PatternCard({
+  name,
+  desc,
+  stat,
+  realStat,
+  id,
+}: {
+  name: string;
+  desc: string;
+  stat: string;
+  realStat: string | null;
+  id: string;
+}) {
+  return (
+    <div
+      style={{
+        backgroundColor: 'var(--cream-base)',
+        border: '1px solid var(--cream-dark)',
+        borderRadius: '2px',
+        padding: '20px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '10px',
+        cursor: 'default',
+        transition: 'all 0.2s ease',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+      className="taxonomy-card-hover"
+    >
+      {/* Paper grain */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          pointerEvents: 'none',
+          opacity: 0.05,
+          backgroundImage:
+            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E\")",
+          backgroundRepeat: 'repeat',
+          backgroundSize: '150px 150px',
+        }}
+      />
+
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        {/* ID */}
+        <div
+          style={{
+            fontFamily: 'var(--font-dm-mono), monospace',
+            fontSize: '8px',
+            textTransform: 'uppercase',
+            letterSpacing: '0.14em',
+            color: 'var(--rust-accent)',
+            marginBottom: '8px',
+          }}
+        >
+          {id}
+        </div>
+
+        {/* Pattern name */}
+        <h3
+          style={{
+            fontFamily: 'var(--font-cormorant), Georgia, serif',
+            fontSize: '20px',
+            fontWeight: '700',
+            lineHeight: 1.1,
+            color: 'var(--ink-black)',
+            marginBottom: '8px',
+          }}
+        >
+          {name}
+        </h3>
+
+        {/* Description */}
+        <p
+          style={{
+            fontFamily: 'var(--font-source-serif), Georgia, serif',
+            fontSize: '12px',
+            lineHeight: 1.6,
+            color: 'var(--ink-muted)',
+            marginBottom: '12px',
+          }}
+        >
+          {desc}
+        </p>
+
+        {/* Stat */}
+        <div
+          style={{
+            borderTop: '1.5px dashed var(--cream-dark)',
+            paddingTop: '10px',
+            fontFamily: 'var(--font-dm-mono), monospace',
+            fontSize: '9px',
+            fontWeight: '500',
+            textTransform: 'uppercase',
+            letterSpacing: '0.12em',
+            color: 'var(--ochre-signal)',
+          }}
+        >
+          {realStat || stat}
+        </div>
+      </div>
+    </div>
   );
 }

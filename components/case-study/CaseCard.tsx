@@ -26,7 +26,7 @@ export function CaseCard({ study }: { study: CaseStudy }) {
       
       {/* 5. Italic verdict */}
       <p className="text-text-secondary text-[13px] mb-5 line-clamp-2 leading-relaxed font-medium opacity-80">
-        "{study.summary}"
+        &quot;{study.summary}&quot;
       </p>
 
       {/* 9. Stats row */}

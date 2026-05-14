@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ai } from '@/lib/ai';
 import { z } from 'zod';
 import { getGlobalStats } from '@/lib/db/case-studies';
+import { createPremortemSession, savePremortemReport } from '@/lib/db/premortem';
 
 const QuestionsSchema = z.object({
   questions: z.array(z.object({
@@ -36,11 +37,19 @@ export async function POST(req: NextRequest) {
         Return a JSON object with a "questions" array. Each question should have an "id" (q1, q2, q3) and "text".
       `;
       const result = await ai.generate(prompt, QuestionsSchema);
-      return NextResponse.json(result);
+      
+      // If user is authenticated, create a session
+      let sessionId = null;
+      if (body.userId) {
+        const session = await createPremortemSession(body.userId, body.pitch);
+        sessionId = session.id;
+      }
+
+      return NextResponse.json({ ...result, sessionId });
     }
 
     if (body.action === 'GET_REPORT') {
-      const { pitch, answers } = body;
+      const { pitch, answers, sessionId } = body;
       const prompt = `
         You are the Graveyard Keeper AI. Perform a startup pre-mortem analysis.
         
@@ -57,6 +66,12 @@ export async function POST(req: NextRequest) {
         }
       `;
       const report = await ai.generate(prompt, ReportSchema);
+
+      // If session exists, save the report
+      if (sessionId) {
+        await savePremortemReport(sessionId, report, report.risk_score);
+      }
+
       return NextResponse.json(report);
     }
 

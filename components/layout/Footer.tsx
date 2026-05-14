@@ -1,7 +1,5 @@
 'use client';
 
-import { GlobalMetadata } from './GlobalMetadata';
-
 interface FooterProps {
   stats?: {
     totalCases: number;
@@ -9,35 +7,181 @@ interface FooterProps {
   };
 }
 
+function formatBig(n: number): string {
+  if (n >= 1_000_000_000) return `$${(n / 1_000_000_000).toFixed(1)}B`;
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(0)}M`;
+  return `$${n.toLocaleString()}`;
+}
+
 export function Footer({ stats }: FooterProps) {
   const currentYear = new Date().getFullYear();
-  
+
   return (
-    <footer className="fixed bottom-0 left-0 right-0 h-10 bg-bg-base border-t border-border-subtle z-[100] px-6 flex items-center justify-between pointer-events-auto">
-      {/* Left: Copyright */}
-      <div className="flex items-center gap-4">
-        <img src="/assets/logo-icon.svg" alt="Icon" className="h-4 w-4 opacity-50" />
-        <span className="font-mono text-[10px] text-text-muted tracking-wider">
-          © {currentYear} STARTUP_GRAVEYARD // FORENSIC_INTEL
-        </span>
-      </div>
+    <footer
+      style={{
+        backgroundColor: 'var(--cream-deep)',
+        borderTop: '1.5px dashed var(--cream-dark)',
+      }}
+    >
+      <div
+        className="sg-container"
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '32px',
+          paddingTop: '40px',
+          paddingBottom: '40px',
+        }}
+      >
+        {/* Top row */}
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '24px',
+            alignItems: 'flex-start',
+          }}
+          className="lg:flex-row lg:justify-between lg:items-center"
+        >
+          {/* Left: Logo + tagline */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div
+              style={{
+                width: '28px',
+                height: '28px',
+                backgroundColor: 'var(--cream-base)',
+                border: '1px solid var(--cream-dark)',
+                borderRadius: '2px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: 'inset 0 1px 2px rgba(26,23,20,0.12)',
+                flexShrink: 0,
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: 'var(--font-cormorant), Georgia, serif',
+                  fontSize: '12px',
+                  fontWeight: '700',
+                  color: 'var(--ink-black)',
+                }}
+              >
+                SG
+              </span>
+            </div>
+            <div>
+              <div
+                style={{
+                  fontFamily: 'var(--font-dm-mono), monospace',
+                  fontSize: '10px',
+                  fontWeight: '500',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.12em',
+                  color: 'var(--ink-black)',
+                }}
+              >
+                Startup Graveyard
+              </div>
+              <div
+                style={{
+                  fontFamily: 'var(--font-dm-mono), monospace',
+                  fontSize: '9px',
+                  fontWeight: '300',
+                  color: 'var(--ink-muted)',
+                  marginTop: '2px',
+                  letterSpacing: '0.04em',
+                }}
+              >
+                Forensic intelligence for failed companies
+              </div>
+            </div>
+          </div>
 
-      {/* Center: Global Metadata */}
-      <div className="hidden md:block">
-        <GlobalMetadata 
-          totalCases={stats?.totalCases || 0} 
-          totalBurned={stats?.totalBurned || 0} 
-        />
-      </div>
-
-      {/* Right: Version & Status */}
-      <div className="flex items-center gap-6 font-mono text-[10px] tracking-widest text-text-muted uppercase">
-        <div className="flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-          <span>SYSTEM_OPERATIONAL</span>
+          {/* Right: Live stats */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0',
+            }}
+          >
+            {[
+              { label: 'CASES_ARCHIVED', value: String(stats?.totalCases || 0) },
+              { label: 'CAPITAL_DESTROYED', value: formatBig(stats?.totalBurned || 0) },
+              { label: 'STATUS', value: 'OPERATIONAL' },
+            ].map((item, i) => (
+              <div
+                key={item.label}
+                style={{
+                  padding: '12px 20px',
+                  borderLeft: i > 0 ? '1.5px dashed var(--cream-dark)' : 'none',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px',
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: 'var(--font-dm-mono), monospace',
+                    fontSize: '9px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.12em',
+                    color: 'var(--ink-muted)',
+                  }}
+                >
+                  {item.label}
+                </span>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-cormorant), Georgia, serif',
+                    fontSize: '22px',
+                    fontWeight: '700',
+                    color: item.label === 'STATUS' ? 'var(--sage-neutral)' : 'var(--ink-black)',
+                    lineHeight: 1,
+                  }}
+                >
+                  {item.value}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="hidden sm:block">
-          V.2.0.4-LOCKED
+
+        {/* Bottom: copyright */}
+        <div
+          style={{
+            borderTop: '1.5px dashed var(--cream-dark)',
+            paddingTop: '20px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '8px',
+          }}
+        >
+          <span
+            style={{
+              fontFamily: 'var(--font-dm-mono), monospace',
+              fontSize: '9px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.12em',
+              color: 'var(--ink-muted)',
+            }}
+          >
+            © {currentYear} Startup Graveyard. All rights reserved.
+          </span>
+          <span
+            style={{
+              fontFamily: 'var(--font-dm-mono), monospace',
+              fontSize: '9px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.12em',
+              color: 'var(--ink-muted)',
+            }}
+          >
+            Built as a research archive for startup failure intelligence.
+          </span>
         </div>
       </div>
     </footer>

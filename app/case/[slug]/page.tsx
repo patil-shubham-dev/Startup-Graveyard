@@ -10,8 +10,17 @@ import { IntelKicker } from '@/components/ui/IntelKicker';
 import { ScanButton } from '@/components/ui/ScanButton';
 import { serialize } from 'next-mdx-remote/serialize';
 
+interface TimelineEvent {
+  date: string;
+  title: string;
+  description: string;
+  type: 'milestone' | 'warning' | 'crisis';
+}
+
+export const dynamic = 'force-dynamic';
 export const revalidate = 3600;
 
+/*
 export async function generateStaticParams() {
   const { data: cases } = await (await import('@/lib/db/config')).supabase
     .from('case_studies')
@@ -22,6 +31,7 @@ export async function generateStaticParams() {
     slug: c.slug,
   }));
 }
+*/
 
 export default async function CaseStudyPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -41,7 +51,7 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
 
   return (
     <main className="min-h-screen bg-bg-page pt-20">
-      <DossierHero study={study as any} />
+      <DossierHero study={study} />
       
       <div className="max-w-[1400px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-20 py-24 relative">
         {/* Article Section */}
@@ -53,7 +63,7 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
 
           <div className="mb-20">
             <IntelKicker label="FORENSIC_TIMELINE" figure="PT. 02" />
-            <Timeline events={mockEvents as any} />
+            <Timeline events={mockEvents as TimelineEvent[]} />
           </div>
 
           <VerdictBox reasons={study.failure_reasons || []} />
@@ -73,7 +83,7 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
 
         {/* Sidebar */}
         <aside className="space-y-12 lg:sticky lg:top-32 lg:h-fit">
-          <FailureDNA scores={study.risk_scores as any} />
+          <FailureDNA scores={study.risk_scores as Record<string, number>} />
           
           <div className="glass-dossier border-border-strong p-8 rounded-[4px] relative overflow-hidden">
             <div className="absolute top-0 left-0 w-[2px] h-full bg-red-500/40" />

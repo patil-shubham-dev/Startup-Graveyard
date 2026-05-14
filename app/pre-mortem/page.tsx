@@ -1,28 +1,132 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RiskGauge } from '@/components/pre-mortem/RiskGauge';
-import { IntelKicker } from '@/components/ui/IntelKicker';
-import { ScanButton } from '@/components/ui/ScanButton';
-import { StatBlock } from '@/components/ui/StatBlock';
+import { PremortemReport } from '@/lib/db/premortem';
 
 type Step = 'PITCH' | 'QUESTIONS' | 'ANALYSIS' | 'REPORT';
+
+interface Question {
+  id: string;
+  text: string;
+}
+
+// Animated SVG: failure vectors radiating from a central node
+function FailureVectorDiagram() {
+  const vectors = [
+    { angle: 0, label: 'PMF' },
+    { angle: 45, label: 'CASH' },
+    { angle: 90, label: 'TEAM' },
+    { angle: 135, label: 'MARKET' },
+    { angle: 180, label: 'SCALE' },
+    { angle: 225, label: 'LEGAL' },
+    { angle: 270, label: 'PIVOT' },
+    { angle: 315, label: 'TRUST' },
+  ];
+
+  return (
+    <svg
+      viewBox="0 0 300 300"
+      style={{ width: '100%', maxWidth: '320px', opacity: 0.6 }}
+      aria-hidden="true"
+    >
+      {/* Dashed circles */}
+      {[60, 100, 140].map((r) => (
+        <circle
+          key={r}
+          cx="150"
+          cy="150"
+          r={r}
+          fill="none"
+          stroke="rgba(253,250,245,0.12)"
+          strokeWidth="1"
+          strokeDasharray="4 4"
+        />
+      ))}
+
+      {/* Radiating vectors */}
+      {vectors.map((v, i) => {
+        const rad = (v.angle * Math.PI) / 180;
+        const x2 = 150 + Math.cos(rad) * 130;
+        const y2 = 150 + Math.sin(rad) * 130;
+        const lx = 150 + Math.cos(rad) * 148;
+        const ly = 150 + Math.sin(rad) * 148;
+
+        return (
+          <g key={v.label}>
+            <line
+              x1="150"
+              y1="150"
+              x2={x2}
+              y2={y2}
+              stroke="rgba(181,74,42,0.35)"
+              strokeWidth="1"
+              strokeDasharray="3 3"
+              style={{
+                animation: `pulse-opacity 3s ease-in-out infinite`,
+                animationDelay: `${i * 0.375}s`,
+              }}
+            />
+            <circle cx={x2} cy={y2} r="3" fill="var(--rust-accent)" opacity="0.5" />
+            <text
+              x={lx}
+              y={ly}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              style={{
+                fontFamily: 'var(--font-dm-mono), monospace',
+                fontSize: '7px',
+                fill: 'rgba(253,250,245,0.4)',
+                letterSpacing: '0.1em',
+              }}
+            >
+              {v.label}
+            </text>
+          </g>
+        );
+      })}
+
+      {/* Center node */}
+      <circle cx="150" cy="150" r="18" fill="var(--ink-black)" stroke="var(--rust-accent)" strokeWidth="1.5" />
+      <text
+        x="150"
+        y="150"
+        textAnchor="middle"
+        dominantBaseline="middle"
+        style={{
+          fontFamily: 'var(--font-cormorant), Georgia, serif',
+          fontSize: '12px',
+          fontWeight: '700',
+          fill: 'var(--cream-base)',
+        }}
+      >
+        SG
+      </text>
+
+      <style>{`
+        @keyframes pulse-opacity {
+          0%, 100% { opacity: 0.4; }
+          50% { opacity: 1; }
+        }
+      `}</style>
+    </svg>
+  );
+}
 
 export default function PreMortemPage() {
   const [step, setStep] = useState<Step>('PITCH');
   const [pitch, setPitch] = useState('');
-  const [questions, setQuestions] = useState<any[]>([]);
+  const [questions, setQuestions] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [report, setReport] = useState<any>(null);
+  const [report, setReport] = useState<PremortemReport | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [reportId] = useState(() => Math.floor(Math.random() * 9000) + 1000);
 
-  const steps = [
-    { id: 'PITCH', label: 'THE_PITCH' },
-    { id: 'QUESTIONS', label: 'INTERROGATION' },
-    { id: 'ANALYSIS', label: 'AUTOPSY' },
-    { id: 'REPORT', label: 'VERDICT' }
-  ];
+  const TOTAL_STEPS = 3;
 
   const handleStartInterrogation = async () => {
     setIsGenerating(true);
@@ -34,7 +138,9 @@ export default function PreMortemPage() {
       });
       const data = await res.json();
       setQuestions(data.questions);
+      setSessionId(data.sessionId);
       setStep('QUESTIONS');
+      setCurrentStep(2);
     } catch (error) {
       console.error(error);
     } finally {
@@ -44,11 +150,12 @@ export default function PreMortemPage() {
 
   const handleFinalize = async () => {
     setStep('ANALYSIS');
+    setCurrentStep(3);
     try {
       const res = await fetch('/api/pre-mortem', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'GET_REPORT', pitch, answers }),
+        body: JSON.stringify({ action: 'GET_REPORT', pitch, answers, sessionId }),
       });
       const data = await res.json();
       setReport(data);
@@ -60,200 +167,600 @@ export default function PreMortemPage() {
   };
 
   return (
-    <main className="pt-12 px-6 max-w-[640px] mx-auto h-full overflow-y-auto scrollbar-thin relative">
-      {/* Step Indicator */}
-      <div className="flex items-center justify-center gap-4 mb-12 py-6 border-b border-border-subtle">
-        {steps.map((s, i) => {
-          const currentIndex = steps.findIndex(st => st.id === step);
-          const isActive = s.id === step;
-          const isCompleted = i < currentIndex;
-          
-          return (
-            <div key={s.id} className="flex items-center gap-1">
-              <div className={`w-3 h-3 rounded-[1px] transition-colors duration-500 ${
-                isActive ? 'bg-violet-600' : isCompleted ? 'bg-violet-600/40' : 'bg-bg-surface border border-border-subtle'
-              }`} />
-              {isActive && (
-                <span className="font-mono text-[9px] text-violet-500 tracking-widest ml-1">{s.label}</span>
-              )}
+    <main
+      style={{
+        minHeight: 'calc(100vh - 56px)',
+        display: 'grid',
+      }}
+      className="lg:grid-cols-2"
+    >
+      {/* LEFT PANEL — Dark / Decorative */}
+      <div
+        style={{
+          backgroundColor: 'var(--ink-black)',
+          padding: '64px 48px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          gap: '48px',
+          minHeight: '400px',
+        }}
+        className="hidden lg:flex"
+      >
+        <div>
+          {/* Kicker */}
+          <div
+            style={{
+              fontFamily: 'var(--font-dm-mono), monospace',
+              fontSize: '10px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.16em',
+              color: 'var(--rust-accent)',
+              marginBottom: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}
+          >
+            <span
+              style={{
+                width: '20px',
+                height: '1px',
+                backgroundColor: 'var(--rust-accent)',
+                display: 'inline-block',
+              }}
+            />
+            FORENSIC DIAGNOSTIC ENGINE
+          </div>
+
+          {/* Headline */}
+          <h1
+            className="t-pullquote"
+            style={{
+              color: 'var(--cream-base)',
+              maxWidth: '16ch',
+              marginBottom: '20px',
+            }}
+          >
+            Diagnose your startup before it&apos;s too late.
+          </h1>
+
+          <p
+            style={{
+              fontFamily: 'var(--font-source-serif), Georgia, serif',
+              fontSize: '15px',
+              lineHeight: 1.75,
+              color: 'var(--ink-muted)',
+              maxWidth: '36ch',
+            }}
+          >
+            Most ventures fail for predictable reasons. Our AI engine maps your venture
+            against the archive of known failure vectors and surfaces the risks before
+            they become fatal.
+          </p>
+        </div>
+
+        {/* SVG diagram */}
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <FailureVectorDiagram />
+        </div>
+
+        {/* Bottom stats */}
+        <div
+          style={{
+            borderTop: '1px solid rgba(217,207,192,0.12)',
+            paddingTop: '24px',
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '16px',
+          }}
+        >
+          {[
+            { value: '8 VECTORS', label: 'FAILURE CATEGORIES' },
+            { value: '< 5 MIN', label: 'TO COMPLETE' },
+          ].map((s) => (
+            <div key={s.label}>
+              <div
+                style={{
+                  fontFamily: 'var(--font-cormorant), Georgia, serif',
+                  fontSize: '24px',
+                  fontWeight: '700',
+                  color: 'var(--cream-base)',
+                  lineHeight: 1,
+                  marginBottom: '4px',
+                }}
+              >
+                {s.value}
+              </div>
+              <div
+                style={{
+                  fontFamily: 'var(--font-dm-mono), monospace',
+                  fontSize: '8px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.12em',
+                  color: 'var(--ink-muted)',
+                }}
+              >
+                {s.label}
+              </div>
             </div>
-          );
-        })}
+          ))}
+        </div>
       </div>
 
-      <div className="relative z-10 pb-20">
-        <AnimatePresence mode="wait">
-          {step === 'PITCH' && (
-            <motion.div 
-              key="pitch" 
-              initial={{ opacity: 0, y: 10 }} 
-              animate={{ opacity: 1, y: 0 }} 
-              exit={{ opacity: 0, y: -10 }} 
-              className="space-y-8"
+      {/* RIGHT PANEL — Form wizard */}
+      <div
+        style={{
+          backgroundColor: 'var(--cream-base)',
+          padding: '48px 40px',
+          display: 'flex',
+          flexDirection: 'column',
+          overflowY: 'auto',
+        }}
+      >
+        {/* Step indicators */}
+        {step !== 'ANALYSIS' && step !== 'REPORT' && (
+          <div style={{ marginBottom: '40px' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0',
+                marginBottom: '16px',
+              }}
             >
-              <div className="text-center mb-10">
-                <span className="font-mono text-[10px] text-violet-500 tracking-widest uppercase block mb-2">FORENSIC_ENGINE // V.4.2</span>
-                <h1 className="font-header text-[32px] font-bold leading-tight">AI PRE-MORTEM</h1>
-                <p className="text-text-muted text-[13px] mt-4 italic">"Most startups commit suicide. We help you identify the weapon before you use it."</p>
-              </div>
-
-              <div className="bg-bg-surface p-6 border border-border-subtle relative rounded-[2px]">
-                <div className="flex justify-between items-center mb-4">
-                  <span className="font-mono text-[9px] text-text-muted uppercase tracking-widest">PROJECT_DOSSIER_INPUT</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-violet-600 animate-pulse rounded-full" />
-                    <span className="font-mono text-[8px] text-violet-500 uppercase">AWAITING_DATA</span>
+              {['STEP_01', 'STEP_02', 'STEP_03'].map((label, i) => {
+                const stepNum = i + 1;
+                const isActive = stepNum === currentStep;
+                const isDone = stepNum < currentStep;
+                return (
+                  <div
+                    key={label}
+                    style={{ display: 'flex', alignItems: 'center', flex: 1 }}
+                  >
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-dm-mono), monospace',
+                        fontSize: '9px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.12em',
+                        color: isActive
+                          ? 'var(--rust-accent)'
+                          : isDone
+                          ? 'var(--sage-neutral)'
+                          : 'var(--ink-muted)',
+                        fontWeight: isActive ? '500' : '400',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {label}
+                    </span>
+                    {i < 2 && (
+                      <div
+                        style={{
+                          flex: 1,
+                          height: '1px',
+                          margin: '0 8px',
+                          borderTop: '1.5px dashed var(--cream-dark)',
+                        }}
+                      />
+                    )}
                   </div>
-                </div>
+                );
+              })}
+            </div>
 
-                <textarea 
-                  className="w-full bg-bg-base border border-border-subtle p-6 text-[14px] min-h-[200px] focus:outline-none focus:border-violet-600/30 transition-all resize-none text-text-primary rounded-[1px] leading-relaxed"
-                  placeholder="Describe your venture's core value, target market, and execution strategy..."
-                  value={pitch}
-                  onChange={(e) => setPitch(e.target.value)}
-                />
-                
-                <button 
-                  onClick={handleStartInterrogation}
-                  disabled={pitch.length < 20 || isGenerating}
-                  className="w-full py-4 mt-6 bg-text-primary text-bg-base font-mono text-[10px] font-bold uppercase tracking-widest hover:bg-violet-600 hover:text-white transition-colors disabled:opacity-20"
+            {/* Progress bar */}
+            <div className="progress-track">
+              <div
+                className="progress-fill"
+                style={{ width: `${((currentStep - 1) / (TOTAL_STEPS - 1)) * 100}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Step content */}
+        <div style={{ flex: 1 }}>
+          <AnimatePresence mode="wait">
+            {step === 'PITCH' && (
+              <motion.div
+                key="pitch"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.28 }}
+              >
+                <div
+                  style={{
+                    fontFamily: 'var(--font-dm-mono), monospace',
+                    fontSize: '9px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.14em',
+                    color: 'var(--rust-accent)',
+                    marginBottom: '12px',
+                  }}
                 >
-                  {isGenerating ? 'ANALYZING...' : 'INITIATE_INTERROGATION'}
-                </button>
-              </div>
-            </motion.div>
-          )}
+                  THE_PITCH
+                </div>
+                <h2
+                  className="t-h2"
+                  style={{ marginBottom: '8px' }}
+                >
+                  Describe your venture.
+                </h2>
+                <p
+                  style={{
+                    fontFamily: 'var(--font-source-serif), Georgia, serif',
+                    fontSize: '14px',
+                    lineHeight: 1.7,
+                    color: 'var(--ink-muted)',
+                    fontStyle: 'italic',
+                    marginBottom: '32px',
+                  }}
+                >
+                  &quot;Most startups commit suicide. We help you identify the weapon before you use it.&quot;
+                </p>
 
-          {step === 'QUESTIONS' && (
-            <motion.div 
-              key="questions" 
-              initial={{ opacity: 0, x: 10 }} 
-              animate={{ opacity: 1, x: 0 }} 
-              exit={{ opacity: 0, x: -10 }} 
-              className="space-y-12"
-            >
-              <div className="space-y-10">
-                {questions.map((q, i) => (
-                  <div key={q.id} className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <span className="font-mono text-violet-500 text-[10px]">VEC_0{i + 1}</span>
-                      <div className="h-[1px] flex-1 bg-border-subtle" />
-                    </div>
-                    
-                    <h3 className="font-header text-[20px] font-bold text-text-primary leading-tight">
-                      {q.text}
-                    </h3>
-                    
-                    <textarea 
-                      className="w-full bg-bg-surface border border-border-subtle p-4 focus:outline-none focus:border-violet-600/30 transition-all min-h-[100px] text-[13px] text-text-primary rounded-[1px] leading-relaxed"
-                      placeholder="Input forensic detail..."
-                      onChange={(e) => setAnswers({...answers, [q.id]: e.target.value})}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                  <div>
+                    <label
+                      style={{
+                        fontFamily: 'var(--font-dm-mono), monospace',
+                        fontSize: '9px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.14em',
+                        color: 'var(--ink-muted)',
+                        display: 'block',
+                        marginBottom: '8px',
+                      }}
+                    >
+                      VENTURE DESCRIPTION
+                    </label>
+                    <textarea
+                      className="sg-textarea"
+                      placeholder="Describe your venture's core value proposition, target market, and execution strategy..."
+                      value={pitch}
+                      onChange={(e) => setPitch(e.target.value)}
+                      rows={7}
                     />
                   </div>
-                ))}
-              </div>
 
-              <button 
-                onClick={handleFinalize} 
-                className="w-full py-5 bg-violet-600 text-white font-mono text-[10px] font-bold uppercase tracking-widest hover:bg-violet-700 transition-colors mt-8"
+                  <button
+                    onClick={handleStartInterrogation}
+                    disabled={pitch.length < 20 || isGenerating}
+                    className="btn-rust"
+                    style={{
+                      opacity: pitch.length < 20 || isGenerating ? 0.4 : 1,
+                      justifyContent: 'center',
+                      padding: '16px 32px',
+                    }}
+                  >
+                    {isGenerating ? 'ANALYZING...' : 'INITIATE DIAGNOSTIC →'}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {step === 'QUESTIONS' && (
+              <motion.div
+                key="questions"
+                initial={{ opacity: 0, x: 16 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -16 }}
+                transition={{ duration: 0.28 }}
               >
-                EXECUTE_FINAL_AUTOPSY
-              </button>
-            </motion.div>
-          )}
-
-          {step === 'ANALYSIS' && (
-            <motion.div 
-              key="analysis" 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
-              className="text-center py-24 space-y-8"
-            >
-              <div className="relative inline-block">
-                <div className="w-16 h-16 rounded-full border border-violet-500/20 flex items-center justify-center relative">
-                  <div className="absolute inset-0 bg-violet-500/5 animate-pulse rounded-full" />
-                  <span className="text-xl">☠</span>
+                <div
+                  style={{
+                    fontFamily: 'var(--font-dm-mono), monospace',
+                    fontSize: '9px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.14em',
+                    color: 'var(--rust-accent)',
+                    marginBottom: '12px',
+                  }}
+                >
+                  INTERROGATION
                 </div>
-                <div className="absolute -inset-2 border border-dashed border-violet-500/10 rounded-full animate-spin-slow" />
-              </div>
-              
-              <div className="space-y-4">
-                <h2 className="font-header text-[24px] font-bold text-text-primary italic">Compiling Verdict</h2>
-                <div className="font-mono text-[9px] text-text-muted space-y-2 uppercase tracking-widest">
-                  <div className="flex items-center justify-center gap-2">
-                    <span className="w-1.5 h-1.5 bg-violet-600 rounded-full animate-ping" />
-                    SCANNING_VECTORS
-                  </div>
-                  <p className="opacity-50">MAPPING_RISK_COEFFICIENTS</p>
+                <h2 className="t-h2" style={{ marginBottom: '36px' }}>
+                  Forensic questions.
+                </h2>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '36px' }}>
+                  {questions.map((q, i) => (
+                    <div key={q.id}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          marginBottom: '12px',
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontFamily: 'var(--font-dm-mono), monospace',
+                            fontSize: '9px',
+                            color: 'var(--rust-accent)',
+                            flexShrink: 0,
+                          }}
+                        >
+                          VEC_0{i + 1}
+                        </span>
+                        <div style={{ flex: 1, height: '1px', borderTop: '1px dashed var(--cream-dark)' }} />
+                      </div>
+                      <label
+                        style={{
+                          fontFamily: 'var(--font-cormorant), Georgia, serif',
+                          fontSize: '20px',
+                          fontWeight: '600',
+                          color: 'var(--ink-black)',
+                          lineHeight: 1.2,
+                          display: 'block',
+                          marginBottom: '12px',
+                        }}
+                      >
+                        {q.text}
+                      </label>
+                      <textarea
+                        className="sg-textarea"
+                        placeholder="Input forensic detail..."
+                        rows={3}
+                        onChange={(e) => setAnswers({ ...answers, [q.id]: e.target.value })}
+                      />
+                    </div>
+                  ))}
                 </div>
-              </div>
-            </motion.div>
-          )}
 
-          {step === 'REPORT' && report && (
-            <motion.div 
-              key="report" 
-              initial={{ opacity: 0, y: 10 }} 
-              animate={{ opacity: 1, y: 0 }} 
-              className="space-y-10"
-            >
-              <div className="bg-bg-surface p-8 border border-border-subtle border-l-4 border-l-violet-600 relative rounded-[2px]">
-                <div className="flex justify-between items-start mb-6">
-                  <span className="font-mono text-[10px] text-violet-500 tracking-widest uppercase">VERDICT_REPORT // CONFIDENTIAL</span>
-                  <span className="font-mono text-[9px] text-text-muted opacity-40">#PRM-{Math.floor(Math.random()*9000)+1000}</span>
+                <button
+                  onClick={handleFinalize}
+                  className="btn-rust"
+                  style={{ marginTop: '40px', justifyContent: 'center', padding: '16px 32px', width: '100%' }}
+                >
+                  GENERATE REPORT →
+                </button>
+              </motion.div>
+            )}
+
+            {step === 'ANALYSIS' && (
+              <motion.div
+                key="analysis"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minHeight: '400px',
+                  gap: '24px',
+                  textAlign: 'center',
+                }}
+              >
+                {/* Spinning ring */}
+                <div style={{ position: 'relative', width: '72px', height: '72px' }}>
+                  <div
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      border: '2px dashed var(--cream-dark)',
+                      borderRadius: '50%',
+                      animation: 'spin-slow 8s linear infinite',
+                    }}
+                  />
+                  <div
+                    style={{
+                      position: 'absolute',
+                      inset: '12px',
+                      border: '1px solid var(--rust-accent)',
+                      borderRadius: '50%',
+                      opacity: 0.4,
+                    }}
+                  />
+                  <div
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-cormorant), Georgia, serif',
+                        fontSize: '18px',
+                        fontWeight: '700',
+                        color: 'var(--ink-black)',
+                      }}
+                    >
+                      SG
+                    </span>
+                  </div>
                 </div>
-                
-                <h2 className="font-header text-[32px] font-bold mb-8">Forensic Verdict</h2>
 
-                <div className="grid grid-cols-3 gap-6 pt-6 border-t border-border-subtle">
-                  <div className="space-y-1">
-                    <span className="font-mono text-[9px] text-text-muted uppercase tracking-widest">RISK_SCORE</span>
-                    <div className="text-xl font-bold text-red-500">{report.risk_score}%</div>
+                <h2
+                  style={{
+                    fontFamily: 'var(--font-cormorant), Georgia, serif',
+                    fontSize: '28px',
+                    fontWeight: '700',
+                    fontStyle: 'italic',
+                    color: 'var(--ink-black)',
+                  }}
+                >
+                  Compiling Verdict
+                </h2>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {['SCANNING_VECTORS', 'MAPPING_RISK_COEFFICIENTS'].map((t) => (
+                    <div
+                      key={t}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: '5px',
+                          height: '5px',
+                          borderRadius: '50%',
+                          backgroundColor: 'var(--rust-accent)',
+                          display: 'inline-block',
+                          animation: 'pulse 1s ease-in-out infinite',
+                        }}
+                      />
+                      <span
+                        style={{
+                          fontFamily: 'var(--font-dm-mono), monospace',
+                          fontSize: '9px',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.14em',
+                          color: 'var(--ink-muted)',
+                        }}
+                      >
+                        {t}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {step === 'REPORT' && report && (
+              <motion.div
+                key="report"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.32 }}
+                style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}
+              >
+                {/* Header */}
+                <div
+                  style={{
+                    borderLeft: '3px solid var(--rust-accent)',
+                    paddingLeft: '16px',
+                    marginBottom: '8px',
+                  }}
+                >
+                  <div
+                    style={{
+                      fontFamily: 'var(--font-dm-mono), monospace',
+                      fontSize: '9px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.14em',
+                      color: 'var(--rust-accent)',
+                      marginBottom: '4px',
+                    }}
+                  >
+                    VERDICT_REPORT {'//'} CONFIDENTIAL
                   </div>
-                  <div className="space-y-1">
-                    <span className="font-mono text-[9px] text-text-muted uppercase tracking-widest">PROBABILITY</span>
-                    <div className="text-xl font-bold text-violet-500 uppercase">HIGH</div>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="mt-4"><RiskGauge score={report.risk_score} /></div>
+                  <div
+                    style={{
+                      fontFamily: 'var(--font-dm-mono), monospace',
+                      fontSize: '9px',
+                      color: 'var(--ink-muted)',
+                    }}
+                  >
+                    #PRM-{reportId}
                   </div>
                 </div>
-              </div>
 
-              <div className="bg-bg-surface p-8 border border-border-subtle relative rounded-[2px]">
-                <span className="font-mono text-[9px] text-text-muted uppercase tracking-widest mb-4 block">EXECUTIVE_SUMMARY</span>
-                <p className="text-[18px] text-text-primary font-serif italic leading-relaxed">
-                  "{report.verdict}"
-                </p>
-              </div>
+                <h2 className="t-h2">Forensic Verdict</h2>
 
-              <div className="grid grid-cols-1 gap-4">
-                {report.primary_risks.map((risk: any, i: number) => (
-                  <div key={i} className="bg-bg-surface p-6 border border-border-subtle border-l-2 border-l-violet-600 rounded-[2px]">
-                    <span className="font-mono text-violet-500 uppercase text-[9px] tracking-widest mb-2 block">VECTOR_0{i+1} // {risk.category}</span>
-                    <h3 className="font-header font-bold text-text-primary mb-4 text-[16px] italic">{risk.description}</h3>
-                    <div className="pt-4 border-t border-border-subtle">
-                      <span className="font-mono text-[8px] text-text-muted block mb-2 uppercase tracking-widest">MITIGATION</span>
-                      <p className="text-[12px] text-text-muted leading-relaxed">{risk.mitigation}</p>
+                {/* Risk score */}
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '16px',
+                    padding: '20px',
+                    backgroundColor: 'var(--cream-deep)',
+                    border: '1px solid var(--cream-dark)',
+                    borderRadius: '2px',
+                  }}
+                >
+                  <div>
+                    <div style={{ fontFamily: 'var(--font-dm-mono)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--ink-muted)', marginBottom: '6px' }}>
+                      RISK_SCORE
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-cormorant)', fontSize: '40px', fontWeight: '700', color: 'var(--rust-accent)', lineHeight: 1 }}>
+                      {report.risk_score}%
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontFamily: 'var(--font-dm-mono)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--ink-muted)', marginBottom: '6px' }}>
+                      PROBABILITY
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-cormorant)', fontSize: '28px', fontWeight: '700', color: 'var(--ochre-signal)', lineHeight: 1 }}>
+                      {report.risk_score > 70 ? 'HIGH' : report.risk_score > 40 ? 'MEDIUM' : 'LOW'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Verdict */}
+                <div
+                  style={{
+                    padding: '24px',
+                    backgroundColor: 'var(--paper-white)',
+                    border: '1px solid var(--cream-dark)',
+                    borderRadius: '2px',
+                  }}
+                >
+                  <div style={{ fontFamily: 'var(--font-dm-mono)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--ink-muted)', marginBottom: '12px' }}>
+                    EXECUTIVE_SUMMARY
+                  </div>
+                  <p style={{ fontFamily: 'var(--font-source-serif)', fontSize: '16px', lineHeight: 1.75, color: 'var(--ink-black)', fontStyle: 'italic' }}>
+                    &quot;{report.verdict}&quot;
+                  </p>
+                </div>
+
+                {/* Risk vectors */}
+                {report.primary_risks.map((risk: { category: string; description: string; mitigation: string }, i: number) => (
+                  <div
+                    key={i}
+                    style={{
+                      padding: '20px',
+                      backgroundColor: 'var(--cream-deep)',
+                      border: '1px solid var(--cream-dark)',
+                      borderLeft: '3px solid var(--rust-accent)',
+                      borderRadius: '2px',
+                    }}
+                  >
+                    <div style={{ fontFamily: 'var(--font-dm-mono)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--rust-accent)', marginBottom: '8px' }}>
+                      VECTOR_0{i + 1} {'//'} {risk.category}
+                    </div>
+                    <h4 style={{ fontFamily: 'var(--font-cormorant)', fontSize: '18px', fontWeight: '600', color: 'var(--ink-black)', marginBottom: '12px', fontStyle: 'italic' }}>
+                      {risk.description}
+                    </h4>
+                    <div style={{ borderTop: '1.5px dashed var(--cream-dark)', paddingTop: '12px' }}>
+                      <div style={{ fontFamily: 'var(--font-dm-mono)', fontSize: '8px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--ink-muted)', marginBottom: '6px' }}>
+                        MITIGATION
+                      </div>
+                      <p style={{ fontFamily: 'var(--font-source-serif)', fontSize: '13px', lineHeight: 1.65, color: 'var(--ink-muted)' }}>
+                        {risk.mitigation}
+                      </p>
                     </div>
                   </div>
                 ))}
-              </div>
 
-              <div className="flex justify-center gap-4 pt-10">
-                <button 
-                  onClick={() => setStep('PITCH')}
-                  className="px-8 py-3 bg-text-primary text-bg-base font-mono text-[10px] font-bold uppercase tracking-widest hover:bg-violet-600 hover:text-white transition-colors"
-                >
-                  NEW_SCAN
-                </button>
-                <button className="px-8 py-3 border border-border-subtle font-mono text-[10px] font-bold uppercase tracking-widest text-text-muted hover:text-white transition-colors">
-                  EXPORT_PDF
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                {/* Actions */}
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  <button
+                    onClick={() => { setStep('PITCH'); setCurrentStep(1); setPitch(''); setAnswers({}); setReport(null); }}
+                    className="btn-rust"
+                  >
+                    NEW SCAN →
+                  </button>
+                  <button className="btn-outline-ink">
+                    EXPORT PDF
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
     </main>
   );
