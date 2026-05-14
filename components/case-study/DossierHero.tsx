@@ -1,63 +1,126 @@
+'use client';
+
 import { CaseStudy } from '@/lib/db/case-studies';
+import { formatCurrency } from '@/lib/utils/format';
 
 export function DossierHero({ study }: { study: CaseStudy }) {
-  const formatFunding = (raised: number | null) => {
-    if (!raised) return 'N/A';
-    if (raised >= 1000000000) return `$${(raised / 1000000000).toFixed(1)}B`;
-    return `$${(raised / 1000000).toFixed(0)}M`;
-  };
-
   return (
-    <section className="pt-32 pb-16 px-6 relative overflow-hidden">
-      {/* Background forensic watermark */}
-      <div className="absolute top-0 right-0 p-10 font-mono text-[120px] text-border-subtle opacity-5 pointer-events-none select-none font-bold rotate-12">
-        DEEP-DIVE
-      </div>
+    <section
+      style={{
+        backgroundColor: 'var(--cream-deep)',
+        borderBottom: '1.5px dashed var(--cream-dark)',
+        padding: '80px 0 64px',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Paper grain */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          pointerEvents: 'none',
+          opacity: 0.05,
+          backgroundImage:
+            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E\")",
+          backgroundRepeat: 'repeat',
+          backgroundSize: '150px 150px',
+        }}
+      />
 
-      <div className="max-w-7xl mx-auto relative z-10">
-        <nav className="flex items-center gap-2 font-mono text-[10px] text-text-muted uppercase tracking-[3px] mb-12">
-          <span className="hover:text-text-primary cursor-pointer transition-colors">ARCHIVE</span>
-          <span>/</span>
-          <span className="hover:text-text-primary cursor-pointer transition-colors">CASE FILES</span>
-          <span>/</span>
-          <span className="text-amber-signal">{study.case_number}</span>
-          <span>/</span>
-          <span className="text-red-critical font-bold">[CLOSED — SHUTDOWN {study.shutdown_year}]</span>
-        </nav>
-
-        <div className="flex flex-col lg:flex-row items-start justify-between gap-12 mb-16">
-          <div className="flex-1">
-            <h1 className="font-display text-5xl md:text-8xl font-bold mb-8 text-text-primary tracking-tight">
-              {study.company_name}
-            </h1>
-            <p className="text-amber-signal text-xl md:text-2xl font-body italic leading-relaxed max-w-2xl border-l-2 border-amber-signal/30 pl-6 py-2">
-              "{study.summary}"
-            </p>
-          </div>
-          
-          <div className="w-full lg:w-auto grid grid-cols-2 md:grid-cols-4 lg:grid-cols-2 gap-4 lg:gap-10 bg-bg-surface-1 p-8 border border-border-subtle rounded-xl shadow-2xl min-w-[320px]">
-            {[
-              { label: 'FOUNDED', value: study.founded_year },
-              { label: 'SHUTDOWN', value: study.shutdown_year },
-              { label: 'TOTAL FUNDING', value: formatFunding(study.funding_raised) },
-              { label: 'PEAK SIZE', value: study.employees_peak ? `${study.employees_peak}+` : 'N/A' },
-            ].map((stat) => (
-              <div key={stat.label} className="space-y-1">
-                <div className="font-mono text-[10px] text-text-muted uppercase tracking-[2px]">{stat.label}</div>
-                <div className="font-mono text-xl font-bold text-text-primary">{stat.value}</div>
-              </div>
-            ))}
-          </div>
+      <div className="sg-container" style={{ position: 'relative', zIndex: 1 }}>
+        {/* Breadcrumb / Meta */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            marginBottom: '24px',
+          }}
+        >
+          <span
+            style={{
+              fontFamily: 'var(--font-dm-mono), monospace',
+              fontSize: '10px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.14em',
+              color: 'var(--rust-accent)',
+            }}
+          >
+            {study.case_number}
+          </span>
+          <div
+            style={{
+              width: '1px',
+              height: '10px',
+              backgroundColor: 'var(--cream-dark)',
+            }}
+          />
+          <span
+            style={{
+              fontFamily: 'var(--font-dm-mono), monospace',
+              fontSize: '10px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.12em',
+              color: 'var(--ink-muted)',
+            }}
+          >
+            {study.industry || 'ARCHIVE'} {'//'} STATUS: CLOSED
+          </span>
         </div>
 
-        <div className="flex flex-wrap gap-3">
-          <span className="bg-violet-primary/10 text-violet-primary border border-violet-primary/20 px-4 py-1.5 rounded-md text-[10px] font-mono uppercase tracking-[2px] font-bold">
-            {study.industry}
-          </span>
-          {(study.failure_reasons || []).map((reason) => (
-            <span key={reason} className="bg-amber-signal/10 text-amber-signal border border-amber-signal/20 px-4 py-1.5 rounded-md text-[10px] font-mono uppercase tracking-[2px] font-bold">
-              {reason}
-            </span>
+        {/* Headline */}
+        <h1
+          className="t-hero"
+          style={{
+            marginBottom: '32px',
+            maxWidth: '15ch',
+          }}
+        >
+          {study.company_name}
+        </h1>
+
+        {/* Stats Grid */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gap: '32px',
+            borderTop: '1.5px dashed var(--cream-dark)',
+            paddingTop: '32px',
+          }}
+        >
+          {[
+            { label: 'CAPITAL_BURNED', value: formatCurrency(study.funding_raised || 0) },
+            { label: 'LIFESPAN', value: `${(study.shutdown_year || 0) - (study.founded_year || 0)} YRS` },
+            { label: 'LOCATION', value: study.location || 'REMOTE' },
+            { label: 'EXIT_YEAR', value: String(study.shutdown_year || '—') },
+          ].map((stat) => (
+            <div key={stat.label}>
+              <div
+                style={{
+                  fontFamily: 'var(--font-dm-mono), monospace',
+                  fontSize: '9px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.14em',
+                  color: 'var(--ink-muted)',
+                  marginBottom: '8px',
+                }}
+              >
+                {stat.label}
+              </div>
+              <div
+                style={{
+                  fontFamily: 'var(--font-cormorant), Georgia, serif',
+                  fontSize: '28px',
+                  fontWeight: '700',
+                  color: stat.label === 'CAPITAL_BURNED' ? 'var(--rust-accent)' : 'var(--ink-black)',
+                  lineHeight: 1,
+                }}
+              >
+                {stat.value}
+              </div>
+            </div>
           ))}
         </div>
       </div>

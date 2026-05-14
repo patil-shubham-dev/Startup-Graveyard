@@ -1,12 +1,31 @@
 import { supabase } from './config';
 
+interface Question {
+  id: string;
+  text: string;
+}
+
+export interface PremortemReport {
+  risk_score: number;
+  verdict: string;
+  primary_risks: Array<{
+    category: string;
+    description: string;
+    mitigation: string;
+  }>;
+  similar_cases: Array<{
+    name: string;
+    correlation: string;
+  }>;
+}
+
 export interface PremortemSession {
   id: string;
   user_id: string;
   pitch: string;
-  questions: any[];
+  questions: Question[];
   answers: Record<string, string>;
-  report: any;
+  report: PremortemReport | null;
   risk_score: number | null;
   share_token: string | null;
   created_at: string;
@@ -43,7 +62,7 @@ export async function updateSessionAnswers(id: string, answers: Record<string, s
   if (error) throw error;
 }
 
-export async function savePremortemReport(id: string, report: any, riskScore: number): Promise<void> {
+export async function savePremortemReport(id: string, report: PremortemReport, riskScore: number): Promise<void> {
   const { error } = await supabase
     .from('premortem_sessions')
     .update({ 

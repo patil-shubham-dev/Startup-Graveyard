@@ -1,32 +1,97 @@
+'use client';
+
 export function VerdictBox({ reasons }: { reasons: string[] }) {
-  const divider = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━";
-  
   return (
-    <div className="verdict-box my-12 relative overflow-hidden">
-      <div className="absolute top-0 right-0 p-4 font-mono text-[8px] text-text-muted opacity-30 select-none">
-        ARCHIVE REF: DG-882-X
-      </div>
-      
-      <div className="mb-8">
-        <span className="font-mono text-[10px] tracking-[3px] uppercase text-amber-signal block mb-2">
-          VERDICT — PRIMARY CAUSES OF FAILURE
-        </span>
-        <div className="font-mono text-[10px] text-border-medium overflow-hidden whitespace-nowrap">
-          {divider}
-        </div>
+    <div
+      style={{
+        backgroundColor: 'var(--ink-black)',
+        padding: '48px 40px',
+        borderRadius: '2px',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Decorative vertical line */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '4px',
+          height: '100%',
+          backgroundColor: 'var(--rust-accent)',
+        }}
+      />
+
+      <div
+        style={{
+          fontFamily: 'var(--font-dm-mono), monospace',
+          fontSize: '10px',
+          textTransform: 'uppercase',
+          letterSpacing: '0.16em',
+          color: 'var(--rust-accent)',
+          marginBottom: '24px',
+        }}
+      >
+        FORENSIC_VERDICT
       </div>
 
-      <div className="space-y-4">
-        {(reasons || []).map((reason) => (
-          <div key={reason} className="flex items-start gap-4 font-mono text-[14px]">
-            <span className="text-amber-signal font-bold">✗</span>
-            <span className="text-text-primary uppercase tracking-tight">{reason}</span>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+        {reasons.map((reason, i) => (
+          <div key={i} style={{ display: 'flex', gap: '24px' }}>
+            <span
+              style={{
+                fontFamily: 'var(--font-cormorant), Georgia, serif',
+                fontSize: '32px',
+                fontWeight: '700',
+                color: 'var(--rust-accent)',
+                lineHeight: 1,
+                opacity: 0.8,
+              }}
+            >
+              0{i + 1}
+            </span>
+            <p
+              style={{
+                fontFamily: 'var(--font-source-serif), Georgia, serif',
+                fontSize: '18px',
+                lineHeight: 1.6,
+                color: 'var(--cream-base)',
+                maxWidth: '32ch',
+                fontStyle: 'italic',
+              }}
+            >
+              {reason}
+            </p>
           </div>
         ))}
       </div>
 
-      <div className="mt-8 font-mono text-[10px] text-border-medium overflow-hidden whitespace-nowrap">
-        {divider}
+      {/* Rubber stamp effect */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: '32px',
+          right: '40px',
+          transform: 'rotate(-12deg)',
+          opacity: 0.3,
+          pointerEvents: 'none',
+        }}
+      >
+        <div
+          style={{
+            border: '2px solid var(--rust-accent)',
+            padding: '8px 16px',
+            fontFamily: 'var(--font-dm-mono), monospace',
+            fontSize: '14px',
+            fontWeight: '700',
+            color: 'var(--rust-accent)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.2em',
+          }}
+        >
+          FINAL_JUDGMENT
+        </div>
       </div>
     </div>
   );

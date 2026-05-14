@@ -1,51 +1,79 @@
+export const dynamic = 'force-dynamic';
 import type { Metadata } from "next";
-import { Fraunces, Inter, JetBrains_Mono } from "next/font/google";
+import { Cormorant_Garamond, DM_Mono, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 import { Navigation } from "@/components/layout/Navigation";
 import { Footer } from "@/components/layout/Footer";
 import { AuthProvider } from "@/context/AuthContext";
-import { ChatOverlay } from "@/components/layout/ChatOverlay";
 import { ProgressBar } from "@/components/layout/ProgressBar";
+import { PageWrapper } from "@/components/layout/PageWrapper";
 
-const fraunces = Fraunces({
-  variable: "--font-display",
+const cormorant = Cormorant_Garamond({
+  variable: "--font-cormorant",
   subsets: ["latin"],
+  weight: ["300", "400", "600", "700"],
+  style: ["normal", "italic"],
+  display: "swap",
 });
 
-const inter = Inter({
-  variable: "--font-body",
+const dmMono = DM_Mono({
+  variable: "--font-dm-mono",
+  weight: ["300", "400", "500"],
   subsets: ["latin"],
+  display: "swap",
 });
 
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-mono",
+const sourceSerif = Source_Serif_4({
+  variable: "--font-source-serif",
   subsets: ["latin"],
+  weight: ["300", "400", "600"],
+  style: ["normal", "italic"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Startup Graveyard AI | Learn from Startup Failures",
-  description: "AI-powered intelligence platform documenting and analyzing startup failures to help founders avoid fatal mistakes.",
+  title: "Startup Graveyard | Forensic Intelligence Archive",
+  description:
+    "The world's most comprehensive forensic database of startup failures. Analyze the billion-dollar mistakes.",
+  icons: {
+    icon: "/assets/logo-icon.svg",
+    shortcut: "/assets/logo-icon.svg",
+    apple: "/assets/logo-icon.svg",
+  },
 };
 
-export default function RootLayout({
+import { getGlobalStats } from "@/lib/db/case-studies";
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const stats = await getGlobalStats();
+
   return (
     <html
       lang="en"
-      className={`${fraunces.variable} ${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      className={`${cormorant.variable} ${dmMono.variable} ${sourceSerif.variable} antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col bg-[#08080D] text-[#F1F5F9] font-body">
+      <body style={{ backgroundColor: "var(--cream-base)", color: "var(--ink-black)" }}>
         <AuthProvider>
-          <ProgressBar />
-          <Navigation />
-          <div className="flex-1">
-            {children}
+          <div className="relative flex min-h-screen flex-col">
+            <ProgressBar />
+            <Navigation />
+            <main className="relative flex-1">
+              <PageWrapper>{children}</PageWrapper>
+            </main>
+            <Footer stats={stats} />
           </div>
-          <ChatOverlay />
-          <Footer />
         </AuthProvider>
       </body>
     </html>

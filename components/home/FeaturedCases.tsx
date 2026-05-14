@@ -1,61 +1,261 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { CaseCard } from '../case-study/CaseCard';
+import { useEffect, useState } from 'react';
 import { listCaseStudies, CaseStudy } from '@/lib/db/case-studies';
+import { formatCurrency } from '@/lib/utils/format';
 
 export function FeaturedCases() {
   const [cases, setCases] = useState<CaseStudy[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadCases = async () => {
-      try {
-        const data = await listCaseStudies({ limit: 3 });
-        setCases(data);
-      } catch (error) {
-        console.error('Failed to load featured cases:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadCases();
+    listCaseStudies({ limit: 3 })
+      .then(setCases)
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
 
   return (
-    <section className="py-24 px-6 max-w-7xl mx-auto">
-      <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
-        <div>
-          <span className="font-mono text-amber-signal tracking-[5px] text-[10px] uppercase block mb-3 font-bold">FEATURED AUTOPSIES</span>
-          <h2 className="font-display text-4xl md:text-5xl font-bold text-text-primary tracking-tight">Intelligence Highlights</h2>
-        </div>
-        <Link 
-          href="/explore" 
-          className="px-6 py-3 border border-border-subtle hover:bg-bg-surface-2 text-text-secondary hover:text-text-primary font-mono text-[10px] tracking-[2px] uppercase rounded-lg transition-all duration-300 shadow-lg hover:shadow-violet-glow/10"
+    <section style={{ backgroundColor: 'var(--cream-base)' }}>
+      <div className="sg-container section-pad">
+        {/* Section label */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            marginBottom: '12px',
+          }}
         >
-          Access Full Archive →
-        </Link>
-      </div>
+          <span
+            style={{
+              fontFamily: 'var(--font-dm-mono), monospace',
+              fontSize: '10px',
+              fontWeight: '500',
+              textTransform: 'uppercase',
+              letterSpacing: '0.14em',
+              color: 'var(--rust-accent)',
+            }}
+          >
+            ARCHIVE CURATION / 001
+          </span>
+          <div style={{ height: '1px', flex: 1, background: 'var(--cream-dark)' }} />
+        </div>
 
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-[420px] bg-bg-surface-1 border border-border-subtle rounded-xl animate-pulse" />
-          ))}
+        {/* Heading */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-end',
+            marginBottom: '48px',
+            flexWrap: 'wrap',
+            gap: '16px',
+          }}
+        >
+          <h2 className="t-h2" style={{ maxWidth: '18ch' }}>
+            Case studies designed for serious reading.
+          </h2>
+          <Link
+            href="/explore"
+            style={{
+              fontFamily: 'var(--font-dm-mono), monospace',
+              fontSize: '11px',
+              fontWeight: '500',
+              textTransform: 'uppercase',
+              letterSpacing: '0.12em',
+              color: 'var(--rust-accent)',
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'gap 0.2s ease',
+              flexShrink: 0,
+            }}
+            className="archive-link"
+          >
+            VIEW FULL ARCHIVE <span style={{ transition: 'transform 0.2s ease' }}>→</span>
+          </Link>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {cases.map((study) => (
-            <CaseCard key={study.id} study={study} />
-          ))}
-          {cases.length === 0 && (
-            <p className="col-span-full text-center text-text-muted font-mono text-sm py-12 border-2 border-dashed border-border-subtle rounded-xl">
-              RETRIEVING CASE FILES...
-            </p>
-          )}
-        </div>
-      )}
+
+        {/* Cards — asymmetric 3-column grid */}
+        {loading ? (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="skeleton-cream"
+                style={{
+                  height: i === 1 ? '420px' : '320px',
+                  borderRadius: '2px',
+                }}
+              />
+            ))}
+          </div>
+        ) : (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '20px',
+              alignItems: 'start',
+            }}
+          >
+            {cases.map((study, i) => (
+              <Link
+                key={study.id}
+                href={`/case/${study.slug}`}
+                style={{
+                  textDecoration: 'none',
+                  display: 'block',
+                  gridRow: i === 1 ? 'span 1' : 'span 1',
+                }}
+              >
+                <div
+                  className="sg-card"
+                  style={{
+                    padding: '28px',
+                    minHeight: i === 1 ? '420px' : '320px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  {/* Top meta row */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      marginBottom: '20px',
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-dm-mono), monospace',
+                        fontSize: '9px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.12em',
+                        color: 'var(--ink-muted)',
+                      }}
+                    >
+                      {study.industry || 'GENERAL'} / {study.case_number}
+                    </span>
+                    <span className="stamp-closed">CLOSED</span>
+                  </div>
+
+                  {/* Company name */}
+                  <h3
+                    style={{
+                      fontFamily: 'var(--font-cormorant), Georgia, serif',
+                      fontSize: 'clamp(22px, 3vw, 28px)',
+                      fontWeight: '700',
+                      lineHeight: 1.05,
+                      letterSpacing: '-0.02em',
+                      color: 'var(--ink-black)',
+                      marginBottom: '12px',
+                    }}
+                  >
+                    {study.company_name}
+                  </h3>
+
+                  {/* Description */}
+                  <p
+                    className="line-clamp-2"
+                    style={{
+                      fontFamily: 'var(--font-source-serif), Georgia, serif',
+                      fontSize: '14px',
+                      lineHeight: 1.6,
+                      color: 'var(--ink-soft)',
+                      marginBottom: 'auto',
+                    }}
+                  >
+                    {study.summary}
+                  </p>
+
+                  {/* Dashed divider */}
+                  <div
+                    style={{
+                      borderTop: '1.5px dashed var(--cream-dark)',
+                      margin: '20px 0',
+                    }}
+                  />
+
+                  {/* Data row */}
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '12px',
+                      marginBottom: '14px',
+                    }}
+                  >
+                    <div>
+                      <div
+                        style={{
+                          fontFamily: 'var(--font-dm-mono), monospace',
+                          fontSize: '8px',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.12em',
+                          color: 'var(--ink-muted)',
+                          marginBottom: '4px',
+                        }}
+                      >
+                        CAPITAL LOST
+                      </div>
+                      <div
+                        style={{
+                          fontFamily: 'var(--font-cormorant), Georgia, serif',
+                          fontSize: '22px',
+                          fontWeight: '700',
+                          color: 'var(--rust-accent)',
+                          lineHeight: 1,
+                        }}
+                      >
+                        {formatCurrency(study.funding_raised || 0)}
+                      </div>
+                    </div>
+                    <div>
+                      <div
+                        style={{
+                          fontFamily: 'var(--font-dm-mono), monospace',
+                          fontSize: '8px',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.12em',
+                          color: 'var(--ink-muted)',
+                          marginBottom: '4px',
+                        }}
+                      >
+                        YEAR CLOSED
+                      </div>
+                      <div
+                        style={{
+                          fontFamily: 'var(--font-cormorant), Georgia, serif',
+                          fontSize: '22px',
+                          fontWeight: '700',
+                          color: 'var(--ink-black)',
+                          lineHeight: 1,
+                        }}
+                      >
+                        {study.shutdown_year || '—'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Primary failure tag */}
+                  {study.failure_reasons?.[0] && (
+                    <span className="stamp-tag">
+                      {study.failure_reasons[0]}
+                    </span>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
     </section>
   );
 }

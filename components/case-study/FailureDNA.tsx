@@ -1,57 +1,89 @@
 'use client';
 
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts';
+interface FailureDNAProps {
+  scores: Record<string, number>;
+}
 
-export function FailureDNA({ scores }: { scores: Record<string, number> }) {
-  const data = [
-    { subject: 'PMF', A: (scores || {}).pmf || 50 },
-    { subject: 'BURN', A: (scores || {}).burn || 50 },
-    { subject: 'COMP', A: (scores || {}).competition || 50 },
-    { subject: 'EXEC', A: (scores || {}).execution || 50 },
-    { subject: 'TIME', A: (scores || {}).timing || 50 },
-    { subject: 'TEAM', A: (scores || {}).team || 50 },
-  ];
+export function FailureDNA({ scores }: FailureDNAProps) {
+  const vectors = Object.entries(scores || {
+    'MARKET_FIT': 0.8,
+    'BURN_RATE': 0.6,
+    'TEAM_DYNAMICS': 0.4,
+    'COMPETITION': 0.7,
+    'REGULATORY': 0.2
+  });
 
   return (
-    <div className="bg-bg-surface-1 border border-border-subtle p-8 h-fit rounded-md">
-      <h3 className="font-mono text-[10px] tracking-[3px] text-text-muted uppercase mb-8">FAILURE DNA — RISK MAP</h3>
-      <div className="h-64 w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
-            <PolarGrid stroke="#1F1F2E" strokeWidth={0.5} />
-            <PolarAngleAxis 
-              dataKey="subject" 
-              tick={{ fill: '#475569', fontSize: 10, fontFamily: 'var(--font-mono)' }} 
-            />
-            <Radar
-              name="Risk"
-              dataKey="A"
-              stroke="#EF4444"
-              strokeWidth={1.5}
-              fill="#EF4444"
-              fillOpacity={0.15}
-              dot={{ fill: '#EF4444', r: 4 }}
-              animationDuration={600}
-              animationEasing="ease-out"
-            />
-          </RadarChart>
-        </ResponsiveContainer>
+    <div
+      style={{
+        backgroundColor: 'var(--cream-deep)',
+        border: '1px solid var(--cream-dark)',
+        padding: '28px',
+        borderRadius: '2px',
+      }}
+    >
+      <div
+        style={{
+          fontFamily: 'var(--font-dm-mono), monospace',
+          fontSize: '9px',
+          textTransform: 'uppercase',
+          letterSpacing: '0.14em',
+          color: 'var(--ink-muted)',
+          marginBottom: '24px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        <span>FAILURE_DNA_SCAN</span>
+        <span style={{ color: 'var(--rust-accent)' }}>0% — 100%</span>
       </div>
-      <div className="mt-8 grid grid-cols-2 gap-x-6 gap-y-4">
-        {data.map((item) => (
-          <div key={item.subject} className="flex flex-col">
-            <div className="flex justify-between items-baseline mb-1">
-              <span className="font-mono text-[9px] text-text-muted uppercase">{item.subject}</span>
-              <span className="font-mono text-[10px] text-text-primary">{item.A}%</span>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {vectors.map(([key, value]) => (
+          <div key={key}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginBottom: '6px',
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: 'var(--font-dm-mono), monospace',
+                  fontSize: '9px',
+                  color: 'var(--ink-soft)',
+                  letterSpacing: '0.05em',
+                }}
+              >
+                {key}
+              </span>
+              <span
+                style={{
+                  fontFamily: 'var(--font-dm-mono), monospace',
+                  fontSize: '9px',
+                  color: 'var(--ink-muted)',
+                }}
+              >
+                {Math.round(value * 100)}%
+              </span>
             </div>
-            <div className="h-[4px] bg-bg-surface-2 rounded-full overflow-hidden">
-              <motion_div 
-                initial={{ width: 0 }}
-                whileInView={{ width: `${item.A}%` }}
-                transition={{ duration: 0.6, ease: "easeOut" }}
-                className={`h-full rounded-full ${
-                  item.A > 70 ? 'bg-red-critical' : item.A > 40 ? 'bg-amber-signal' : 'bg-green-lesson'
-                }`} 
+            <div
+              style={{
+                height: '4px',
+                backgroundColor: 'var(--cream-dark)',
+                borderRadius: '1px',
+                overflow: 'hidden',
+              }}
+            >
+              <div
+                style={{
+                  width: `${value * 100}%`,
+                  height: '100%',
+                  backgroundColor: value > 0.6 ? 'var(--rust-accent)' : 'var(--ochre-signal)',
+                  borderRadius: '1px',
+                }}
               />
             </div>
           </div>
@@ -60,6 +92,3 @@ export function FailureDNA({ scores }: { scores: Record<string, number> }) {
     </div>
   );
 }
-
-import { motion } from 'framer-motion';
-const motion_div = motion.div;

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ai } from '@/lib/ai';
 import { z } from 'zod';
+import { getGlobalStats } from '@/lib/db/case-studies';
+import { createPremortemSession, savePremortemReport } from '@/lib/db/premortem';
 
 const QuestionsSchema = z.object({
   questions: z.array(z.object({
@@ -26,6 +28,7 @@ const ReportSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    const stats = await getGlobalStats();
     
     if (body.action === 'GET_QUESTIONS') {
       const prompt = `
@@ -34,18 +37,26 @@ export async function POST(req: NextRequest) {
         Return a JSON object with a "questions" array. Each question should have an "id" (q1, q2, q3) and "text".
       `;
       const result = await ai.generate(prompt, QuestionsSchema);
-      return NextResponse.json(result);
+      
+      // If user is authenticated, create a session
+      let sessionId = null;
+      if (body.userId) {
+        const session = await createPremortemSession(body.userId, body.pitch);
+        sessionId = session.id;
+      }
+
+      return NextResponse.json({ ...result, sessionId });
     }
 
     if (body.action === 'GET_REPORT') {
-      const { pitch, answers } = body;
+      const { pitch, answers, sessionId } = body;
       const prompt = `
         You are the Graveyard Keeper AI. Perform a startup pre-mortem analysis.
         
         Pitch: ${pitch}
         Interrogation Answers: ${JSON.stringify(answers)}
 
-        Identify the most likely causes of failure based on historical patterns of 1,000+ failed startups.
+        Identify the most likely causes of failure based on historical patterns of ${stats.totalCases} failed startups in your archive.
         Return a JSON object following this schema:
         {
           "risk_score": number (0-100),
@@ -55,6 +66,12 @@ export async function POST(req: NextRequest) {
         }
       `;
       const report = await ai.generate(prompt, ReportSchema);
+
+      // If session exists, save the report
+      if (sessionId) {
+        await savePremortemReport(sessionId, report, report.risk_score);
+      }
+
       return NextResponse.json(report);
     }
 

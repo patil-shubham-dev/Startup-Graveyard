@@ -1,114 +1,408 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import Link from 'next/link';
+import { formatCurrency } from '@/lib/utils/format';
 
-export function HeroSection() {
+const HARDCODED_FAILURES = [
+  {
+    name: 'Quibi',
+    burn: '$1.75B',
+    date: '2020',
+    industry: 'STREAMING',
+    note: 'Consumer appetite never matched the spend curve. Mobile-first pivoted into irrelevance.',
+    caseNum: 'CASE #0001',
+  },
+  {
+    name: 'Jawbone',
+    burn: '$930M',
+    date: '2017',
+    industry: 'HARDWARE',
+    note: 'Hardware ambition outran operating discipline. Wearables market shifted before they could.',
+    caseNum: 'CASE #0002',
+  },
+  {
+    name: 'Fast',
+    burn: '$120M',
+    date: '2022',
+    industry: 'FINTECH',
+    note: 'Narrative growth masked a dangerously thin product core. CAC never reconciled with LTV.',
+    caseNum: 'CASE #0003',
+  },
+  {
+    name: 'Theranos',
+    burn: '$945M',
+    date: '2018',
+    industry: 'HEALTHTECH',
+    note: 'Trust collapsed before the business could recover. Deception compounded by regulatory blindness.',
+    caseNum: 'CASE #0004',
+  },
+];
+
+interface LiveCase {
+  company_name: string;
+  funding_raised: number;
+  shutdown_year: number | null;
+  slug: string;
+}
+
+interface HeroStats {
+  totalCases: number;
+  totalBurned: number;
+  avgLifespan: string;
+  patternCount: number;
+  totalLessons: number;
+}
+
+interface HeroSectionProps {
+  stats?: HeroStats;
+  liveCases?: LiveCase[];
+}
+
+// Folded corner SVG
+function FoldedCorner() {
   return (
-    <section className="relative min-h-[95vh] flex flex-col items-center justify-center text-center px-6 overflow-hidden pt-32">
-      {/* Dynamic Background */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-radial-at-c from-violet-primary/5 via-transparent to-transparent opacity-40" />
-        <svg className="absolute inset-0 w-full h-full opacity-40" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="hero-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1F1F2E" strokeWidth="1"/>
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#hero-grid)" />
-        </svg>
-        
-        {/* Animated Particles */}
-        {[...Array(8)].map((_, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{ 
-              opacity: [0.1, 0.3, 0.1], 
-              scale: [1, 1.2, 1],
-              y: [0, -20, 0]
-            }}
-            transition={{ 
-              duration: 4 + Math.random() * 4, 
-              repeat: Infinity,
-              delay: Math.random() * 5
-            }}
-            className="absolute w-1 h-1 bg-amber-signal rounded-full shadow-[0_0_8px_#F59E0B]"
-            style={{
-              top: `${20 + Math.random() * 60}%`,
-              left: `${10 + Math.random() * 80}%`,
-            }}
-          />
-        ))}
-      </div>
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      style={{ position: 'absolute', bottom: 0, right: 0 }}
+      aria-hidden="true"
+    >
+      <path d="M20 0 L20 20 L0 20 Z" fill="var(--cream-dark)" />
+      <path d="M20 0 L20 20 L0 20" fill="none" stroke="var(--cream-dark)" strokeWidth="1" />
+    </svg>
+  );
+}
 
-      <motion.div
-        initial={{ opacity: 0, y: 30, filter: 'blur(10px)' }}
-        animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-        className="relative z-10 max-w-[920px]"
-      >
-        <div className="flex flex-col items-center mb-10">
-          <img src="/logo.png" alt="Startup Graveyard" className="h-24 w-auto mb-8 filter invert brightness-200" />
-          <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-violet-primary/10 border border-violet-primary/20">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-primary opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-primary"></span>
-            </span>
-            <span className="font-mono text-[10px] text-violet-primary uppercase tracking-[3px] font-bold">
-              V4 PRO INTELLIGENCE ACTIVE
-            </span>
+export function HeroSection({ liveCases = [] }: HeroSectionProps) {
+  // Build rotation list: 4 hardcoded + up to 2 from Supabase
+  const dynamicCards = liveCases.slice(0, 2).map((c, i) => ({
+    name: c.company_name,
+    burn: formatCurrency(c.funding_raised),
+    date: String(c.shutdown_year || '—'),
+    industry: 'ARCHIVE',
+    note: 'Documented in the archive. High-capital collapse with compounding failure vectors.',
+    caseNum: `CASE #${String(i + 5).padStart(4, '0')}`,
+  }));
+
+  const ALL_FAILURES = [...HARDCODED_FAILURES, ...dynamicCards];
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveIndex((current) => (current + 1) % ALL_FAILURES.length);
+    }, 4200);
+    return () => clearInterval(timer);
+  }, [ALL_FAILURES.length]);
+
+  const current = ALL_FAILURES[activeIndex];
+
+  return (
+    <section style={{ width: '100%', backgroundColor: 'var(--cream-base)' }}>
+      <div className="sg-container">
+        <div
+          style={{
+            display: 'grid',
+            gap: '48px',
+            paddingTop: '80px',
+            paddingBottom: '80px',
+            alignItems: 'start',
+          }}
+          className="lg:grid-cols-[55fr_45fr]"
+        >
+          {/* LEFT: Editorial copy */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+            {/* Kicker */}
+            <div
+              style={{
+                fontFamily: 'var(--font-dm-mono), monospace',
+                fontSize: '10px',
+                fontWeight: '500',
+                textTransform: 'uppercase',
+                letterSpacing: '0.14em',
+                color: 'var(--rust-accent)',
+                marginBottom: '28px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+              }}
+            >
+              <span
+                style={{
+                  display: 'inline-block',
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  backgroundColor: 'var(--rust-accent)',
+                  flexShrink: 0,
+                }}
+              />
+              FORENSIC INTELLIGENCE UNIT / LIVE ARCHIVE
+            </div>
+
+            {/* Hero headline */}
+            <h1
+              className="t-hero"
+              style={{ maxWidth: '10ch', marginBottom: '28px' }}
+            >
+              Learn from the companies that failed expensively.
+            </h1>
+
+            {/* Subtext */}
+            <p
+              className="t-body"
+              style={{ maxWidth: '420px', marginBottom: '40px' }}
+            >
+              Startup Graveyard is a research-driven archive of failed companies, built
+              to help founders study collapse with the same seriousness investors study growth.
+            </p>
+
+            {/* CTAs */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '0' }}>
+              <Link href="/explore" className="btn-rust">
+                BROWSE CASE STUDIES →
+              </Link>
+              <Link href="/pre-mortem" className="btn-outline-ink">
+                RUN PRE-MORTEM →
+              </Link>
+            </div>
+          </div>
+
+          {/* RIGHT: Rotating dossier card */}
+          <div>
+            {/* Card header */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '16px',
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: 'var(--font-dm-mono), monospace',
+                  fontSize: '9px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.14em',
+                  color: 'var(--ink-muted)',
+                }}
+              >
+                FEATURED COLLAPSE
+              </span>
+              <span
+                style={{
+                  fontFamily: 'var(--font-dm-mono), monospace',
+                  fontSize: '9px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.12em',
+                  color: 'var(--ink-muted)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                <span
+                  style={{
+                    width: '5px',
+                    height: '5px',
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--sage-neutral)',
+                    display: 'inline-block',
+                  }}
+                />
+                ROTATING LIVE
+              </span>
+            </div>
+
+            {/* Dossier card */}
+            <div
+              style={{
+                backgroundColor: 'var(--paper-white)',
+                border: '1px solid var(--cream-dark)',
+                borderRadius: '2px',
+                position: 'relative',
+                overflow: 'hidden',
+                boxShadow: '4px 6px 24px rgba(26,23,20,0.08), 0 1px 0 rgba(217,207,192,0.5)',
+                minHeight: '320px',
+              }}
+            >
+              {/* Paper grain */}
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  pointerEvents: 'none',
+                  opacity: 0.05,
+                  backgroundImage:
+                    "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E\")",
+                  backgroundRepeat: 'repeat',
+                  backgroundSize: '150px 150px',
+                }}
+              />
+
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={current.name}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -12 }}
+                  transition={{ duration: 0.32, ease: 'easeOut' }}
+                  style={{ padding: '32px', position: 'relative', zIndex: 1 }}
+                >
+                  {/* Top meta */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      marginBottom: '24px',
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-dm-mono), monospace',
+                        fontSize: '9px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.14em',
+                        color: 'var(--ink-muted)',
+                      }}
+                    >
+                      {current.industry} / {current.caseNum}
+                    </span>
+                    <span className="stamp-closed">CLOSED</span>
+                  </div>
+
+                  {/* Company name */}
+                  <div
+                    style={{
+                      fontFamily: 'var(--font-cormorant), Georgia, serif',
+                      fontSize: 'clamp(40px, 5vw, 64px)',
+                      fontWeight: '700',
+                      lineHeight: 0.9,
+                      letterSpacing: '-0.03em',
+                      color: 'var(--ink-black)',
+                      marginBottom: '20px',
+                    }}
+                  >
+                    {current.name}
+                  </div>
+
+                  {/* Note */}
+                  <p
+                    style={{
+                      fontFamily: 'var(--font-source-serif), Georgia, serif',
+                      fontSize: '14px',
+                      lineHeight: 1.65,
+                      color: 'var(--ink-soft)',
+                      marginBottom: '28px',
+                      maxWidth: '38ch',
+                    }}
+                  >
+                    {current.note}
+                  </p>
+
+                  {/* Bottom data */}
+                  <div
+                    style={{
+                      borderTop: '1.5px dashed var(--cream-dark)',
+                      paddingTop: '20px',
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '16px',
+                    }}
+                  >
+                    <div>
+                      <div
+                        style={{
+                          fontFamily: 'var(--font-dm-mono), monospace',
+                          fontSize: '9px',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.12em',
+                          color: 'var(--ink-muted)',
+                          marginBottom: '6px',
+                        }}
+                      >
+                        CAPITAL LOST
+                      </div>
+                      <div
+                        style={{
+                          fontFamily: 'var(--font-cormorant), Georgia, serif',
+                          fontSize: '28px',
+                          fontWeight: '700',
+                          color: 'var(--rust-accent)',
+                          lineHeight: 1,
+                        }}
+                      >
+                        {current.burn}
+                      </div>
+                    </div>
+                    <div>
+                      <div
+                        style={{
+                          fontFamily: 'var(--font-dm-mono), monospace',
+                          fontSize: '9px',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.12em',
+                          color: 'var(--ink-muted)',
+                          marginBottom: '6px',
+                        }}
+                      >
+                        YEAR CLOSED
+                      </div>
+                      <div
+                        style={{
+                          fontFamily: 'var(--font-cormorant), Georgia, serif',
+                          fontSize: '28px',
+                          fontWeight: '700',
+                          color: 'var(--ink-black)',
+                          lineHeight: 1,
+                        }}
+                      >
+                        {current.date}
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Folded corner */}
+              <FoldedCorner />
+            </div>
+
+            {/* Rotation dots */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                gap: '8px',
+                marginTop: '16px',
+              }}
+            >
+              {ALL_FAILURES.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActiveIndex(i)}
+                  style={{
+                    width: i === activeIndex ? '20px' : '6px',
+                    height: '3px',
+                    borderRadius: '1px',
+                    backgroundColor:
+                      i === activeIndex ? 'var(--rust-accent)' : 'var(--cream-dark)',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    padding: 0,
+                  }}
+                  aria-label={`Go to slide ${i + 1}`}
+                />
+              ))}
+            </div>
           </div>
         </div>
-        
-        <h1 className="font-display text-[48px] md:text-[88px] font-bold leading-[0.95] mb-8 text-text-primary tracking-tighter">
-          Master the art of <br />
-          <span className="hero-gradient italic">not failing.</span>
-        </h1>
-        
-        <p className="text-text-secondary text-lg md:text-xl max-w-[640px] mx-auto mb-12 leading-relaxed font-body">
-          The world's most comprehensive database of startup autopsies. 
-          Deconstruct a thousand failures to build one lasting success.
-        </p>
-
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link 
-            href="/explore" 
-            className="w-full sm:w-auto px-10 py-4 bg-violet-primary hover:bg-violet-hover active:bg-violet-dim text-white font-mono text-[12px] uppercase tracking-[2px] font-bold rounded-lg shadow-violet-glow transition-all duration-300"
-          >
-            Access Archives
-          </Link>
-          <Link 
-            href="/pre-mortem" 
-            className="w-full sm:w-auto px-10 py-4 bg-bg-surface-2 border border-border-subtle hover:border-violet-primary text-text-secondary hover:text-text-primary font-mono text-[12px] uppercase tracking-[2px] font-bold rounded-lg transition-all duration-300"
-          >
-            Run Pre-Mortem
-          </Link>
-        </div>
-      </motion.div>
-
-      {/* Hero Stats */}
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1 }}
-        className="absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-12"
-      >
-        <div className="flex flex-col items-center">
-          <span className="font-mono text-[10px] text-text-muted tracking-[2px] uppercase">CASES</span>
-          <span className="font-mono text-lg text-text-primary">1,024</span>
-        </div>
-        <div className="h-8 w-[1px] bg-border-subtle" />
-        <div className="flex flex-col items-center">
-          <span className="font-mono text-[10px] text-text-muted tracking-[2px] uppercase">CAPITAL DECAY</span>
-          <span className="font-mono text-lg text-text-primary">$48.2B</span>
-        </div>
-        <div className="h-8 w-[1px] bg-border-subtle" />
-        <div className="flex flex-col items-center">
-          <span className="font-mono text-[10px] text-text-muted tracking-[2px] uppercase">SUCCESS RATE</span>
-          <span className="font-mono text-lg text-amber-signal">0.02%</span>
-        </div>
-      </motion.div>
+      </div>
     </section>
   );
 }

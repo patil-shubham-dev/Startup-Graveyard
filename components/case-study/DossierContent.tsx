@@ -2,26 +2,52 @@
 
 import { MDXRemote, MDXRemoteSerializeResult } from 'next-mdx-remote';
 
-interface DossierContentProps {
-  source: MDXRemoteSerializeResult;
-}
-
-const components = {
-  h2: (props: any) => <h2 className="font-display text-3xl font-bold mt-12 mb-6" {...props} />,
-  h3: (props: any) => <h3 className="font-display text-2xl font-bold mt-8 mb-4" {...props} />,
-  p: (props: any) => <p className="text-text-muted leading-relaxed mb-6 text-lg" {...props} />,
-  ul: (props: any) => <ul className="list-disc pl-6 space-y-3 text-text-muted mb-8" {...props} />,
-  li: (props: any) => <li className="leading-relaxed" {...props} />,
-  blockquote: (props: any) => (
-    <blockquote className="border-l-4 border-amber-500 bg-surface/50 p-6 italic my-8 text-text" {...props} />
-  ),
-  code: (props: any) => <code className="bg-surface-2 border border-border px-1.5 py-0.5 rounded font-mono text-sm" {...props} />,
-};
-
-export function DossierContent({ source }: DossierContentProps) {
+export function DossierContent({ source }: { source: MDXRemoteSerializeResult }) {
   return (
-    <div className="prose prose-invert max-w-none prose-headings:font-display prose-p:font-body">
-      <MDXRemote {...source} components={components} />
+    <div className="dossier-content-wrapper">
+      <MDXRemote {...source} />
+
+      <style jsx global>{`
+        .dossier-content-wrapper {
+          font-family: var(--font-body), 'Georgia', serif;
+          font-size: 17px;
+          line-height: 1.8;
+          color: var(--ink-soft);
+        }
+        .dossier-content-wrapper p {
+          margin-bottom: 24px;
+        }
+        .dossier-content-wrapper h2 {
+          font-family: var(--font-display), 'Georgia', serif;
+          font-size: 32px;
+          font-weight: 700;
+          color: var(--ink-black);
+          margin: 48px 0 24px;
+          line-height: 1.1;
+        }
+        .dossier-content-wrapper h3 {
+          font-family: var(--font-display), 'Georgia', serif;
+          font-size: 24px;
+          font-weight: 700;
+          color: var(--ink-black);
+          margin: 32px 0 16px;
+        }
+        .dossier-content-wrapper blockquote {
+          border-left: 3px solid var(--rust-accent);
+          padding-left: 24px;
+          font-style: italic;
+          color: var(--ink-muted);
+          margin: 32px 0;
+        }
+        .dossier-content-wrapper ul {
+          margin-bottom: 24px;
+          padding-left: 20px;
+          list-style-type: square;
+        }
+        .dossier-content-wrapper li {
+          margin-bottom: 8px;
+        }
+      `}</style>
     </div>
   );
 }

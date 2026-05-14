@@ -1,12 +1,31 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect } from 'react';
-import { CaseCard } from '@/components/case-study/CaseCard';
+import { DossierCard } from '@/components/ui/DossierCard';
 import { listCaseStudies, CaseStudy } from '@/lib/db/case-studies';
+
+const INDUSTRIES = ['Fintech', 'SaaS', 'Hardware', 'Healthtech', 'E-commerce', 'Social', 'Logistics'];
+const FAIL_TYPES = ['No Market Need', 'Cash Exhaustion', 'Team Fracture', 'Competition', 'Pricing Failure', 'Regulatory'];
+
+// Tombstone SVG for empty state
+function TombstoneSVG() {
+  return (
+    <svg width="64" height="80" viewBox="0 0 64 80" fill="none" aria-hidden="true">
+      <rect x="16" y="32" width="32" height="40" rx="1" fill="none" stroke="var(--cream-dark)" strokeWidth="1.5" />
+      <path d="M16 32 Q16 14 32 14 Q48 14 48 32" fill="none" stroke="var(--cream-dark)" strokeWidth="1.5" />
+      <line x1="24" y1="48" x2="40" y2="48" stroke="var(--cream-dark)" strokeWidth="1" strokeDasharray="2 2" />
+      <line x1="24" y1="54" x2="36" y2="54" stroke="var(--cream-dark)" strokeWidth="1" strokeDasharray="2 2" />
+      <line x1="8" y1="72" x2="56" y2="72" stroke="var(--cream-dark)" strokeWidth="1.5" />
+    </svg>
+  );
+}
 
 export default function ExplorePage() {
   const [search, setSearch] = useState('');
   const [industry, setIndustry] = useState('');
+  const [failType, setFailType] = useState('');
   const [cases, setCases] = useState<CaseStudy[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -14,9 +33,7 @@ export default function ExplorePage() {
     const loadCases = async () => {
       setLoading(true);
       try {
-        const data = await listCaseStudies({ 
-          industry: industry !== 'INDUSTRY' ? industry : undefined 
-        });
+        const data = await listCaseStudies({ industry: industry || undefined });
         setCases(data);
       } catch (error) {
         console.error('Failed to load case studies:', error);
@@ -27,118 +44,280 @@ export default function ExplorePage() {
     loadCases();
   }, [industry]);
 
-  const filteredCases = cases.filter(c => 
-    c.company_name.toLowerCase().includes(search.toLowerCase()) ||
-    c.summary.toLowerCase().includes(search.toLowerCase()) ||
-    c.industry?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredCases = cases.filter((c) => {
+    const matchesSearch =
+      !search ||
+      c.company_name.toLowerCase().includes(search.toLowerCase()) ||
+      c.summary.toLowerCase().includes(search.toLowerCase()) ||
+      c.industry?.toLowerCase().includes(search.toLowerCase());
+
+    const matchesFailType =
+      !failType ||
+      c.failure_reasons?.some((r) => r.toLowerCase().includes(failType.toLowerCase()));
+
+    return matchesSearch && matchesFailType;
+  });
 
   return (
-    <main className="pt-32 pb-24 px-6 max-w-7xl mx-auto min-h-screen">
-      <header className="mb-16">
-        <h1 className="font-display text-5xl md:text-6xl font-bold mb-4 text-text-primary tracking-tight">The Graveyard</h1>
-        <p className="text-text-secondary max-w-2xl text-lg leading-relaxed font-body">
-          Browse through the definitive record of startup failures. 
-          Use forensic filters to search by industry, funding, or root cause.
-        </p>
-      </header>
-
-      {/* Sticky Filter Bar */}
-      <div className="sticky top-[72px] z-40 bg-bg-page/80 backdrop-blur-md border border-border-subtle p-5 mb-16 flex flex-wrap gap-4 items-center rounded-lg shadow-xl">
-        <div className="flex-1 min-w-[240px] relative">
-          <input 
-            type="text" 
-            placeholder="Search 1,000+ startup autopsies..." 
-            className="w-full bg-bg-surface-2 border border-border-subtle px-4 py-2.5 text-sm focus:outline-none focus:border-violet-primary transition-colors text-text-primary rounded-md placeholder:text-text-muted font-body shadow-inner"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <span className="absolute right-4 top-3 text-text-muted text-[10px] font-mono border border-border-subtle px-1.5 py-0.5 rounded-sm bg-bg-surface-1">/</span>
-        </div>
-        
-        <div className="flex flex-wrap gap-3">
-          <select 
-            value={industry}
-            onChange={(e) => setIndustry(e.target.value)}
-            className="bg-bg-surface-2 border border-border-subtle px-4 py-2.5 text-xs font-mono uppercase tracking-widest text-text-secondary focus:outline-none focus:border-violet-primary rounded-md cursor-pointer transition-colors"
+    <main
+      style={{
+        minHeight: '100vh',
+        backgroundColor: 'var(--cream-base)',
+      }}
+    >
+      {/* Page Header */}
+      <div
+        style={{
+          backgroundColor: 'var(--cream-deep)',
+          borderBottom: '1.5px dashed var(--cream-dark)',
+          padding: '40px 0 32px',
+        }}
+      >
+        <div className="sg-container">
+          {/* Top row: title + count */}
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-end',
+              marginBottom: '28px',
+              flexWrap: 'wrap',
+              gap: '16px',
+            }}
           >
-            <option value="INDUSTRY">INDUSTRY</option>
-            <option value="Fintech">FINTECH</option>
-            <option value="Streaming">STREAMING</option>
-            <option value="SaaS">SAAS</option>
-            <option value="Hardware">HARDWARE</option>
-          </select>
-
-          <select className="bg-bg-surface-2 border border-border-subtle px-4 py-2.5 text-xs font-mono uppercase tracking-widest text-text-secondary focus:outline-none focus:border-violet-primary rounded-md cursor-pointer opacity-50">
-            <option>FUNDING</option>
-            <option>$100M+</option>
-            <option>$500M+</option>
-          </select>
-
-          <select className="bg-bg-surface-2 border border-border-subtle px-4 py-2.5 text-xs font-mono uppercase tracking-widest text-text-secondary focus:outline-none focus:border-violet-primary rounded-md cursor-pointer opacity-50">
-            <option>FAILURE REASON</option>
-            <option>PMF FAILURE</option>
-            <option>BURN RATE</option>
-          </select>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between mb-10">
-        <p className="font-mono text-[10px] text-text-muted uppercase tracking-[3px]">
-          {loading ? 'RETRIEVING RECORDS...' : `Showing ${filteredCases.length} OF ${cases.length} CASE FILES`}
-        </p>
-        <div className="flex items-center gap-2">
-          <button className="p-2 border border-border-strong bg-bg-surface-3 text-violet-primary rounded-sm transition-colors"><GridIcon /></button>
-          <button className="p-2 border border-border-subtle hover:bg-bg-surface-2 transition-colors text-text-muted rounded-sm"><ListIcon /></button>
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-[400px] bg-bg-surface-1 border border-border-subtle rounded-xl animate-pulse" />
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredCases.map((study) => (
-            <CaseCard key={study.id} study={study} />
-          ))}
-          {filteredCases.length === 0 && (
-            <div className="col-span-full py-32 text-center border-2 border-dashed border-border-subtle rounded-xl">
-              <span className="text-4xl mb-4 block">🔍</span>
-              <p className="font-mono text-xs text-text-muted uppercase tracking-widest">
-                No matching autopsies found in this sector.
-              </p>
+            <div>
+              <div
+                style={{
+                  fontFamily: 'var(--font-dm-mono), monospace',
+                  fontSize: '10px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.14em',
+                  color: 'var(--rust-accent)',
+                  marginBottom: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+              >
+                <span
+                  style={{
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--sage-neutral)',
+                    display: 'inline-block',
+                  }}
+                />
+                LIVE ARCHIVE
+              </div>
+              <h1 className="t-h1">Archives</h1>
             </div>
-          )}
-        </div>
-      )}
 
-      {/* Infinite Scroll Indicator */}
-      {!loading && cases.length > 0 && (
-        <div className="mt-24 py-16 border-t border-border-subtle text-center">
-          <p className="font-mono text-[10px] text-text-muted uppercase tracking-[5px]">
-            END OF CURRENT DOSSIER
-          </p>
+            {/* File count */}
+            <div
+              style={{
+                fontFamily: 'var(--font-dm-mono), monospace',
+                fontSize: '11px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.14em',
+                color: loading ? 'var(--ink-muted)' : 'var(--rust-accent)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+            >
+              {loading ? 'SYNCING...' : `${filteredCases.length}_FILES`}
+              <span
+                style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  backgroundColor: loading ? 'var(--ochre-signal)' : 'var(--rust-accent)',
+                  display: 'inline-block',
+                  animation: loading ? 'pulse 1s ease-in-out infinite' : 'none',
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Filter bar */}
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '10px',
+              alignItems: 'center',
+            }}
+          >
+            {/* Search */}
+            <div style={{ position: 'relative', flex: '1', minWidth: '200px', maxWidth: '360px' }}>
+              <span
+                style={{
+                  position: 'absolute',
+                  left: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  fontFamily: 'var(--font-dm-mono), monospace',
+                  fontSize: '12px',
+                  color: 'var(--ink-muted)',
+                  pointerEvents: 'none',
+                }}
+              >
+                ⌕
+              </span>
+              <input
+                type="text"
+                placeholder="SEARCH_AUTOPSIES..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                style={{
+                  width: '100%',
+                  backgroundColor: 'var(--paper-white)',
+                  border: '1px solid var(--cream-dark)',
+                  borderRadius: '1px',
+                  padding: '8px 12px 8px 30px',
+                  fontFamily: 'var(--font-dm-mono), monospace',
+                  fontSize: '10px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                  color: 'var(--ink-black)',
+                  outline: 'none',
+                }}
+              />
+            </div>
+
+            {/* Industry dropdown */}
+            <select
+              value={industry}
+              onChange={(e) => setIndustry(e.target.value)}
+              className="sg-select"
+            >
+              <option value="">INDUSTRY ▾</option>
+              {INDUSTRIES.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt.toUpperCase()}
+                </option>
+              ))}
+            </select>
+
+            {/* Fail type dropdown */}
+            <select
+              value={failType}
+              onChange={(e) => setFailType(e.target.value)}
+              className="sg-select"
+            >
+              <option value="">FAIL_TYPE ▾</option>
+              {FAIL_TYPES.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt.toUpperCase()}
+                </option>
+              ))}
+            </select>
+
+            {/* Reset */}
+            {(search || industry || failType) && (
+              <button
+                onClick={() => { setSearch(''); setIndustry(''); setFailType(''); }}
+                style={{
+                  fontFamily: 'var(--font-dm-mono), monospace',
+                  fontSize: '9px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.12em',
+                  color: 'var(--ink-muted)',
+                  background: 'none',
+                  border: '1px solid var(--cream-dark)',
+                  borderRadius: '1px',
+                  padding: '8px 12px',
+                  cursor: 'pointer',
+                }}
+              >
+                CLEAR ×
+              </button>
+            )}
+          </div>
         </div>
-      )}
+      </div>
+
+      {/* Grid */}
+      <div className="sg-container" style={{ paddingTop: '40px', paddingBottom: '80px' }}>
+        {loading ? (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+              gap: '16px',
+            }}
+          >
+            {Array.from({ length: 9 }).map((_, i) => (
+              <div
+                key={i}
+                className="skeleton-cream"
+                style={{ height: '200px', borderRadius: '2px' }}
+              />
+            ))}
+          </div>
+        ) : filteredCases.length === 0 ? (
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingTop: '100px',
+              paddingBottom: '100px',
+              gap: '24px',
+              textAlign: 'center',
+            }}
+          >
+            <TombstoneSVG />
+            <div
+              style={{
+                fontFamily: 'var(--font-cormorant), Georgia, serif',
+                fontSize: '32px',
+                fontWeight: '300',
+                fontStyle: 'italic',
+                color: 'var(--ink-muted)',
+              }}
+            >
+              No autopsies matched.
+            </div>
+            <div
+              style={{
+                fontFamily: 'var(--font-dm-mono), monospace',
+                fontSize: '9px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.14em',
+                color: 'var(--cream-dark)',
+              }}
+            >
+              ADJUST FILTERS TO SEARCH THE ARCHIVE
+            </div>
+          </div>
+        ) : (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+              gap: '16px',
+            }}
+          >
+            {filteredCases.map((study) => (
+              <DossierCard
+                key={study.id}
+                id={study.case_number}
+                name={study.company_name}
+                category={study.industry || 'GENERAL'}
+                status="CLOSED"
+                description={study.summary}
+                burnedAmount={study.funding_raised || 0}
+                eolYear={study.shutdown_year?.toString() || '—'}
+                primaryCause={study.failure_reasons?.[0] || 'UNSPECIFIED'}
+                slug={study.slug}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </main>
-  );
-}
-
-function GridIcon() {
-  return (
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-    </svg>
-  );
-}
-
-function ListIcon() {
-  return (
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-    </svg>
   );
 }

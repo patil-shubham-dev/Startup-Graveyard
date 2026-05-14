@@ -19,6 +19,7 @@ export interface CaseStudy {
   content: string | null;
   published_at: string | null;
   employees_peak: number | null;
+  location: string | null;
 }
 
 export async function getCaseStudy(slug: string): Promise<CaseStudy | null> {
@@ -58,8 +59,6 @@ export async function listCaseStudies(params: {
 }
 
 export async function getSimilarCases(id: string, limit = 3): Promise<CaseStudy[]> {
-  // In a real implementation, we would use pgvector for semantic similarity.
-  // For now, we'll fetch cases by shared industry or tags as a fallback.
   const { data: current } = await supabase
     .from('case_studies')
     .select('industry, tags')
@@ -73,9 +72,188 @@ export async function getSimilarCases(id: string, limit = 3): Promise<CaseStudy[
     .select('*')
     .eq('published', true)
     .neq('id', id)
-    .or(`industry.eq.${current.industry},tags.cs.{${current.tags.join(',')}}`)
+    .or(`industry.eq.${current.industry},tags.cs.{${(current.tags || []).join(',')}}`)
     .limit(limit);
 
   if (error) return [];
   return data as CaseStudy[];
+}
+
+export async function getGlobalStats() {
+  const { count, error: countError } = await supabase
+    .from('case_studies')
+    .select('*', { count: 'exact', head: true })
+    .eq('published', true);
+
+  const { data: sumData, error: sumError } = await supabase
+    .from('case_studies')
+    .select('funding_raised')
+    .eq('published', true);
+
+  if (countError || sumError) {
+    return {
+      totalCases: 0,
+      totalBurned: 0
+    };
+  }
+
+  const totalBurned = (sumData || []).reduce((acc, curr) => acc + (curr.funding_raised || 0), 0);
+
+  return {
+    totalCases: count || 0,
+    totalBurned
+  };
+}
+
+export async function getInsightsData() {
+  const { data: cases, error } = await supabase
+    .from('case_studies')
+    .select('company_name, industry, failure_reasons, funding_raised, founded_year, shutdown_year, lessons')
+    .eq('published', true);
+
+  if (error || !cases) {
+    return {
+      failureData: [],
+      fundingTrends: [],
+      avgLifespan: 0,
+      totalCases: 0,
+      totalBurned: 0,
+      patternCount: 0,
+      totalLessons: 0,
+      topLiquidations: []
+    };
+  }
+
+  type InsightCase = {
+    company_name: string;
+    industry: string | null;
+    failure_reasons: string[] | null;
+    funding_raised: number | null;
+    founded_year: number | null;
+    shutdown_year: number | null;
+    lessons: string[] | null;
+  };
+
+  const typedCases = cases as InsightCase[];
+
+  // 1. Failure Reasons
+  const reasonsMap: Record<string, number> = {};
+  typedCases.forEach((c) => {
+    (c.failure_reasons || []).forEach((reason: string) => {
+      reasonsMap[reason] = (reasonsMap[reason] || 0) + 1;
+    });
+  });
+
+  const failureData = Object.entries(reasonsMap)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 6)
+    .map((item, i) => ({
+      ...item,
+      color: ['#F59E0B', '#7C3AED', '#EF4444', '#10B981', '#3B82F6', '#475569'][i] || '#475569'
+    }));
+
+  // 2. Funding Trends
+  const trendsMap: Record<string, number> = {};
+  typedCases.forEach((c) => {
+    const year = c.shutdown_year?.toString() || 'Unknown';
+    if (year !== 'Unknown') {
+      trendsMap[year] = (trendsMap[year] || 0) + (c.funding_raised || 0);
+    }
+  });
+
+  const fundingTrends = Object.entries(trendsMap)
+    .map(([year, amount]) => ({ year, amount }))
+    .sort((a, b) => parseInt(a.year) - parseInt(b.year));
+
+  // 3. Metrics
+  let totalYears = 0;
+  let countWithYears = 0;
+  let totalBurned = 0;
+  let totalLessons = 0;
+
+  typedCases.forEach((c) => {
+    if (c.founded_year && c.shutdown_year) {
+      totalYears += (c.shutdown_year - c.founded_year);
+      countWithYears++;
+    }
+    totalBurned += (c.funding_raised || 0);
+    totalLessons += c.lessons?.length || 0;
+  });
+
+  const topLiquidations = [...typedCases]
+    .sort((a, b) => (b.funding_raised || 0) - (a.funding_raised || 0))
+    .slice(0, 4)
+    .map((item) => ({
+      name: item.company_name,
+      amount: item.funding_raised || 0,
+      reason: item.failure_reasons?.[0] || item.industry || 'UNSPECIFIED',
+    }));
+
+  return {
+    failureData,
+    fundingTrends,
+    avgLifespan: countWithYears > 0 ? (totalYears / countWithYears).toFixed(1) : 0,
+    totalCases: typedCases.length,
+    totalBurned,
+    patternCount: Object.keys(reasonsMap).length,
+    totalLessons,
+    topLiquidations
+  };
+}
+
+export async function searchCaseStudies(embedding: number[], limit = 5) {
+  const { data, error } = await supabase.rpc('match_case_studies', {
+    query_embedding: embedding,
+    match_threshold: 0.5,
+    match_count: limit,
+  });
+
+  if (error) {
+    console.error('Vector search error:', error);
+    return [];
+  }
+
+  return data as Array<{
+    id: string;
+    slug: string;
+    company_name: string;
+    summary: string;
+    similarity: number;
+  }>;
+}
+
+export async function getTopCasesByFunding(limit = 2): Promise<Array<{
+  company_name: string;
+  funding_raised: number;
+  shutdown_year: number | null;
+  slug: string;
+}>> {
+  const { data, error } = await supabase
+    .from('case_studies')
+    .select('company_name, funding_raised, shutdown_year, slug')
+    .eq('published', true)
+    .not('funding_raised', 'is', null)
+    .order('funding_raised', { ascending: false })
+    .limit(limit);
+
+  if (error || !data) return [];
+  return data;
+}
+
+export async function getCaseListForSidebar(): Promise<Array<{
+  id: string;
+  slug: string;
+  case_number: string;
+  company_name: string;
+  shutdown_year: number | null;
+}>> {
+  const { data, error } = await supabase
+    .from('case_studies')
+    .select('id, slug, case_number, company_name, shutdown_year')
+    .eq('published', true)
+    .order('published_at', { ascending: false });
+
+  if (error || !data) return [];
+  return data;
 }
