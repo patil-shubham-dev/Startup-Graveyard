@@ -1,14 +1,15 @@
 import { NextRequest } from 'next/server';
 import { ai, nvidia } from '@/lib/ai';
-import { streamText } from 'ai';
+import { generateText } from 'ai';
 import { searchCaseStudies } from '@/lib/db/case-studies';
 
 // Use the robust model from AIService defaults
-const MODEL_ID = process.env.AI_DEFAULT_MODEL || 'nvidia/llama-3.1-nemotron-70b-instruct';
+const MODEL_ID = process.env.AI_DEFAULT_MODEL || 'meta/llama-3.1-70b-instruct';
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages } = await req.json();
+    const body = await req.json();
+    const messages = body.messages || [];
     const lastMessage = messages[messages.length - 1]?.content || '';
 
     console.log('[Chat API] Request received:', { 
@@ -34,9 +35,9 @@ export async function POST(req: NextRequest) {
       // Fallback: Continue without context rather than failing
     }
 
-    // 2. Stream response using the toDataStreamResponse (compatible with useChat and manual fetch)
-    const result = streamText({
-      model: nvidia.chat(MODEL_ID),
+    // 2. Generate response (non-streaming)
+    const result = await generateText({
+      model: nvidia(MODEL_ID),
       messages,
       system: `You are the Graveyard Keeper, a forensic investigator for failed startups. 
       Use the following case studies from our archive to provide evidence-based analysis:
@@ -44,16 +45,25 @@ export async function POST(req: NextRequest) {
       ${context}
       
       Speak in a professional, clinical, yet slightly somber tone. Focus on forensic facts and patterns of failure.`,
-      onFinish: () => {
-        console.log('[Chat API] Response streaming complete');
-      },
     });
 
-    return result.toDataStreamResponse();
+    console.log('[Chat API] Generation complete');
+    
+    return new Response(JSON.stringify({ text: result.text }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
 
   } catch (error: any) {
-    console.error('[Chat API] Fatal error:', error);
-    return new Response(JSON.stringify({ error: error.message || 'Internal Server Error' }), {
+    console.error('[Chat API] Fatal error details:', {
+      message: error.message,
+      stack: error.stack,
+      cause: error.cause,
+      name: error.name
+    });
+    return new Response(JSON.stringify({ 
+      error: error.message || 'Internal Server Error',
+      details: error.stack
+    }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });

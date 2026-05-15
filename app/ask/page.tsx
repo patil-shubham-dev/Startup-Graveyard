@@ -3,9 +3,13 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useChat } from 'ai/react';
 import { useRef, useEffect, useState } from 'react';
 import { getCaseListForSidebar } from '@/lib/db/case-studies';
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
 
 interface SidebarCase {
   id: string;
@@ -15,41 +19,87 @@ interface SidebarCase {
   shutdown_year: number | null;
 }
 
+const STORAGE_KEY = 'sg_chat_history';
+
 export default function AskTheGraveyard() {
   const [localInput, setLocalInput] = useState('');
-  const { messages, append, isLoading, status } = useChat({
-    body: { sessionId: null },
-    onResponse: (response) => {
-      console.log('AI Response received:', response.status);
-    },
-    onError: (error) => {
-      console.error('AI Chat Error:', error);
-    }
-  });
-
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  
   const [sidebarCases, setSidebarCases] = useState<SidebarCase[]>([]);
   const [activeCase, setActiveCase] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // 1. Load history from localStorage on mount
   useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        setMessages(JSON.parse(saved));
+      } catch (e) {
+        console.error('Failed to parse chat history', e);
+      }
+    }
+    
     getCaseListForSidebar().then(setSidebarCases).catch(() => setSidebarCases([]));
   }, []);
+
+  // 2. Save history to localStorage on change
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+    }
+  }, [messages]);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, isLoading]);
+
+  const sendMessage = async (content: string) => {
+    if (!content.trim() || isLoading) return;
+
+    const userMessage: Message = { role: 'user', content };
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
+    setLocalInput('');
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: newMessages }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Server Error:', errorData);
+        throw new Error(errorData.error || 'Failed to fetch response');
+      }
+
+      const data = await response.json();
+      const assistantMessage: Message = { role: 'assistant', content: data.text };
+      setMessages([...newMessages, assistantMessage]);
+    } catch (error: any) {
+      console.error('AI Chat Error:', error);
+      // Add error message to chat
+      setMessages([...newMessages, { role: 'assistant', content: `I apologize, but my connection to the archive has been interrupted: ${error.message}. Please try again.` }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const onManualSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const val = localInput.trim();
-    if (!val || isLoading) return;
+    e.preventDefault(); // Prevents reload
+    sendMessage(localInput);
+  };
 
-    // Manually append the message to bypass sync issues
-    append({ role: 'user', content: val });
-    setLocalInput('');
+  const clearHistory = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setMessages([]);
   };
 
   const messageCount = messages.length;
@@ -63,7 +113,7 @@ export default function AskTheGraveyard() {
         overflow: 'hidden',
       }}
     >
-      {/* LEFT SIDEBAR — Desktop: always visible, Mobile: toggle */}
+      {/* LEFT SIDEBAR */}
       {sidebarOpen && (
         <div
           className="lg:hidden"
@@ -116,15 +166,21 @@ export default function AskTheGraveyard() {
           >
             NEURAL_ARCHIVE
           </span>
-          <span
+          <button 
+            onClick={clearHistory}
             style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
               fontFamily: 'var(--font-dm-mono), monospace',
               fontSize: '9px',
-              color: 'var(--ink-muted)',
+              color: 'var(--rust-accent)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
             }}
           >
-            {sidebarCases.length} FILES
-          </span>
+            CLEAR [×]
+          </button>
         </div>
 
         <div
@@ -144,9 +200,10 @@ export default function AskTheGraveyard() {
             sidebarCases.map((c) => (
               <button
                 key={c.id}
-                onClick={() => {
+                onClick={(e) => {
+                  e.preventDefault(); // Prevents any accidental reload
                   setActiveCase(c.id);
-                  append({ role: 'user', content: `Tell me about ${c.company_name}` });
+                  sendMessage(`Tell me about ${c.company_name}`);
                   setSidebarOpen(false);
                 }}
                 style={{
@@ -372,7 +429,10 @@ export default function AskTheGraveyard() {
                 ].map((hint) => (
                   <button
                     key={hint}
-                    onClick={() => append({ role: 'user', content: hint })}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      sendMessage(hint);
+                    }}
                     style={{
                       padding: '10px 12px',
                       backgroundColor: 'var(--cream-base)',
@@ -395,8 +455,8 @@ export default function AskTheGraveyard() {
             </div>
           )}
 
-          {messages.map((m: any, idx: number) => (
-            <div key={m.id || idx} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
+          {messages.map((m: Message, idx: number) => (
+            <div key={idx} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
               <div style={{ maxWidth: '75%' }}>
                 {m.role === 'assistant' && (
                   <div
