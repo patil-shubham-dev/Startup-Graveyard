@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createOpenAI } from '@ai-sdk/openai';
-import { CoreMessage, generateObject, embed, streamText } from 'ai';
+import { generateObject, embed, streamText } from 'ai';
 import { ZodSchema } from 'zod';
 
-export type Message = CoreMessage;
+export type Message = any;
 
 // Default provider configuration
 const DEFAULT_MODEL = process.env.AI_DEFAULT_MODEL || 'meta/llama-3.1-70b-instruct';
@@ -42,7 +43,7 @@ export class AIService {
       messages,
     });
 
-    return result.toUIMessageStreamResponse().body!;
+    return result.toTextStreamResponse().body!;
   }
 
   /**

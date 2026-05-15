@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 const navLinks = [
@@ -13,7 +13,12 @@ const navLinks = [
 
 export function Navigation() {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const prefetch = (href: string) => {
+    router.prefetch(href);
+  };
 
   return (
     <>
@@ -114,6 +119,7 @@ export function Navigation() {
                 <Link
                   key={link.name}
                   href={link.href}
+                  onMouseEnter={() => prefetch(link.href)}
                   style={{
                     fontFamily: 'var(--font-dm-mono), monospace',
                     fontSize: '11px',

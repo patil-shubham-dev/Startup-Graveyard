@@ -1,4 +1,4 @@
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600; // Revalidate every hour by default
 import type { Metadata } from "next";
 import { Cormorant_Garamond, DM_Mono, Source_Serif_4, Crimson_Text } from "next/font/google";
 import "./globals.css";
@@ -41,7 +41,31 @@ const crimsonText = Crimson_Text({
 export const metadata: Metadata = {
   title: "Startup Graveyard | Forensic Intelligence Archive",
   description:
-    "The world's most comprehensive forensic database of startup failures. Analyze the billion-dollar mistakes.",
+    "The world's most comprehensive forensic database of startup failures. Analyze the billion-dollar mistakes, death spirals, and autopsy reports of failed ventures.",
+  keywords: ["startup failures", "post-mortem", "business autopsies", "entrepreneurship risk", "venture capital", "why startups fail"],
+  authors: [{ name: "Forensic Intelligence Team" }],
+  openGraph: {
+    title: "Startup Graveyard | Forensic Intelligence Archive",
+    description: "Analyze the billion-dollar mistakes of failed ventures.",
+    url: "https://startupgraveyard.com",
+    siteName: "Startup Graveyard",
+    images: [
+      {
+        url: "/assets/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Startup Graveyard Forensic Archive",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Startup Graveyard | Forensic Intelligence Archive",
+    description: "Analyze the billion-dollar mistakes of failed ventures.",
+    images: ["/assets/og-image.jpg"],
+  },
   icons: {
     icon: "/assets/logo-icon.svg",
     shortcut: "/assets/logo-icon.svg",

@@ -21,17 +21,19 @@ function useScrollReveal(threshold = 0.12) {
   return { ref, visible };
 }
 
-export function FeaturedCases() {
-  const [cases, setCases] = useState<CaseStudy[]>([]);
-  const [loading, setLoading] = useState(true);
+export function FeaturedCases({ initialCases = [] }: { initialCases?: CaseStudy[] }) {
+  const [cases, setCases] = useState<CaseStudy[]>(initialCases);
+  const [loading, setLoading] = useState(initialCases.length === 0);
   const { ref, visible } = useScrollReveal();
 
   useEffect(() => {
-    listCaseStudies({ limit: 3 })
-      .then(setCases)
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
+    if (initialCases.length === 0) {
+      listCaseStudies({ limit: 3 })
+        .then(setCases)
+        .catch(console.error)
+        .finally(() => setLoading(false));
+    }
+  }, [initialCases.length]);
 
   return (
     <section

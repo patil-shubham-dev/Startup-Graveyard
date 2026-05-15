@@ -17,12 +17,11 @@ interface TimelineEvent {
   type: 'milestone' | 'warning' | 'crisis';
 }
 
-export const dynamic = 'force-dynamic';
 export const revalidate = 3600;
 
-/*
 export async function generateStaticParams() {
-  const { data: cases } = await (await import('@/lib/db/config')).supabase
+  const { supabase } = await import('@/lib/db/config');
+  const { data: cases } = await supabase
     .from('case_studies')
     .select('slug')
     .eq('published', true);
@@ -31,7 +30,6 @@ export async function generateStaticParams() {
     slug: c.slug,
   }));
 }
-*/
 
 export default async function CaseStudyPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

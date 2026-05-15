@@ -1,9 +1,11 @@
-import { InsightsCharts } from '@/components/insights/InsightsCharts';
+import dynamic from 'next/dynamic';
+const InsightsCharts = dynamic(() => import('@/components/insights/InsightsCharts').then(mod => mod.InsightsCharts), {
+  loading: () => <div className="skeleton-cream" style={{ height: '400px', width: '100%' }} />
+});
 import { getInsightsData } from '@/lib/db/case-studies';
 import { formatCurrencyCompact } from '@/lib/utils/format';
 
-export const revalidate = 86400;
-export const dynamic = 'force-dynamic';
+export const revalidate = 86400; // Cache for 24 hours
 
 export default async function InsightsPage() {
   const data = await getInsightsData();
