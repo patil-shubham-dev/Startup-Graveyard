@@ -3,7 +3,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useChat } from 'ai/react';
+import { useChat } from '@ai-sdk/react';
 import { useRef, useEffect, useState } from 'react';
 import { getCaseListForSidebar } from '@/lib/db/case-studies';
 
