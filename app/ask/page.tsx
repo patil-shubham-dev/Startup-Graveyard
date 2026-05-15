@@ -1,15 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-export const dynamic = 'force-dynamic';
+// Chat interface is client-side only
 
 import { useRef, useEffect, useState } from 'react';
 import { getCaseListForSidebar } from '@/lib/db/case-studies';
-
-interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-}
+import { useChat } from '@ai-sdk/react';
 
 interface SidebarCase {
   id: string;
@@ -22,10 +18,14 @@ interface SidebarCase {
 const STORAGE_KEY = 'sg_chat_history';
 
 export default function AskTheGraveyard() {
-  const [localInput, setLocalInput] = useState('');
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  
+  const { messages, input, handleInputChange, handleSubmit, isLoading, setMessages, append } = (useChat as any)({
+    api: '/api/chat',
+    initialMessages: [],
+    onFinish: (message: any) => {
+      // Logic after message finishes streaming
+    }
+  });
+
   const [sidebarCases, setSidebarCases] = useState<SidebarCase[]>([]);
   const [activeCase, setActiveCase] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -58,43 +58,13 @@ export default function AskTheGraveyard() {
     }
   }, [messages, isLoading]);
 
-  const sendMessage = async (content: string) => {
+  const sendMessage = (content: string) => {
     if (!content.trim() || isLoading) return;
-
-    const userMessage: Message = { role: 'user', content };
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
-    setLocalInput('');
-    setIsLoading(true);
-
-    try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: newMessages }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Server Error:', errorData);
-        throw new Error(errorData.error || 'Failed to fetch response');
-      }
-
-      const data = await response.json();
-      const assistantMessage: Message = { role: 'assistant', content: data.text };
-      setMessages([...newMessages, assistantMessage]);
-    } catch (error: any) {
-      console.error('AI Chat Error:', error);
-      // Add error message to chat
-      setMessages([...newMessages, { role: 'assistant', content: `I apologize, but my connection to the archive has been interrupted: ${error.message}. Please try again.` }]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const onManualSubmit = (e: React.FormEvent) => {
-    e.preventDefault(); // Prevents reload
-    sendMessage(localInput);
+    
+    append({
+      role: 'user',
+      content: content.trim(),
+    });
   };
 
   const clearHistory = () => {
@@ -455,7 +425,7 @@ export default function AskTheGraveyard() {
             </div>
           )}
 
-          {messages.map((m: Message, idx: number) => (
+          {messages.map((m: any, idx: number) => (
             <div key={idx} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
               <div style={{ maxWidth: '75%' }}>
                 {m.role === 'assistant' && (
@@ -552,7 +522,7 @@ export default function AskTheGraveyard() {
           }}
         >
           <form
-            onSubmit={onManualSubmit}
+            onSubmit={handleSubmit}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -562,8 +532,8 @@ export default function AskTheGraveyard() {
             }}
           >
             <input
-              value={localInput}
-              onChange={(e) => setLocalInput(e.target.value)}
+              value={input}
+              onChange={handleInputChange}
               placeholder="Input query for forensic analysis..."
               style={{
                 flex: 1,
@@ -577,9 +547,9 @@ export default function AskTheGraveyard() {
             />
             <button
               type="submit"
-              disabled={isLoading || !localInput.trim()}
+              disabled={isLoading || !input.trim()}
               style={{
-                backgroundColor: (localInput.trim() && !isLoading) ? 'var(--rust-accent)' : 'var(--cream-dark)',
+                backgroundColor: (input.trim() && !isLoading) ? 'var(--rust-accent)' : 'var(--cream-dark)',
                 border: 'none',
                 borderRadius: '1px',
                 width: '32px',
@@ -587,9 +557,9 @@ export default function AskTheGraveyard() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                cursor: (localInput.trim() && !isLoading) ? 'pointer' : 'default',
+                cursor: (input.trim() && !isLoading) ? 'pointer' : 'default',
                 transition: 'background-color 0.2s ease',
-                color: (localInput.trim() && !isLoading) ? 'var(--cream-base)' : 'var(--ink-muted)',
+                color: (input.trim() && !isLoading) ? 'var(--cream-base)' : 'var(--ink-muted)',
                 flexShrink: 0,
                 fontSize: '14px',
               }}

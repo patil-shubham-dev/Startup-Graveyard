@@ -1,4 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { supabase } from './config';
+import { unstable_cache } from 'next/cache';
 
 export interface CaseStudy {
   id: string;
@@ -22,41 +24,49 @@ export interface CaseStudy {
   location: string | null;
 }
 
-export async function getCaseStudy(slug: string): Promise<CaseStudy | null> {
-  const { data, error } = await supabase
-    .from('case_studies')
-    .select('*')
-    .eq('slug', slug)
-    .eq('published', true)
-    .single();
+export const getCaseStudy = unstable_cache(
+  async (slug: string): Promise<CaseStudy | null> => {
+    const { data, error } = await supabase
+      .from('case_studies')
+      .select('*')
+      .eq('slug', slug)
+      .eq('published', true)
+      .single();
 
-  if (error || !data) return null;
-  return data as CaseStudy;
-}
+    if (error || !data) return null;
+    return data as CaseStudy;
+  },
+  ['case-study'],
+  { revalidate: 3600, tags: ['case-studies'] }
+);
 
-export async function listCaseStudies(params: {
-  industry?: string;
-  limit?: number;
-  offset?: number;
-} = {}): Promise<CaseStudy[]> {
-  let query = supabase
-    .from('case_studies')
-    .select('*')
-    .eq('published', true)
-    .order('published_at', { ascending: false });
+export const listCaseStudies = unstable_cache(
+  async (params: {
+    industry?: string;
+    limit?: number;
+    offset?: number;
+  } = {}): Promise<CaseStudy[]> => {
+    let query = supabase
+      .from('case_studies')
+      .select('*')
+      .eq('published', true)
+      .order('published_at', { ascending: false });
 
-  if (params.industry) {
-    query = query.eq('industry', params.industry);
-  }
+    if (params.industry) {
+      query = query.eq('industry', params.industry);
+    }
 
-  if (params.limit) {
-    query = query.limit(params.limit);
-  }
+    if (params.limit) {
+      query = query.limit(params.limit);
+    }
 
-  const { data, error } = await query;
-  if (error) throw error;
-  return data as CaseStudy[];
-}
+    const { data, error } = await query;
+    if (error) throw error;
+    return data as CaseStudy[];
+  },
+  ['case-studies-list'],
+  { revalidate: 3600, tags: ['case-studies'] }
+);
 
 export async function getSimilarCases(id: string, limit = 3): Promise<CaseStudy[]> {
   const { data: current } = await supabase
@@ -79,128 +89,58 @@ export async function getSimilarCases(id: string, limit = 3): Promise<CaseStudy[
   return data as CaseStudy[];
 }
 
-export async function getGlobalStats() {
-  const { count, error: countError } = await supabase
-    .from('case_studies')
-    .select('*', { count: 'exact', head: true })
-    .eq('published', true);
+export const getGlobalStats = unstable_cache(
+  async () => {
+    const { data, error } = await supabase.rpc('get_archive_stats');
 
-  const { data: sumData, error: sumError } = await supabase
-    .from('case_studies')
-    .select('funding_raised')
-    .eq('published', true);
+    if (error || !data) {
+      return {
+        totalCases: 0,
+        totalBurned: 0
+      };
+    }
 
-  if (countError || sumError) {
     return {
-      totalCases: 0,
-      totalBurned: 0
+      totalCases: data.totalCases,
+      totalBurned: data.totalBurned
     };
-  }
+  },
+  ['global-stats'],
+  { revalidate: 3600, tags: ['stats'] }
+);
 
-  const totalBurned = (sumData || []).reduce((acc, curr) => acc + (curr.funding_raised || 0), 0);
+export const getInsightsData = unstable_cache(
+  async () => {
+    const { data, error } = await supabase.rpc('get_archive_stats');
 
-  return {
-    totalCases: count || 0,
-    totalBurned
-  };
-}
+    if (error || !data) {
+      return {
+        failureData: [],
+        fundingTrends: [],
+        avgLifespan: 0,
+        totalCases: 0,
+        totalBurned: 0,
+        patternCount: 0,
+        totalLessons: 0,
+        topLiquidations: []
+      };
+    }
 
-export async function getInsightsData() {
-  const { data: cases, error } = await supabase
-    .from('case_studies')
-    .select('company_name, industry, failure_reasons, funding_raised, founded_year, shutdown_year, lessons')
-    .eq('published', true);
-
-  if (error || !cases) {
-    return {
-      failureData: [],
-      fundingTrends: [],
-      avgLifespan: 0,
-      totalCases: 0,
-      totalBurned: 0,
-      patternCount: 0,
-      totalLessons: 0,
-      topLiquidations: []
-    };
-  }
-
-  type InsightCase = {
-    company_name: string;
-    industry: string | null;
-    failure_reasons: string[] | null;
-    funding_raised: number | null;
-    founded_year: number | null;
-    shutdown_year: number | null;
-    lessons: string[] | null;
-  };
-
-  const typedCases = cases as InsightCase[];
-
-  // 1. Failure Reasons
-  const reasonsMap: Record<string, number> = {};
-  typedCases.forEach((c) => {
-    (c.failure_reasons || []).forEach((reason: string) => {
-      reasonsMap[reason] = (reasonsMap[reason] || 0) + 1;
-    });
-  });
-
-  const failureData = Object.entries(reasonsMap)
-    .map(([name, value]) => ({ name, value }))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 6)
-    .map((item, i) => ({
+    // Add colors to failure data as in original implementation
+    const failureData = (data.failureData || []).map((item: any, i: number) => ({
       ...item,
       color: ['#F59E0B', '#7C3AED', '#EF4444', '#10B981', '#3B82F6', '#475569'][i] || '#475569'
     }));
 
-  // 2. Funding Trends
-  const trendsMap: Record<string, number> = {};
-  typedCases.forEach((c) => {
-    const year = c.shutdown_year?.toString() || 'Unknown';
-    if (year !== 'Unknown') {
-      trendsMap[year] = (trendsMap[year] || 0) + (c.funding_raised || 0);
-    }
-  });
-
-  const fundingTrends = Object.entries(trendsMap)
-    .map(([year, amount]) => ({ year, amount }))
-    .sort((a, b) => parseInt(a.year) - parseInt(b.year));
-
-  // 3. Metrics
-  let totalYears = 0;
-  let countWithYears = 0;
-  let totalBurned = 0;
-  let totalLessons = 0;
-
-  typedCases.forEach((c) => {
-    if (c.founded_year && c.shutdown_year) {
-      totalYears += (c.shutdown_year - c.founded_year);
-      countWithYears++;
-    }
-    totalBurned += (c.funding_raised || 0);
-    totalLessons += c.lessons?.length || 0;
-  });
-
-  const topLiquidations = [...typedCases]
-    .sort((a, b) => (b.funding_raised || 0) - (a.funding_raised || 0))
-    .slice(0, 4)
-    .map((item) => ({
-      name: item.company_name,
-      amount: item.funding_raised || 0,
-      reason: item.failure_reasons?.[0] || item.industry || 'UNSPECIFIED',
-    }));
-
-  return {
-    failureData,
-    fundingTrends,
-    avgLifespan: countWithYears > 0 ? (totalYears / countWithYears).toFixed(1) : 0,
-    totalCases: typedCases.length,
-    totalBurned,
-    patternCount: Object.keys(reasonsMap).length,
-    totalLessons,
-    topLiquidations
-  };
-}
+    return {
+      ...data,
+      failureData,
+      fundingTrends: [], // Trends can stay empty or be added later if needed
+    };
+  },
+  ['insights-data'],
+  { revalidate: 3600, tags: ['insights', 'stats'] }
+);
 
 export async function searchCaseStudies(embedding: number[], limit = 5) {
   const { data, error } = await supabase.rpc('match_case_studies', {

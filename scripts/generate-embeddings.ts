@@ -1,4 +1,5 @@
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createClient } from '@supabase/supabase-js';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -87,7 +88,7 @@ async function main() {
       } else {
         console.log(`Successfully updated ${c.company_name}`);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(`Error processing ${c.company_name}:`, err.message);
     }
   }

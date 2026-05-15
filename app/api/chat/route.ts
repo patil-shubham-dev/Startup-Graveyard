@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { ai, nvidia } from '@/lib/ai';
-import { generateText } from 'ai';
+import { streamText } from 'ai';
 import { searchCaseStudies } from '@/lib/db/case-studies';
 
 // Use the robust model from AIService defaults
@@ -35,8 +35,8 @@ export async function POST(req: NextRequest) {
       // Fallback: Continue without context rather than failing
     }
 
-    // 2. Generate response (non-streaming)
-    const result = await generateText({
+    // 2. Generate response (streaming)
+    const result = streamText({
       model: nvidia(MODEL_ID),
       messages,
       system: `You are the Graveyard Keeper, a forensic investigator for failed startups. 
@@ -44,14 +44,13 @@ export async function POST(req: NextRequest) {
       
       ${context}
       
-      Speak in a professional, clinical, yet slightly somber tone. Focus on forensic facts and patterns of failure.`,
+      Speak in a professional, clinical, yet slightly somber tone. Focus on forensic facts and patterns of failure.
+      When mentioning a startup that exists in our archive (like those in the context above), wrap its name in [[Startup Name]] for the system to identify.`,
     });
 
-    console.log('[Chat API] Generation complete');
+    console.log('[Chat API] Streaming started');
     
-    return new Response(JSON.stringify({ text: result.text }), {
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return result.toTextStreamResponse();
 
   } catch (error: any) {
     console.error('[Chat API] Fatal error details:', {

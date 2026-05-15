@@ -1,18 +1,26 @@
-export const dynamic = 'force-dynamic';
-
+import dynamic from 'next/dynamic';
 import { HeroSection } from '@/components/home/HeroSection';
 import { StatsBar } from '@/components/home/StatsBar';
-import { FeaturedCases } from '@/components/home/FeaturedCases';
 import { TaxonomyGrid } from '@/components/home/TaxonomyGrid';
-import { InsightsPreview } from '@/components/home/InsightsPreview';
 import { PreMortemCTA } from '@/components/home/PreMortemCTA';
-import { getGlobalStats, getInsightsData, getTopCasesByFunding } from '@/lib/db/case-studies';
+import { getGlobalStats, getInsightsData, getTopCasesByFunding, listCaseStudies } from '@/lib/db/case-studies';
+
+const FeaturedCases = dynamic(() => import('@/components/home/FeaturedCases').then(mod => mod.FeaturedCases), {
+  ssr: true, // Keep SSR for SEO but allow splitting
+});
+
+const InsightsPreview = dynamic(() => import('@/components/home/InsightsPreview').then(mod => mod.InsightsPreview), {
+  loading: () => <div className="skeleton-cream" style={{ height: '400px', width: '100%' }} />
+});
+
+export const revalidate = 3600;
 
 export default async function Home() {
-  const [stats, insights, liveCases] = await Promise.all([
+  const [stats, insights, liveCases, featuredCases] = await Promise.all([
     getGlobalStats(),
     getInsightsData(),
     getTopCasesByFunding(2),
+    listCaseStudies({ limit: 3 }),
   ]);
 
   return (
@@ -38,7 +46,7 @@ export default async function Home() {
       />
 
       {/* 3. Featured cases archive */}
-      <FeaturedCases />
+      <FeaturedCases initialCases={featuredCases} />
 
       {/* 4. Failure pattern taxonomy */}
       <TaxonomyGrid failureData={insights.failureData} />
