@@ -3,9 +3,13 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useChat } from '@ai-sdk/react';
 import { useRef, useEffect, useState } from 'react';
 import { getCaseListForSidebar } from '@/lib/db/case-studies';
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
 
 interface SidebarCase {
   id: string;
@@ -17,16 +21,9 @@ interface SidebarCase {
 
 export default function AskTheGraveyard() {
   const [localInput, setLocalInput] = useState('');
-  const { messages, append, isLoading, status } = useChat({
-    body: { sessionId: null },
-    onResponse: (response) => {
-      console.log('AI Response received:', response.status);
-    },
-    onError: (error) => {
-      console.error('AI Chat Error:', error);
-    }
-  });
-
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  
   const [sidebarCases, setSidebarCases] = useState<SidebarCase[]>([]);
   const [activeCase, setActiveCase] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -40,16 +37,41 @@ export default function AskTheGraveyard() {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, isLoading]);
+
+  const sendMessage = async (content: string) => {
+    if (!content.trim() || isLoading) return;
+
+    const userMessage: Message = { role: 'user', content };
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
+    setLocalInput('');
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: newMessages }),
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch response');
+
+      const data = await response.json();
+      const assistantMessage: Message = { role: 'assistant', content: data.text };
+      setMessages([...newMessages, assistantMessage]);
+    } catch (error) {
+      console.error('AI Chat Error:', error);
+      // Add error message to chat
+      setMessages([...newMessages, { role: 'assistant', content: "I apologize, but my connection to the archive has been interrupted. Please try again." }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const onManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const val = localInput.trim();
-    if (!val || isLoading) return;
-
-    // Manually append the message to bypass sync issues
-    append({ role: 'user', content: val });
-    setLocalInput('');
+    sendMessage(localInput);
   };
 
   const messageCount = messages.length;
@@ -146,7 +168,7 @@ export default function AskTheGraveyard() {
                 key={c.id}
                 onClick={() => {
                   setActiveCase(c.id);
-                  append({ role: 'user', content: `Tell me about ${c.company_name}` });
+                  sendMessage(`Tell me about ${c.company_name}`);
                   setSidebarOpen(false);
                 }}
                 style={{
@@ -372,7 +394,7 @@ export default function AskTheGraveyard() {
                 ].map((hint) => (
                   <button
                     key={hint}
-                    onClick={() => append({ role: 'user', content: hint })}
+                    onClick={() => sendMessage(hint)}
                     style={{
                       padding: '10px 12px',
                       backgroundColor: 'var(--cream-base)',
@@ -396,7 +418,7 @@ export default function AskTheGraveyard() {
           )}
 
           {messages.map((m: any, idx: number) => (
-            <div key={m.id || idx} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
+            <div key={idx} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
               <div style={{ maxWidth: '75%' }}>
                 {m.role === 'assistant' && (
                   <div
