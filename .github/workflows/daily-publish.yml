@@ -1,0 +1,38 @@
+name: Daily Case Study Generation
+
+on:
+  schedule:
+    - cron: '0 5 * * *' # 10:30 AM IST
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Run Autopsy Script
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+          AI_DEFAULT_MODEL: "meta/llama-3.1-70b-instruct"
+        run: npx ts-node --project tsconfig.json scripts/daily-autopsy.ts
+
+      - name: Commit and Push Changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add content/data
+          git commit -m "chore: autonomous daily forensic update [skip ci]" || echo "No changes to commit"
+          git push

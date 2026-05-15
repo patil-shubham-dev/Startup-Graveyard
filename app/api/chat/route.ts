@@ -36,16 +36,20 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Generate response (streaming)
-    const result = streamText({
-      model: nvidia(MODEL_ID),
-      messages,
-      system: `You are the Graveyard Keeper, a forensic investigator for failed startups. 
-      Use the following case studies from our archive to provide evidence-based analysis:
+    const customContext = body.context || '';
+    const systemPrompt = `You are the Graveyard Keeper, a forensic investigator for failed startups. 
+      ${customContext ? `SPECIAL_TASK: ${customContext}` : 'Analyze the failure patterns of startups based on available data.'}
       
+      ARCHIVE_CONTEXT:
       ${context}
       
       Speak in a professional, clinical, yet slightly somber tone. Focus on forensic facts and patterns of failure.
-      When mentioning a startup that exists in our archive (like those in the context above), wrap its name in [[Startup Name]] for the system to identify.`,
+      When mentioning a startup that exists in our archive, wrap its name in [[Startup Name]].`;
+
+    const result = streamText({
+      model: nvidia(MODEL_ID),
+      messages,
+      system: systemPrompt,
     });
 
     console.log('[Chat API] Streaming started');

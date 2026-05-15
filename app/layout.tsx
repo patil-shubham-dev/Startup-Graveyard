@@ -7,6 +7,7 @@ import { Footer } from "@/components/layout/Footer";
 import { AuthProvider } from "@/context/AuthContext";
 import { ProgressBar } from "@/components/layout/ProgressBar";
 import { PageWrapper } from "@/components/layout/PageWrapper";
+import { Suspense } from "react";
 
 const cormorant = Cormorant_Garamond({
   variable: "--font-cormorant",
@@ -39,6 +40,7 @@ const crimsonText = Crimson_Text({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://startupgraveyard.com'),
   title: "Startup Graveyard | Forensic Intelligence Archive",
   description:
     "The world's most comprehensive forensic database of startup failures. Analyze the billion-dollar mistakes, death spirals, and autopsy reports of failed ventures.",
@@ -98,7 +100,9 @@ export default async function RootLayout({
       <body style={{ backgroundColor: "var(--cream-base)", color: "var(--ink-black)" }}>
         <AuthProvider>
           <div className="relative flex min-h-screen flex-col">
-            <ProgressBar />
+            <Suspense fallback={null}>
+              <ProgressBar />
+            </Suspense>
             <Navigation />
             <main className="relative flex-1">
               <PageWrapper>{children}</PageWrapper>

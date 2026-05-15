@@ -2,6 +2,7 @@
 
 import { CaseStudy } from '@/lib/db/case-studies';
 import { formatCurrencyCompact } from '@/lib/utils/format';
+import { LogoImage } from '@/components/ui/LogoImage';
 
 export function DossierHero({ study }: { study: CaseStudy }) {
   return (
@@ -69,16 +70,18 @@ export function DossierHero({ study }: { study: CaseStudy }) {
           </span>
         </div>
 
-        {/* Headline */}
-        <h1
-          className="t-hero"
-          style={{
-            marginBottom: '32px',
-            maxWidth: '15ch',
-          }}
-        >
-          {study.company_name}
-        </h1>
+        <div className="flex flex-col md:flex-row md:items-end gap-8 mb-8">
+          <h1
+            className="t-hero"
+            style={{
+              marginBottom: '0',
+              maxWidth: '15ch',
+            }}
+          >
+            {study.company_name}
+          </h1>
+          <LogoImage src={study.logo_url} name={study.company_name} className="h-16 w-16 md:h-20 md:w-20 mb-2" />
+        </div>
 
         {/* Stats Grid */}
         <div

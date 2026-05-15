@@ -3,19 +3,30 @@ import { notFound } from 'next/navigation';
 import { DossierHero } from '@/components/case-study/DossierHero';
 import { VerdictBox } from '@/components/case-study/VerdictBox';
 import { Timeline } from '@/components/case-study/Timeline';
-import { FailureDNA } from '@/components/case-study/FailureDNA';
 import { DossierCard } from '@/components/ui/DossierCard';
-import { DossierContent } from '@/components/case-study/DossierContent';
 import { IntelKicker } from '@/components/ui/IntelKicker';
 import { ScanButton } from '@/components/ui/ScanButton';
-import { serialize } from 'next-mdx-remote/serialize';
-
-interface TimelineEvent {
-  date: string;
-  title: string;
-  description: string;
-  type: 'milestone' | 'warning' | 'crisis';
-}
+import { ForensicRadar } from '@/components/case-study/ForensicRadar';
+import { EvidenceFolder } from '@/components/case-study/EvidenceFolder';
+import { Marginalia } from '@/components/case-study/Marginalia';
+import { ForensicControls } from '@/components/case-study/ForensicControls';
+import { ReadingProgressBar } from '@/components/case-study/ReadingProgressBar';
+import { SectorBenchmarking } from '@/components/case-study/SectorBenchmarking';
+import { FailureDNA } from '@/components/case-study/FailureDNA';
+import { BurnChart } from '@/components/case-study/BurnChart';
+import { FounderInterview } from '@/components/case-study/FounderInterview';
+import { TableOfContents } from '@/components/case-study/TableOfContents';
+import { MetricsDashboard } from '@/components/case-study/MetricsDashboard';
+import { FundingChart, HeadcountChart } from '@/components/case-study/EditorialCharts';
+import { CompetitorMatrix } from '@/components/case-study/CompetitorMatrix';
+import { RootCauseVerdict } from '@/components/case-study/RootCauseVerdict';
+import { FounderInterrogation } from '@/components/case-study/FounderInterrogation';
+import { SourcesList } from '@/components/case-study/SourcesList';
+import { QuotesSection } from '@/components/case-study/QuotesSection';
+import { compileMDX } from 'next-mdx-remote/rsc';
+import type { TimelineEvent } from '@/components/case-study/Timeline';
+import { CaseCard } from '@/components/case-study/CaseCard';
+import { Metadata } from 'next';
 
 export const revalidate = 3600;
 
@@ -31,6 +42,29 @@ export async function generateStaticParams() {
   }));
 }
 
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const study = await getCaseStudy(slug);
+  if (!study) return {};
+
+  return {
+    title: `${study.company_name} Forensic Autopsy | Startup Graveyard`,
+    description: study.summary,
+    openGraph: {
+      title: `${study.company_name} Case Study`,
+      description: study.summary,
+      type: 'article',
+      images: [
+        {
+          url: `/api/og?title=${encodeURIComponent(study.company_name)}&type=CASE_STUDY`,
+          width: 1200,
+          height: 630,
+        },
+      ],
+    },
+  };
+}
+
 export default async function CaseStudyPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const study = await getCaseStudy(slug);
@@ -38,78 +72,186 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
   if (!study) return notFound();
 
   const similarCases = await getSimilarCases(study.id);
-  const mdxSource = await serialize(study.content || '# Dossier Content Pending\n\nFull investigation is currently being finalized by the forensic team.');
+  const { content } = await compileMDX({
+    source: study.content || '# Dossier Content Pending\n\nFull investigation is currently being finalized.',
+    components: {
+      Timeline,
+      VerdictBox,
+      MetricsDashboard,
+      EvidenceFolder,
+      SectorBenchmarking,
+      FailureDNA,
+      FundingChart,
+      HeadcountChart,
+      BurnChart,
+      ForensicRadar,
+      FounderInterview,
+      FounderInterrogation,
+      RootCauseVerdict,
+      CompetitorMatrix,
+      CaseCard,
+      ReadingProgressBar,
+    }
+  });
 
-  // Mock events if not in DB, but pull some data from study
-  const mockEvents = [
-    { date: `JAN ${study.founded_year || 2018}`, title: 'Project Initiation', description: `${study.company_name} enters the market with significant backing.`, type: 'milestone' },
-    { date: 'MID CYCLE', title: 'Market Saturation', description: 'User acquisition costs begin to exceed lifetime value projections.', type: 'warning' },
-    { date: `${study.shutdown_year || 'END'}`, title: 'Final Liquidation', description: 'Board of directors votes to cease operations and liquidate assets.', type: 'crisis' },
+  const sections = [
+    { id: 'summary', label: 'Executive Summary' },
+    { id: 'story', label: 'The Story' },
+    { id: 'metrics', label: 'Key Metrics' },
+    { id: 'charts', label: 'Data Visualization' },
+    { id: 'analysis', label: 'Failure Analysis' },
+    { id: 'verdict', label: 'Root Cause Verdict' },
+    { id: 'timeline', label: 'Timeline' },
+    { id: 'competitors', label: 'Market Context' },
+    { id: 'lessons', label: 'Lessons Learned' },
+    { id: 'interrogation', label: 'AI Interrogation' },
+    { id: 'sources', label: 'Sources' },
   ];
 
+  const timelineEvents = (study.timeline_events as TimelineEvent[]) || [];
+
   return (
-    <main className="min-h-screen bg-bg-page pt-20">
+    <main className="min-h-screen bg-bg-page relative">
+      <ReadingProgressBar />
+      
       <DossierHero study={study} />
       
-      <div className="max-w-[1400px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-20 py-24 relative">
-        {/* Article Section */}
-        <article className="overflow-visible">
-          <div className="mb-20">
-            <IntelKicker label="FORENSIC_SUMMARY" figure="PT. 01" />
-            <DossierContent source={mdxSource} />
-          </div>
+      <div className="max-w-[1440px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-[240px_1fr_360px] gap-12 py-24 relative">
+        
+        {/* Left Sidebar - TOC */}
+        <div className="hidden lg:block">
+          <TableOfContents sections={sections} />
+        </div>
 
-          <div className="mb-20">
-            <IntelKicker label="FORENSIC_TIMELINE" figure="PT. 02" />
-            <Timeline events={mockEvents as TimelineEvent[]} />
-          </div>
+        {/* Central Article Content */}
+        <article className="overflow-visible paper-dossier p-8 md:p-16 lg:p-24 shadow-2xl bg-paper-white relative">
+          <div className="absolute top-0 left-0 w-full h-1 bg-ink-black opacity-10" />
+          
+          <ForensicControls audioUrl={study.audio_briefing_url || undefined} />
 
-          <VerdictBox reasons={study.failure_reasons || []} />
+          <section id="summary" className="scroll-mt-32 mb-32">
+            <IntelKicker label="CASE_SUMMARY" figure="PT. 01" />
+            <div className="mt-12">
+              <h2 className="t-h1 mb-12 border-b border-cream-dark/30 pb-8">Executive Autopsy</h2>
+              <div className="t-body text-xl leading-relaxed text-ink-soft italic opacity-80 mb-12">
+                {study.summary}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <div>
+                  <h4 className="t-label text-[10px] mb-4">Initial Success</h4>
+                  <p className="t-body-sm opacity-70">
+                    Founded in {study.founded_year}, {study.company_name} initially gained traction through innovative disruption in the {study.industry} sector.
+                  </p>
+                </div>
+                <div>
+                  <h4 className="t-label text-[10px] mb-4">Critical Collapse</h4>
+                  <p className="t-body-sm opacity-70">
+                    The shutdown in {study.shutdown_year} was the culmination of strategic failures and market pressures.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
 
-          <div className="mt-20">
-            <IntelKicker label="LESSONS_LEARNED" figure="PT. 03" />
+          <section id="story" className="scroll-mt-32 mb-32">
+            <IntelKicker label="FORENSIC_NARRATIVE" figure="PT. 02" />
+            <div className="prose-editorial mt-12">
+              {content}
+            </div>
+          </section>
+
+          <section id="metrics" className="scroll-mt-32 mb-32">
+            <IntelKicker label="CORE_METRICS" figure="PT. 03" />
+            <h2 className="t-h2 mt-12 mb-12">By The Numbers</h2>
+            <MetricsDashboard metrics={study.metrics} />
+          </section>
+
+          <section id="charts" className="scroll-mt-32 mb-32 space-y-12">
+            <IntelKicker label="DATA_VISUALIZATION" figure="PT. 04" />
+            <h2 className="t-h2 mt-12 mb-12">Economic Fingerprints</h2>
+            <div className="grid grid-cols-1 gap-8">
+              {study.financial_data?.rounds && <FundingChart data={study.financial_data.rounds} />}
+              {study.financial_data?.headcount && <HeadcountChart data={study.financial_data.headcount} />}
+            </div>
+          </section>
+
+          <section id="analysis" className="scroll-mt-32 mb-32">
+            <IntelKicker label="FAILURE_ANALYSIS" figure="PT. 05" />
+            <h2 className="t-h2 mt-12 mb-12">Anatomy of Failure</h2>
+            <VerdictBox reasons={study.failure_reasons || []} />
+          </section>
+
+          <section id="verdict" className="scroll-mt-32 mb-32">
+            <RootCauseVerdict verdict={study.verdict} companyName={study.company_name} />
+          </section>
+
+          <QuotesSection quotes={study.quotes || []} />
+
+          <section id="timeline" className="scroll-mt-32 mb-32">
+            <IntelKicker label="CHRONOLOGY" figure="PT. 06" />
+            <h2 className="t-h2 mt-12 mb-12">Timeline of Decline</h2>
+            <Timeline events={timelineEvents} />
+          </section>
+
+          <section id="competitors" className="scroll-mt-32 mb-32">
+            <IntelKicker label="MARKET_CONTEXT" figure="PT. 07" />
+            <h2 className="t-h2 mt-12 mb-12">The Competition Factor</h2>
+            <CompetitorMatrix competitors={study.competitors || []} companyName={study.company_name} />
+          </section>
+
+          <section id="lessons" className="scroll-mt-32 mb-32">
+            <IntelKicker label="LESSONS_LEARNED" figure="PT. 08" />
+            <h2 className="t-h2 mt-12 mb-12">Lessons for Founders</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
               {(study.lessons || []).map((lesson, i) => (
-                <div key={i} className="flex gap-6 group p-6 glass-dossier border-border-subtle rounded-[2px] hover:border-green-500/40 transition-colors">
-                  <span className="font-mono text-green-500 font-bold text-lg">0{i + 1}</span>
-                  <p className="text-text-muted leading-relaxed text-[15px]">{lesson}</p>
+                <div key={i} className="flex gap-6 group p-8 bg-cream-base/10 border border-cream-dark/20 rounded-[2px] hover:border-rust-accent/40 transition-colors relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-2 opacity-5 font-mono text-4xl">0{i+1}</div>
+                  <p className="text-text-muted leading-relaxed text-[15px] z-10">{lesson}</p>
                 </div>
               ))}
             </div>
+          </section>
+
+          <section id="interrogation" className="scroll-mt-32 mb-32">
+            <FounderInterrogation companyName={study.company_name} />
+          </section>
+
+          <EvidenceFolder images={study.evidence_images || []} />
+
+          <section id="sources" className="scroll-mt-32">
+            <SourcesList sources={study.sources || []} />
+          </section>
+
+          <div className="mt-20 pt-20 border-t border-cream-dark/20 flex justify-between items-center">
+            <div className="t-label text-[10px] opacity-40">Investigation_ID: {study.id}</div>
+            <div className="t-label text-[10px] opacity-40">Archived_At: {study.published_at ? new Date(study.published_at).toLocaleDateString() : 'Pending'}</div>
           </div>
         </article>
 
-        {/* Sidebar */}
+        {/* Right Sidebar - Marginalia & CTA */}
         <aside className="space-y-12 lg:sticky lg:top-32 lg:h-fit">
-          <FailureDNA scores={study.risk_scores as Record<string, number>} />
+          <ForensicRadar scores={study.risk_scores as Record<string, number>} />
           
-          <div className="glass-dossier border-border-strong p-8 rounded-[4px] relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-[2px] h-full bg-red-500/40" />
-            <h3 className="font-mono text-[10px] text-text-ghost tracking-[0.2em] uppercase mb-8">REDACTED_EVIDENCE</h3>
-            <p className="text-[14px] leading-relaxed text-text-muted italic">
-              Investigation reveals <span className="redacted" title="Hover to reveal">internal warnings about PMF were ignored</span> by the executive team 
-              months before the final <span className="redacted" title="Hover to reveal">liquidity crisis</span> forced a shutdown.
-            </p>
-          </div>
+          <Marginalia notes={study.marginalia || []} />
 
-          <div className="glass-dossier border-border-strong p-8 rounded-[4px] bg-violet-600/[0.02] relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-[2px] h-full bg-violet-600/40" />
-            <h3 className="font-header text-2xl font-bold mb-4 text-text-primary italic">Run a Pre-Mortem</h3>
-            <p className="text-[14px] text-text-muted mb-8 leading-relaxed">
-              Stress-test your idea against the failure patterns of companies like {study.company_name}.
+          <div className="paper-dossier border border-ink-black/10 p-8 rounded-[4px] bg-paper-white relative overflow-hidden shadow-lg group hover:shadow-xl transition-shadow">
+            <div className="absolute top-0 left-0 w-[4px] h-full bg-failed-red" />
+            <h3 className="t-hero text-2xl mb-4 italic">Post-Mortem Analysis</h3>
+            <p className="t-body-sm text-ink-muted mb-8 leading-relaxed">
+              Every failure is a data point. Use our AI analyzer to stress-test your own startup idea against the patterns that killed {study.company_name}.
             </p>
-            <ScanButton href="/pre-mortem" label="ANALYZE MY IDEA" fullWidth />
+            <ScanButton href="/pre-mortem" label="RUN PRE-MORTEM" fullWidth />
           </div>
         </aside>
       </div>
 
       {/* Similar Failures */}
       {similarCases.length > 0 && (
-        <section className="border-t border-border-subtle py-32 bg-white/[0.01]">
-          <div className="max-w-[1400px] mx-auto px-6">
+        <section className="border-t border-cream-dark/20 py-32 bg-cream-deep/10">
+          <div className="max-w-[1440px] mx-auto px-6">
             <div className="mb-16">
               <IntelKicker label="SIMILAR_INVESTIGATIONS" figure="FIG. 04" />
-              <h2 className="section-header">Cross-Reference Data</h2>
+              <h2 className="t-h1">Cross-Reference Data</h2>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

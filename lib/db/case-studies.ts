@@ -22,6 +22,19 @@ export interface CaseStudy {
   published_at: string | null;
   employees_peak: number | null;
   location: string | null;
+  timeline_events: any[] | null;
+  financial_data: any | null;
+  marginalia: any[] | null;
+  evidence_images: string[] | null;
+  audio_briefing_url: string | null;
+  metrics: any | null;
+  competitors: any[] | null;
+  quotes: any[] | null;
+  sources: any[] | null;
+  financial_rounds: any[] | null;
+  failure_analysis: any | null;
+  verdict: any | null;
+  archived_media: any[] | null;
 }
 
 export const getCaseStudy = unstable_cache(

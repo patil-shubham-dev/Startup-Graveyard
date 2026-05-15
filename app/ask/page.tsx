@@ -532,7 +532,7 @@ export default function AskTheGraveyard() {
             }}
           >
             <input
-              value={input}
+              value={input || ''}
               onChange={handleInputChange}
               placeholder="Input query for forensic analysis..."
               style={{
@@ -547,9 +547,9 @@ export default function AskTheGraveyard() {
             />
             <button
               type="submit"
-              disabled={isLoading || !input.trim()}
+              disabled={isLoading || !input?.trim()}
               style={{
-                backgroundColor: (input.trim() && !isLoading) ? 'var(--rust-accent)' : 'var(--cream-dark)',
+                backgroundColor: (input?.trim() && !isLoading) ? 'var(--rust-accent)' : 'var(--cream-dark)',
                 border: 'none',
                 borderRadius: '1px',
                 width: '32px',
@@ -557,9 +557,9 @@ export default function AskTheGraveyard() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                cursor: (input.trim() && !isLoading) ? 'pointer' : 'default',
+                cursor: (input?.trim() && !isLoading) ? 'pointer' : 'default',
                 transition: 'background-color 0.2s ease',
-                color: (input.trim() && !isLoading) ? 'var(--cream-base)' : 'var(--ink-muted)',
+                color: (input?.trim() && !isLoading) ? 'var(--cream-base)' : 'var(--ink-muted)',
                 flexShrink: 0,
                 fontSize: '14px',
               }}

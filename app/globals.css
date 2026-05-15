@@ -631,6 +631,24 @@ body::before {
   background-size: 4px 4px;
 }
 
+.paper-dossier {
+  background-color: var(--paper-white);
+  box-shadow: 
+    0 0 0 1px rgba(0,0,0,0.05),
+    4px 4px 0 var(--cream-dark),
+    8px 8px 0 var(--cream-deep);
+  position: relative;
+}
+
+.paper-dossier::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("https://www.transparenttextures.com/patterns/natural-paper.png");
+}
+
 .chart-card > * {
   position: relative;
   z-index: 1;
@@ -842,5 +860,38 @@ body::before {
   .btn-outline-hero {
     width: 100%;
     justify-content: center;
+  }
+}
+
+/* ============================================================
+   PRINT STYLES
+   ============================================================ */
+@media print {
+  nav, button, aside, .no-print {
+    display: none !important;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .paper-dossier {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+  
+  main {
+    padding: 0 !important;
+  }
+  
+  .sg-container {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  article {
+    width: 100% !important;
   }
 }

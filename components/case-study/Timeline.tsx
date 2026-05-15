@@ -1,6 +1,6 @@
 'use client';
 
-interface TimelineEvent {
+export interface TimelineEvent {
   date: string;
   title: string;
   description: string;
@@ -8,6 +8,7 @@ interface TimelineEvent {
 }
 
 export function Timeline({ events }: { events: TimelineEvent[] }) {
+  if (!events || events.length === 0) return null;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
       {events.map((event, i) => (
