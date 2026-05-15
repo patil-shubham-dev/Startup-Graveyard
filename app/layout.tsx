@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 import type { Metadata } from "next";
-import { Cormorant_Garamond, DM_Mono, Source_Serif_4 } from "next/font/google";
+import { Cormorant_Garamond, DM_Mono, Source_Serif_4, Crimson_Text } from "next/font/google";
 import "./globals.css";
 import { Navigation } from "@/components/layout/Navigation";
 import { Footer } from "@/components/layout/Footer";
@@ -28,6 +28,13 @@ const sourceSerif = Source_Serif_4({
   subsets: ["latin"],
   weight: ["300", "400", "600"],
   style: ["normal", "italic"],
+  display: "swap",
+});
+
+const crimsonText = Crimson_Text({
+  variable: "--font-crimson",
+  weight: ["400", "600", "700"],
+  subsets: ["latin"],
   display: "swap",
 });
 
@@ -61,7 +68,7 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
-      className={`${cormorant.variable} ${dmMono.variable} ${sourceSerif.variable} antialiased`}
+      className={`${cormorant.variable} ${dmMono.variable} ${sourceSerif.variable} ${crimsonText.variable} antialiased`}
       suppressHydrationWarning
     >
       <body style={{ backgroundColor: "var(--cream-base)", color: "var(--ink-black)" }}>

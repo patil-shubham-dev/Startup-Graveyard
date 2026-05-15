@@ -22,8 +22,8 @@ export function Timeline({ events }: { events: TimelineEvent[] }) {
             }}
           >
             <div
+              className="t-num"
               style={{
-                fontFamily: 'var(--font-dm-mono), monospace',
                 fontSize: '11px',
                 fontWeight: '600',
                 color: 'var(--ink-black)',

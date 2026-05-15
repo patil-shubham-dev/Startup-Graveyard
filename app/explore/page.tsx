@@ -115,8 +115,8 @@ export default function ExplorePage() {
 
             {/* File count */}
             <div
+              className="t-num"
               style={{
-                fontFamily: 'var(--font-dm-mono), monospace',
                 fontSize: '11px',
                 textTransform: 'uppercase',
                 letterSpacing: '0.14em',
@@ -126,7 +126,7 @@ export default function ExplorePage() {
                 gap: '8px',
               }}
             >
-              {loading ? 'SYNCING...' : `${filteredCases.length}_FILES`}
+              {loading ? 'SYNCING...' : <>{filteredCases.length}_FILES</>}
               <span
                 style={{
                   width: '6px',

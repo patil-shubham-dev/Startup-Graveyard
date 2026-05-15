@@ -1,6 +1,6 @@
 'use client';
 
-import { formatCurrency } from '@/lib/utils/format';
+import { formatCurrencyCompact } from '@/lib/utils/format';
 
 interface GlobalMetadataProps {
   totalCases: number;
@@ -9,7 +9,7 @@ interface GlobalMetadataProps {
 }
 
 export function GlobalMetadata({ totalCases, totalBurned, survivalRate = "98.4%" }: GlobalMetadataProps) {
-  const formattedBurned = formatCurrency(totalBurned);
+  const formattedBurned = formatCurrencyCompact(totalBurned);
 
   return (
     <div className="flex flex-wrap items-center gap-5 font-mono text-[10px] tracking-[0.24em] uppercase text-text-muted">

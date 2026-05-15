@@ -5,7 +5,7 @@ import { ZodSchema } from 'zod';
 export type Message = ModelMessage;
 
 // Default provider configuration
-const DEFAULT_MODEL = process.env.AI_DEFAULT_MODEL || 'deepseek-ai/deepseek-v4-pro';
+const DEFAULT_MODEL = process.env.AI_DEFAULT_MODEL || 'nvidia/llama-3.1-nemotron-70b-instruct';
 
 /**
  * NVIDIA NIM Provider Instance

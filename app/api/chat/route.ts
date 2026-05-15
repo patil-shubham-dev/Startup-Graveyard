@@ -1,63 +1,61 @@
+import { NextRequest } from 'next/server';
+import { ai, nvidia } from '@/lib/ai';
 import { streamText } from 'ai';
-import { nvidia, ai } from '@/lib/ai';
-import { getGlobalStats, searchCaseStudies } from '@/lib/db/case-studies';
-import { appendChatMessage } from '@/lib/db/chat';
+import { searchCaseStudies } from '@/lib/db/case-studies';
 
-export const maxDuration = 30;
+// Use the robust model from AIService defaults
+const MODEL_ID = process.env.AI_DEFAULT_MODEL || 'nvidia/llama-3.1-nemotron-70b-instruct';
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const { messages, sessionId } = await req.json();
-    const lastMessage = messages[messages.length - 1]?.content;
-    
-    let context = '';
-    if (lastMessage) {
-      // 1. Generate embedding for the query
-      const embedding = await ai.embed(lastMessage);
-      
-      // 2. Search for relevant case studies
-      const similarCases = await searchCaseStudies(embedding, 3);
-      
-      // 3. Construct context
-      if (similarCases.length > 0) {
-        context = "REL_ARCHIVE_DATA:\n" + similarCases.map(c => 
-          `- ${c.company_name}: ${c.summary} (Case ID: ${c.slug})`
-        ).join('\n');
-      }
-    }
+    const { messages } = await req.json();
+    const lastMessage = messages[messages.length - 1]?.content || '';
 
-    const stats = await getGlobalStats();
-
-    const result = streamText({
-      model: nvidia.chat(process.env.AI_DEFAULT_MODEL || 'deepseek-ai/deepseek-v4-pro'),
-      system: `You are the Graveyard Keeper AI. You are a forensic startup researcher. 
-      Your tone is professional, analytical, and slightly grim. 
-      You have access to ${stats.totalCases} historical startup autopsies in the archive.
-      
-      ${context ? `Use the following retrieved data from the archive to inform your answer:\n${context}` : 'No specific archive data retrieved for this query. Use your general knowledge of startup failure patterns.'}
-
-      When discussing failures, be specific about burn rates, PMF, and execution errors.
-      Always maintain the "Forensic Intelligence" persona.`,
-      messages,
-      onFinish: async ({ text }) => {
-        if (sessionId) {
-          try {
-            // Save the conversation history including the new assistant message
-            const history = [...messages, { role: 'assistant', content: text }];
-            await appendChatMessage(sessionId, history);
-          } catch (e) {
-            console.error('Failed to save chat session:', e);
-          }
-        }
-      }
+    console.log('[Chat API] Request received:', { 
+      messageCount: messages?.length,
+      lastMessage: lastMessage.substring(0, 50) + '...'
     });
 
-    return result.toUIMessageStreamResponse();
-  } catch (error) {
-    console.error('AI Route Error:', error);
-    return new Response(JSON.stringify({ error: (error as Error).message }), { 
+    // 1. Get relevant context from vector database
+    let context = '';
+    try {
+      const embedding = await ai.embed(lastMessage);
+      const similarCases = await searchCaseStudies(embedding, 3);
+      
+      if (similarCases && similarCases.length > 0) {
+        context = similarCases.map(c => 
+          `Case: ${c.company_name}
+           Summary: ${c.summary}`
+        ).join('\n\n');
+        console.log('[Chat API] RAG context retrieved from', similarCases.length, 'cases');
+      }
+    } catch (ragError) {
+      console.error('[Chat API] RAG error:', ragError);
+      // Fallback: Continue without context rather than failing
+    }
+
+    // 2. Stream response using the toDataStreamResponse (compatible with useChat and manual fetch)
+    const result = streamText({
+      model: nvidia.chat(MODEL_ID),
+      messages,
+      system: `You are the Graveyard Keeper, a forensic investigator for failed startups. 
+      Use the following case studies from our archive to provide evidence-based analysis:
+      
+      ${context}
+      
+      Speak in a professional, clinical, yet slightly somber tone. Focus on forensic facts and patterns of failure.`,
+      onFinish: () => {
+        console.log('[Chat API] Response streaming complete');
+      },
+    });
+
+    return result.toDataStreamResponse();
+
+  } catch (error: any) {
+    console.error('[Chat API] Fatal error:', error);
+    return new Response(JSON.stringify({ error: error.message || 'Internal Server Error' }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 }

@@ -1,6 +1,6 @@
 import { InsightsCharts } from '@/components/insights/InsightsCharts';
 import { getInsightsData } from '@/lib/db/case-studies';
-import { formatCurrency } from '@/lib/utils/format';
+import { formatCurrencyCompact } from '@/lib/utils/format';
 
 export const revalidate = 86400;
 export const dynamic = 'force-dynamic';
@@ -10,7 +10,7 @@ export default async function InsightsPage() {
 
   const kpis = [
     { label: 'LIQUIDATIONS', value: data.totalCases.toLocaleString() },
-    { label: 'CAPITAL_BURNED', value: formatCurrency(data.totalBurned) },
+    { label: 'CAPITAL_BURNED', value: formatCurrencyCompact(data.totalBurned) },
     { label: 'AVG_LIFESPAN', value: `${data.avgLifespan} YRS` },
     { label: 'PATTERNS_IDENTIFIED', value: String(data.patternCount) },
   ];
@@ -49,7 +49,7 @@ export default async function InsightsPage() {
                 color: 'var(--rust-accent)',
               }}
             >
-              SYSTEMIC_ANALYSIS // V.02
+              SYSTEMIC_ANALYSIS // V.<span className="t-num">02</span>
             </span>
             <div
               style={{
@@ -67,7 +67,7 @@ export default async function InsightsPage() {
                 color: 'var(--ink-muted)',
               }}
             >
-              FILES_ANALYZED: {data.totalCases.toLocaleString()}
+              FILES_ANALYZED: <span className="t-num">{data.totalCases.toLocaleString()}</span>
             </span>
           </div>
           <h1 className="t-h1">Failure Insights.</h1>
@@ -102,18 +102,9 @@ export default async function InsightsPage() {
                 gap: '8px',
               }}
             >
-              <div
-                style={{
-                  fontFamily: 'var(--font-cormorant), Georgia, serif',
-                  fontSize: 'clamp(32px, 4vw, 52px)',
-                  fontWeight: '700',
-                  lineHeight: 1,
-                  color: 'var(--ink-black)',
-                  letterSpacing: '-0.02em',
-                }}
-              >
-                {kpi.value}
-              </div>
+                <div className="t-num" style={{ fontSize: 'clamp(32px, 4vw, 52px)', fontWeight: '600', lineHeight: 1, color: 'var(--ink-black)', letterSpacing: '-0.02em' }}>
+                  {kpi.value}
+                </div>
               <div
                 style={{
                   fontFamily: 'var(--font-dm-mono), monospace',
@@ -234,7 +225,7 @@ export default async function InsightsPage() {
                       color: 'var(--rust-accent)',
                     }}
                   >
-                    {insight.code}
+                    <span className="t-num">{insight.code}</span>
                   </span>
                   {insight.icon}
                 </div>
@@ -276,7 +267,7 @@ export default async function InsightsPage() {
                     color: 'var(--ochre-signal)',
                   }}
                 >
-                  {insight.stat}
+                  <span className="t-num">{insight.stat}</span>
                 </div>
               </div>
             ))}

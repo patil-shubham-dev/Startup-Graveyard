@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { CaseStudy } from '@/lib/db/case-studies';
+import { formatCurrencyCompact } from '@/lib/utils/format';
 
 export function CaseCard({ study }: { study: CaseStudy }) {
   return (
@@ -31,7 +32,7 @@ export function CaseCard({ study }: { study: CaseStudy }) {
 
       {/* 9. Stats row */}
       <div className="font-mono text-[9px] text-text-subtle flex items-center gap-3 mb-5 font-bold tracking-wider uppercase">
-        <span className="text-amber-signal/80 underline decoration-amber-signal/20 underline-offset-4">${((study.funding_raised || 0) / 1000000000).toFixed(1)}B_BURNED</span>
+        <span className="text-amber-signal/80 underline decoration-amber-signal/20 underline-offset-4">{formatCurrencyCompact(study.funding_raised || 0)}_BURNED</span>
         <span className="opacity-20">|</span>
         <span>EOL_{study.shutdown_year}</span>
       </div>

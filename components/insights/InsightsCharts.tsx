@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect, useRef } from 'react';
 import {
   BarChart,
   Bar,
@@ -11,6 +12,8 @@ import {
   Cell,
   Tooltip,
 } from 'recharts';
+
+import { formatCurrencyCompact } from '@/lib/utils/format';
 
 interface FailureItem {
   name: string;
@@ -37,11 +40,6 @@ const PIE_COLORS = [
   '#5C4A3A',
 ];
 
-function formatBig(n: number): string {
-  if (n >= 1_000_000_000) return `$${(n / 1_000_000_000).toFixed(1)}B`;
-  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(0)}M`;
-  return `$${n.toLocaleString()}`;
-}
 
 const CustomBarTooltip = ({
   active,
@@ -75,14 +73,14 @@ const CustomBarTooltip = ({
           {label}
         </div>
         <div
+          className="t-num"
           style={{
-            fontFamily: 'var(--font-cormorant), Georgia, serif',
             fontSize: '18px',
-            fontWeight: '700',
+            fontWeight: '600',
             color: 'var(--ink-black)',
           }}
         >
-          {formatBig(payload[0].value)}
+          {formatCurrencyCompact(payload[0].value)}
         </div>
       </div>
     );
@@ -120,10 +118,10 @@ const CustomPieTooltip = ({
           {payload[0].name}
         </div>
         <div
+          className="t-num"
           style={{
-            fontFamily: 'var(--font-cormorant), Georgia, serif',
-            fontSize: '20px',
-            fontWeight: '700',
+            fontSize: '18px',
+            fontWeight: '600',
             color: 'var(--ink-black)',
           }}
         >
@@ -136,6 +134,23 @@ const CustomPieTooltip = ({
 };
 
 export function InsightsCharts({ failureData, fundingTrends }: InsightsChartsProps) {
+  const [isVisible, setIsVisible] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    if (containerRef.current) observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
   const chartFailureData = failureData.length
     ? failureData
     : [
@@ -160,11 +175,13 @@ export function InsightsCharts({ failureData, fundingTrends }: InsightsChartsPro
 
   return (
     <div
+      ref={containerRef}
       style={{
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
         gap: '24px',
         marginBottom: '48px',
+        minHeight: '400px',
       }}
       className="lg:grid-cols-2 grid-cols-1"
     >
@@ -184,28 +201,33 @@ export function InsightsCharts({ failureData, fundingTrends }: InsightsChartsPro
         </div>
 
         <div style={{ height: '220px' }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={chartFailureData}
-                cx="50%"
-                cy="50%"
-                innerRadius="52%"
-                outerRadius="78%"
-                paddingAngle={2}
-                dataKey="value"
-                strokeWidth={0}
-              >
-                {chartFailureData.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={PIE_COLORS[index % PIE_COLORS.length]}
-                  />
-                ))}
-              </Pie>
-              <Tooltip content={<CustomPieTooltip />} />
-            </PieChart>
-          </ResponsiveContainer>
+          {isVisible ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={chartFailureData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius="52%"
+                  outerRadius="78%"
+                  paddingAngle={2}
+                  dataKey="value"
+                  strokeWidth={0}
+                  isAnimationActive={false} // Disable heavy animations
+                >
+                  {chartFailureData.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={PIE_COLORS[index % PIE_COLORS.length]}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomPieTooltip />} />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="skeleton-cream" style={{ height: '100%', width: '100%' }} />
+          )}
         </div>
 
         {/* Legend */}
@@ -270,32 +292,37 @@ export function InsightsCharts({ failureData, fundingTrends }: InsightsChartsPro
         </div>
 
         <div style={{ height: '260px' }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={chartFundingData}
-              barCategoryGap="32%"
-            >
-              <XAxis
-                dataKey="year"
-                tick={{
-                  fontFamily: 'var(--font-dm-mono), monospace',
-                  fontSize: 9,
-                  fill: 'var(--ink-muted)',
-                  letterSpacing: '0.1em',
-                }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis hide />
-              <Tooltip content={<CustomBarTooltip />} />
-              <Bar
-                dataKey="amount"
-                fill="var(--ochre-signal)"
-                radius={[1, 1, 0, 0]}
-                background={{ fill: 'var(--cream-dark)', radius: 1 }}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+          {isVisible ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={chartFundingData}
+                barCategoryGap="32%"
+              >
+                <XAxis
+                  dataKey="year"
+                  tick={{
+                    fontFamily: 'var(--font-dm-mono), monospace',
+                    fontSize: 9,
+                    fill: 'var(--ink-muted)',
+                    letterSpacing: '0.1em',
+                  }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis hide />
+                <Tooltip content={<CustomBarTooltip />} />
+                <Bar
+                  dataKey="amount"
+                  fill="var(--ochre-signal)"
+                  radius={[1, 1, 0, 0]}
+                  background={{ fill: 'var(--cream-dark)', radius: 1 }}
+                  isAnimationActive={false} // Disable heavy animations
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="skeleton-cream" style={{ height: '100%', width: '100%' }} />
+          )}
         </div>
       </div>
     </div>

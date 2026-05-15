@@ -36,7 +36,7 @@ export function FailureDNA({ scores }: FailureDNAProps) {
         }}
       >
         <span>FAILURE_DNA_SCAN</span>
-        <span style={{ color: 'var(--rust-accent)' }}>0% — 100%</span>
+        <span style={{ color: 'var(--rust-accent)' }} className="t-num">0% — 100%</span>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -60,9 +60,10 @@ export function FailureDNA({ scores }: FailureDNAProps) {
                 {key}
               </span>
               <span
+                className="t-num"
                 style={{
-                  fontFamily: 'var(--font-dm-mono), monospace',
-                  fontSize: '9px',
+                  fontSize: '11px',
+                  fontWeight: '600',
                   color: 'var(--ink-muted)',
                 }}
               >

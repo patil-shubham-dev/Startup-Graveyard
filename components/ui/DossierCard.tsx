@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { formatCurrency } from '@/lib/utils/format';
+import { formatCurrencyCompact } from '@/lib/utils/format';
 
 interface DossierCardProps {
   id: string;
@@ -27,7 +27,7 @@ export function DossierCard({
   slug,
 }: DossierCardProps) {
   const displayBurned =
-    typeof burnedAmount === 'number' ? formatCurrency(burnedAmount) : burnedAmount;
+    typeof burnedAmount === 'number' ? formatCurrencyCompact(burnedAmount) : burnedAmount;
 
   return (
     <Link
@@ -48,22 +48,21 @@ export function DossierCard({
           gap: '0',
           position: 'relative',
           overflow: 'hidden',
-          transition: 'all 0.2s ease',
+          transition: 'all 0.25s cubic-bezier(0.22, 1, 0.36, 1)',
           cursor: 'crosshair',
+          willChange: 'transform, box-shadow',
         }}
         className="dossier-hover-card"
       >
-        {/* Paper grain texture */}
+        {/* Paper grain texture — simplified for performance */}
         <div
           style={{
             position: 'absolute',
             inset: 0,
             pointerEvents: 'none',
-            opacity: 0.06,
-            backgroundImage:
-              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E\")",
-            backgroundRepeat: 'repeat',
-            backgroundSize: '150px 150px',
+            opacity: 0.03,
+            backgroundImage: 'radial-gradient(var(--ink-black) 0.5px, transparent 0.5px)',
+            backgroundSize: '4px 4px',
           }}
         />
 
@@ -86,7 +85,7 @@ export function DossierCard({
                 color: 'var(--ink-muted)',
               }}
             >
-              {category} / {id}
+              {category} / <span className="t-num">{id}</span>
             </span>
             <span className="stamp-closed">{status}</span>
           </div>
@@ -151,12 +150,13 @@ export function DossierCard({
                 CAPITAL LOST
               </div>
               <div
+                className="t-num"
                 style={{
-                  fontFamily: 'var(--font-cormorant), Georgia, serif',
                   fontSize: '22px',
-                  fontWeight: '700',
+                  fontWeight: '600',
                   color: 'var(--rust-accent)',
                   lineHeight: 1,
+                  letterSpacing: '-0.01em',
                 }}
               >
                 {displayBurned}
@@ -176,12 +176,13 @@ export function DossierCard({
                 YEAR CLOSED
               </div>
               <div
+                className="t-num"
                 style={{
-                  fontFamily: 'var(--font-cormorant), Georgia, serif',
                   fontSize: '22px',
-                  fontWeight: '700',
+                  fontWeight: '600',
                   color: 'var(--ink-black)',
                   lineHeight: 1,
+                  letterSpacing: '-0.01em',
                 }}
               >
                 {eolYear}
