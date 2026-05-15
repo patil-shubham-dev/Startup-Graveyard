@@ -19,6 +19,8 @@ interface SidebarCase {
   shutdown_year: number | null;
 }
 
+const STORAGE_KEY = 'sg_chat_history';
+
 export default function AskTheGraveyard() {
   const [localInput, setLocalInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
@@ -29,9 +31,26 @@ export default function AskTheGraveyard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // 1. Load history from localStorage on mount
   useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        setMessages(JSON.parse(saved));
+      } catch (e) {
+        console.error('Failed to parse chat history', e);
+      }
+    }
+    
     getCaseListForSidebar().then(setSidebarCases).catch(() => setSidebarCases([]));
   }, []);
+
+  // 2. Save history to localStorage on change
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+    }
+  }, [messages]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -62,7 +81,6 @@ export default function AskTheGraveyard() {
       setMessages([...newMessages, assistantMessage]);
     } catch (error) {
       console.error('AI Chat Error:', error);
-      // Add error message to chat
       setMessages([...newMessages, { role: 'assistant', content: "I apologize, but my connection to the archive has been interrupted. Please try again." }]);
     } finally {
       setIsLoading(false);
@@ -70,8 +88,13 @@ export default function AskTheGraveyard() {
   };
 
   const onManualSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault(); // Prevents reload
     sendMessage(localInput);
+  };
+
+  const clearHistory = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setMessages([]);
   };
 
   const messageCount = messages.length;
@@ -85,7 +108,7 @@ export default function AskTheGraveyard() {
         overflow: 'hidden',
       }}
     >
-      {/* LEFT SIDEBAR — Desktop: always visible, Mobile: toggle */}
+      {/* LEFT SIDEBAR */}
       {sidebarOpen && (
         <div
           className="lg:hidden"
@@ -138,15 +161,21 @@ export default function AskTheGraveyard() {
           >
             NEURAL_ARCHIVE
           </span>
-          <span
+          <button 
+            onClick={clearHistory}
             style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
               fontFamily: 'var(--font-dm-mono), monospace',
               fontSize: '9px',
-              color: 'var(--ink-muted)',
+              color: 'var(--rust-accent)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
             }}
           >
-            {sidebarCases.length} FILES
-          </span>
+            CLEAR [×]
+          </button>
         </div>
 
         <div
@@ -166,7 +195,8 @@ export default function AskTheGraveyard() {
             sidebarCases.map((c) => (
               <button
                 key={c.id}
-                onClick={() => {
+                onClick={(e) => {
+                  e.preventDefault(); // Prevents any accidental reload
                   setActiveCase(c.id);
                   sendMessage(`Tell me about ${c.company_name}`);
                   setSidebarOpen(false);
@@ -394,7 +424,10 @@ export default function AskTheGraveyard() {
                 ].map((hint) => (
                   <button
                     key={hint}
-                    onClick={() => sendMessage(hint)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      sendMessage(hint);
+                    }}
                     style={{
                       padding: '10px 12px',
                       backgroundColor: 'var(--cream-base)',
@@ -417,7 +450,7 @@ export default function AskTheGraveyard() {
             </div>
           )}
 
-          {messages.map((m: any, idx: number) => (
+          {messages.map((m: Message, idx: number) => (
             <div key={idx} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
               <div style={{ maxWidth: '75%' }}>
                 {m.role === 'assistant' && (
