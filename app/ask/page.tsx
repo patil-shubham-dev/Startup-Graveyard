@@ -3,7 +3,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useChat } from '@ai-sdk/react';
+import { useChat } from 'ai/react';
 import { useRef, useEffect, useState } from 'react';
 import { getCaseListForSidebar } from '@/lib/db/case-studies';
 
@@ -16,16 +16,20 @@ interface SidebarCase {
 }
 
 export default function AskTheGraveyard() {
-  const [sessionId] = useState<string | null>(null);
-  const { messages, sendMessage, status } = useChat({
-    body: { sessionId }
-  } as any) as any;
+  const [localInput, setLocalInput] = useState('');
+  const { messages, append, isLoading, status } = useChat({
+    body: { sessionId: null },
+    onResponse: (response) => {
+      console.log('AI Response received:', response.status);
+    },
+    onError: (error) => {
+      console.error('AI Chat Error:', error);
+    }
+  });
 
-  const [input, setInput] = useState('');
   const [sidebarCases, setSidebarCases] = useState<SidebarCase[]>([]);
   const [activeCase, setActiveCase] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const isLoading = status === 'submitted' || status === 'streaming';
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -37,6 +41,16 @@ export default function AskTheGraveyard() {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  const onManualSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const val = localInput.trim();
+    if (!val || isLoading) return;
+
+    // Manually append the message to bypass sync issues
+    append({ role: 'user', content: val });
+    setLocalInput('');
+  };
 
   const messageCount = messages.length;
 
@@ -50,7 +64,6 @@ export default function AskTheGraveyard() {
       }}
     >
       {/* LEFT SIDEBAR — Desktop: always visible, Mobile: toggle */}
-      {/* Mobile overlay */}
       {sidebarOpen && (
         <div
           className="lg:hidden"
@@ -81,7 +94,6 @@ export default function AskTheGraveyard() {
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}
       >
-        {/* Sidebar header */}
         <div
           style={{
             padding: '20px',
@@ -115,7 +127,6 @@ export default function AskTheGraveyard() {
           </span>
         </div>
 
-        {/* Case list */}
         <div
           style={{
             flex: 1,
@@ -124,14 +135,7 @@ export default function AskTheGraveyard() {
           }}
         >
           {sidebarCases.length === 0 ? (
-            <div
-              style={{
-                padding: '20px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '8px',
-              }}
-            >
+            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="skeleton-cream" style={{ height: '40px', borderRadius: '1px' }} />
               ))}
@@ -142,7 +146,7 @@ export default function AskTheGraveyard() {
                 key={c.id}
                 onClick={() => {
                   setActiveCase(c.id);
-                  sendMessage({ text: `Tell me about ${c.company_name}` });
+                  append({ role: 'user', content: `Tell me about ${c.company_name}` });
                   setSidebarOpen(false);
                 }}
                 style={{
@@ -211,7 +215,6 @@ export default function AskTheGraveyard() {
           minWidth: 0,
         }}
       >
-        {/* Top status bar */}
         <div
           style={{
             backgroundColor: 'var(--cream-deep)',
@@ -225,9 +228,7 @@ export default function AskTheGraveyard() {
             gap: '16px',
           }}
         >
-          {/* Left: Mobile sidebar toggle + status */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {/* Mobile toggle */}
             <button
               className="lg:hidden"
               onClick={() => setSidebarOpen(true)}
@@ -253,7 +254,7 @@ export default function AskTheGraveyard() {
                   width: '6px',
                   height: '6px',
                   borderRadius: '50%',
-                  backgroundColor: 'var(--sage-neutral)',
+                  backgroundColor: isLoading ? 'var(--rust-accent)' : 'var(--sage-neutral)',
                   flexShrink: 0,
                 }}
               />
@@ -266,38 +267,19 @@ export default function AskTheGraveyard() {
                   color: 'var(--ink-muted)',
                 }}
               >
-                DIRECT_LINK_ACTIVE
+                {isLoading ? 'ANALYZING_DATA' : 'DIRECT_LINK_ACTIVE'}
               </span>
             </div>
           </div>
 
-          {/* Right: Stats */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <span
-              style={{
-                fontFamily: 'var(--font-dm-mono), monospace',
-                fontSize: '9px',
-                color: 'var(--ink-muted)',
-              }}
-            >
+            <span style={{ fontFamily: 'var(--font-dm-mono), monospace', fontSize: '9px', color: 'var(--ink-muted)' }}>
               STABILITY: 99.4%
             </span>
-            <span
-              style={{
-                fontFamily: 'var(--font-dm-mono), monospace',
-                fontSize: '9px',
-                color: 'var(--ink-muted)',
-              }}
-            >
-              LATENCY: 42MS
+            <span style={{ fontFamily: 'var(--font-dm-mono), monospace', fontSize: '9px', color: 'var(--ink-muted)' }}>
+              LATENCY: {isLoading ? '---' : '42MS'}
             </span>
-            <span
-              style={{
-                fontFamily: 'var(--font-dm-mono), monospace',
-                fontSize: '9px',
-                color: 'var(--rust-accent)',
-              }}
-            >
+            <span style={{ fontFamily: 'var(--font-dm-mono), monospace', fontSize: '9px', color: 'var(--rust-accent)' }}>
               INTERROGATED // {String(messageCount).padStart(2, '0')}
             </span>
           </div>
@@ -330,7 +312,6 @@ export default function AskTheGraveyard() {
                 gap: '0',
               }}
             >
-              {/* SG monogram */}
               <div
                 style={{
                   width: '56px',
@@ -382,15 +363,7 @@ export default function AskTheGraveyard() {
               &quot;I have indexed the patterns of collapse. Describe your venture, and I will perform an autopsy.&quot;
               </p>
 
-              {/* Quick prompts */}
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: '8px',
-                  width: '100%',
-                }}
-              >
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', width: '100%' }}>
                 {[
                   'Why did Quibi fail?',
                   'What kills most startups?',
@@ -399,7 +372,7 @@ export default function AskTheGraveyard() {
                 ].map((hint) => (
                   <button
                     key={hint}
-                    onClick={() => sendMessage({ text: hint })}
+                    onClick={() => append({ role: 'user', content: hint })}
                     style={{
                       padding: '10px 12px',
                       backgroundColor: 'var(--cream-base)',
@@ -423,13 +396,7 @@ export default function AskTheGraveyard() {
           )}
 
           {messages.map((m: any, idx: number) => (
-            <div
-              key={m.id || idx}
-              style={{
-                display: 'flex',
-                justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start',
-              }}
-            >
+            <div key={m.id || idx} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
               <div style={{ maxWidth: '75%' }}>
                 {m.role === 'assistant' && (
                   <div
@@ -449,24 +416,20 @@ export default function AskTheGraveyard() {
                   style={{
                     padding: '14px 18px',
                     borderRadius: '1px',
-                    backgroundColor:
-                      m.role === 'user' ? 'var(--ink-black)' : 'var(--cream-deep)',
+                    backgroundColor: m.role === 'user' ? 'var(--ink-black)' : 'var(--cream-deep)',
                     border: `1px solid ${m.role === 'user' ? 'var(--ink-black)' : 'var(--cream-dark)'}`,
                   }}
                 >
                   <div
                     style={{
-                      fontFamily:
-                        m.role === 'user'
-                          ? 'var(--font-dm-mono), monospace'
-                          : 'var(--font-source-serif), Georgia, serif',
+                      fontFamily: m.role === 'user' ? 'var(--font-dm-mono), monospace' : 'var(--font-source-serif), Georgia, serif',
                       fontSize: m.role === 'user' ? '12px' : '14px',
                       lineHeight: m.role === 'user' ? 1.5 : 1.75,
                       color: m.role === 'user' ? 'var(--cream-base)' : 'var(--ink-black)',
                       whiteSpace: 'pre-wrap',
                     }}
                   >
-                    {m.content || (m.parts && m.parts.map((p: any) => p.type === 'text' ? p.text : '').join(''))}
+                    {m.content}
                   </div>
                 </div>
               </div>
@@ -529,12 +492,7 @@ export default function AskTheGraveyard() {
           }}
         >
           <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (!input.trim() || isLoading) return;
-              sendMessage({ text: input });
-              setInput('');
-            }}
+            onSubmit={onManualSubmit}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -544,8 +502,8 @@ export default function AskTheGraveyard() {
             }}
           >
             <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
+              value={localInput}
+              onChange={(e) => setLocalInput(e.target.value)}
               placeholder="Input query for forensic analysis..."
               style={{
                 flex: 1,
@@ -559,9 +517,9 @@ export default function AskTheGraveyard() {
             />
             <button
               type="submit"
-              disabled={isLoading || !input.trim()}
+              disabled={isLoading || !localInput.trim()}
               style={{
-                backgroundColor: input.trim() && !isLoading ? 'var(--rust-accent)' : 'var(--cream-dark)',
+                backgroundColor: (localInput.trim() && !isLoading) ? 'var(--rust-accent)' : 'var(--cream-dark)',
                 border: 'none',
                 borderRadius: '1px',
                 width: '32px',
@@ -569,9 +527,9 @@ export default function AskTheGraveyard() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                cursor: input.trim() && !isLoading ? 'pointer' : 'default',
+                cursor: (localInput.trim() && !isLoading) ? 'pointer' : 'default',
                 transition: 'background-color 0.2s ease',
-                color: input.trim() && !isLoading ? 'var(--cream-base)' : 'var(--ink-muted)',
+                color: (localInput.trim() && !isLoading) ? 'var(--cream-base)' : 'var(--ink-muted)',
                 flexShrink: 0,
                 fontSize: '14px',
               }}

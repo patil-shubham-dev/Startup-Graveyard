@@ -1,7 +1,7 @@
 'use client';
 
 import { CaseStudy } from '@/lib/db/case-studies';
-import { formatCurrency } from '@/lib/utils/format';
+import { formatCurrencyCompact } from '@/lib/utils/format';
 
 export function DossierHero({ study }: { study: CaseStudy }) {
   return (
@@ -47,7 +47,7 @@ export function DossierHero({ study }: { study: CaseStudy }) {
               color: 'var(--rust-accent)',
             }}
           >
-            {study.case_number}
+            <span className="t-num">{study.case_number}</span>
           </span>
           <div
             style={{
@@ -91,7 +91,7 @@ export function DossierHero({ study }: { study: CaseStudy }) {
           }}
         >
           {[
-            { label: 'CAPITAL_BURNED', value: formatCurrency(study.funding_raised || 0) },
+            { label: 'CAPITAL_BURNED', value: formatCurrencyCompact(study.funding_raised || 0) },
             { label: 'LIFESPAN', value: `${(study.shutdown_year || 0) - (study.founded_year || 0)} YRS` },
             { label: 'LOCATION', value: study.location || 'REMOTE' },
             { label: 'EXIT_YEAR', value: String(study.shutdown_year || '—') },
@@ -109,17 +109,17 @@ export function DossierHero({ study }: { study: CaseStudy }) {
               >
                 {stat.label}
               </div>
-              <div
-                style={{
-                  fontFamily: 'var(--font-cormorant), Georgia, serif',
-                  fontSize: '28px',
-                  fontWeight: '700',
-                  color: stat.label === 'CAPITAL_BURNED' ? 'var(--rust-accent)' : 'var(--ink-black)',
-                  lineHeight: 1,
-                }}
-              >
-                {stat.value}
-              </div>
+                <div
+                  className="t-num"
+                  style={{
+                    fontSize: '28px',
+                    fontWeight: '600',
+                    color: stat.label === 'CAPITAL_BURNED' ? 'var(--rust-accent)' : 'var(--ink-black)',
+                    lineHeight: 1,
+                  }}
+                >
+                  {stat.value}
+                </div>
             </div>
           ))}
         </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { formatCurrencyCompact } from '@/lib/utils/format';
 
 interface StatsBarProps {
   totalCases: number;
@@ -9,13 +10,8 @@ interface StatsBarProps {
   patternCount: number;
 }
 
-function formatBig(n: number): string {
-  if (n >= 1_000_000_000) return `$${(n / 1_000_000_000).toFixed(1)}B`;
-  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(0)}M`;
-  return `$${n.toLocaleString()}`;
-}
 
-function useCountUp(target: number, duration = 1200, isVisible: boolean) {
+function useCountUp(target: number, duration = 1400, isVisible: boolean) {
   const [count, setCount] = useState(0);
   const startedRef = useRef(false);
 
@@ -26,7 +22,6 @@ function useCountUp(target: number, duration = 1200, isVisible: boolean) {
     const tick = (now: number) => {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      // ease-out cubic
       const eased = 1 - Math.pow(1 - progress, 3);
       setCount(Math.round(eased * target));
       if (progress < 1) requestAnimationFrame(tick);
@@ -48,25 +43,27 @@ function StatItem({
   displayValue?: string;
   isVisible: boolean;
 }) {
-  const count = useCountUp(rawValue, 1200, isVisible);
+  const count = useCountUp(rawValue, 1400, isVisible);
   const shown = displayValue ?? String(count);
 
   return (
     <div
       style={{
         flex: 1,
-        padding: '28px 32px',
+        minWidth: 0,
+        padding: '24px 20px',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         gap: '8px',
+        textAlign: 'center',
       }}
     >
       <div
+        className="t-num"
         style={{
-          fontFamily: 'var(--font-cormorant), Georgia, serif',
-          fontSize: 'clamp(32px, 4vw, 48px)',
-          fontWeight: '700',
+          fontSize: 'clamp(28px, 3.5vw, 44px)',
+          fontWeight: '600',
           lineHeight: 1,
           color: 'var(--ink-black)',
           letterSpacing: '-0.02em',
@@ -77,12 +74,12 @@ function StatItem({
       <div
         style={{
           fontFamily: 'var(--font-dm-mono), monospace',
-          fontSize: '9px',
+          fontSize: '8.5px',
           fontWeight: '500',
           textTransform: 'uppercase',
-          letterSpacing: '0.14em',
+          letterSpacing: '0.16em',
           color: 'var(--ink-muted)',
-          textAlign: 'center',
+          whiteSpace: 'nowrap',
         }}
       >
         {label}
@@ -103,7 +100,7 @@ export function StatsBar({ totalCases, totalBurned, avgLifespan, patternCount }:
           observer.disconnect();
         }
       },
-      { threshold: 0.3 }
+      { threshold: 0.4 }
     );
     if (ref.current) observer.observe(ref.current);
     return () => observer.disconnect();
@@ -118,56 +115,52 @@ export function StatsBar({ totalCases, totalBurned, avgLifespan, patternCount }:
       style={{
         width: '100%',
         backgroundColor: 'var(--cream-deep)',
-        borderTop: '1.5px dashed var(--cream-dark)',
-        borderBottom: '1.5px dashed var(--cream-dark)',
+        borderTop: '1px solid var(--cream-dark)',
+        borderBottom: '1px solid var(--cream-dark)',
+        position: 'relative',
+        overflow: 'hidden',
       }}
     >
+      {/* Fine dashed accent lines */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          inset: 0,
+          pointerEvents: 'none',
+          opacity: 0.4,
+          backgroundImage: 'repeating-linear-gradient(90deg, var(--cream-dark) 0, var(--cream-dark) 1px, transparent 1px, transparent 25%)',
+          backgroundSize: '25% 100%',
+        }}
+      />
+
       <div
         className="sg-container"
         style={{
           display: 'flex',
-          flexWrap: 'wrap',
+          flexWrap: 'nowrap',
           alignItems: 'stretch',
+          position: 'relative',
+          zIndex: 1,
         }}
       >
-        {/* Stat 1: Published Cases */}
-        <StatItem
-          label="PUBLISHED CASES"
-          rawValue={totalCases}
-          isVisible={isVisible}
-        />
-
-        {/* Divider */}
-        <div style={{ width: '1.5px', background: 'var(--cream-dark)', margin: '16px 0', flexShrink: 0 }} />
-
-        {/* Stat 2: Capital Lost */}
+        <StatItem label="PUBLISHED CASES" rawValue={totalCases} isVisible={isVisible} />
+        <div style={{ width: '1px', background: 'var(--cream-dark)', margin: '16px 0', flexShrink: 0 }} />
         <StatItem
           label="CAPITAL LOST"
           rawValue={burnedNum}
-          displayValue={isVisible ? formatBig(burnedNum) : '$0'}
+          displayValue={isVisible ? formatCurrencyCompact(burnedNum) : '$0'}
           isVisible={isVisible}
         />
-
-        {/* Divider */}
-        <div style={{ width: '1.5px', background: 'var(--cream-dark)', margin: '16px 0', flexShrink: 0 }} />
-
-        {/* Stat 3: Avg Lifespan */}
+        <div style={{ width: '1px', background: 'var(--cream-dark)', margin: '16px 0', flexShrink: 0 }} />
         <StatItem
           label="AVG. LIFESPAN (YRS)"
           rawValue={Math.round(lifespanNum * 10)}
           displayValue={isVisible ? `${lifespanNum.toFixed(1)} YRS` : '0 YRS'}
           isVisible={isVisible}
         />
-
-        {/* Divider */}
-        <div style={{ width: '1.5px', background: 'var(--cream-dark)', margin: '16px 0', flexShrink: 0 }} />
-
-        {/* Stat 4: Failure Patterns */}
-        <StatItem
-          label="FAILURE PATTERNS"
-          rawValue={patternCount}
-          isVisible={isVisible}
-        />
+        <div style={{ width: '1px', background: 'var(--cream-dark)', margin: '16px 0', flexShrink: 0 }} />
+        <StatItem label="FAILURE PATTERNS" rawValue={patternCount} isVisible={isVisible} />
       </div>
     </div>
   );

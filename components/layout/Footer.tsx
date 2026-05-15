@@ -1,5 +1,7 @@
 'use client';
 
+import { formatCurrencyCompact } from '@/lib/utils/format';
+
 interface FooterProps {
   stats?: {
     totalCases: number;
@@ -7,11 +9,6 @@ interface FooterProps {
   };
 }
 
-function formatBig(n: number): string {
-  if (n >= 1_000_000_000) return `$${(n / 1_000_000_000).toFixed(1)}B`;
-  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(0)}M`;
-  return `$${n.toLocaleString()}`;
-}
 
 export function Footer({ stats }: FooterProps) {
   const currentYear = new Date().getFullYear();
@@ -108,7 +105,7 @@ export function Footer({ stats }: FooterProps) {
           >
             {[
               { label: 'CASES_ARCHIVED', value: String(stats?.totalCases || 0) },
-              { label: 'CAPITAL_DESTROYED', value: formatBig(stats?.totalBurned || 0) },
+              { label: 'CAPITAL_DESTROYED', value: formatCurrencyCompact(stats?.totalBurned || 0) },
               { label: 'STATUS', value: 'OPERATIONAL' },
             ].map((item, i) => (
               <div
@@ -133,10 +130,10 @@ export function Footer({ stats }: FooterProps) {
                   {item.label}
                 </span>
                 <span
+                  className="t-num"
                   style={{
-                    fontFamily: 'var(--font-cormorant), Georgia, serif',
                     fontSize: '22px',
-                    fontWeight: '700',
+                    fontWeight: '600',
                     color: item.label === 'STATUS' ? 'var(--sage-neutral)' : 'var(--ink-black)',
                     lineHeight: 1,
                   }}
@@ -169,7 +166,7 @@ export function Footer({ stats }: FooterProps) {
               color: 'var(--ink-muted)',
             }}
           >
-            © {currentYear} Startup Graveyard. All rights reserved.
+            © <span className="t-num">{currentYear}</span> Startup Graveyard. All rights reserved.
           </span>
           <span
             style={{

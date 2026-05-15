@@ -30,6 +30,9 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const stats = await getGlobalStats();
     
+    // Ensure we are using the most stable model
+    const MODEL_ID = process.env.AI_DEFAULT_MODEL || 'nvidia/llama-3.1-nemotron-70b-instruct';
+    
     if (body.action === 'GET_QUESTIONS') {
       const prompt = `
         You are the Graveyard Keeper AI. A founder just submitted a startup pitch: "${body.pitch}".

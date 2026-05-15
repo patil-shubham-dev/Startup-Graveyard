@@ -270,7 +270,7 @@ export default function PreMortemPage() {
                   marginBottom: '4px',
                 }}
               >
-                {s.value}
+                <span className="t-num">{s.value}</span>
               </div>
               <div
                 style={{
@@ -333,7 +333,7 @@ export default function PreMortemPage() {
                         whiteSpace: 'nowrap',
                       }}
                     >
-                      {label}
+                      {label.split('_')[0]}_<span className="t-num">{label.split('_')[1]}</span>
                     </span>
                     {i < 2 && (
                       <div
@@ -485,7 +485,7 @@ export default function PreMortemPage() {
                             flexShrink: 0,
                           }}
                         >
-                          VEC_0{i + 1}
+                          VEC_<span className="t-num">0{i + 1}</span>
                         </span>
                         <div style={{ flex: 1, height: '1px', borderTop: '1px dashed var(--cream-dark)' }} />
                       </div>
@@ -663,7 +663,7 @@ export default function PreMortemPage() {
                       color: 'var(--ink-muted)',
                     }}
                   >
-                    #PRM-{reportId}
+                    #PRM-<span className="t-num">{reportId}</span>
                   </div>
                 </div>
 
@@ -685,7 +685,7 @@ export default function PreMortemPage() {
                     <div style={{ fontFamily: 'var(--font-dm-mono)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--ink-muted)', marginBottom: '6px' }}>
                       RISK_SCORE
                     </div>
-                    <div style={{ fontFamily: 'var(--font-cormorant)', fontSize: '40px', fontWeight: '700', color: 'var(--rust-accent)', lineHeight: 1 }}>
+                    <div className="t-num" style={{ fontSize: '40px', fontWeight: '600', color: 'var(--rust-accent)', lineHeight: 1 }}>
                       {report.risk_score}%
                     </div>
                   </div>
@@ -729,7 +729,7 @@ export default function PreMortemPage() {
                     }}
                   >
                     <div style={{ fontFamily: 'var(--font-dm-mono)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--rust-accent)', marginBottom: '8px' }}>
-                      VECTOR_0{i + 1} {'//'} {risk.category}
+                      VECTOR_<span className="t-num">0{i + 1}</span> {'//'} {risk.category}
                     </div>
                     <h4 style={{ fontFamily: 'var(--font-cormorant)', fontSize: '18px', fontWeight: '600', color: 'var(--ink-black)', marginBottom: '12px', fontStyle: 'italic' }}>
                       {risk.description}

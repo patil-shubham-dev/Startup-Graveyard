@@ -36,9 +36,10 @@ export function IntelKicker({ label, figure }: IntelKickerProps) {
         </span>
         {figure && (
           <span
+            className="t-num"
             style={{
-              fontFamily: 'var(--font-dm-mono), monospace',
-              fontSize: '10px',
+              fontSize: '11px',
+              fontWeight: '600',
               color: 'var(--ink-muted)',
               opacity: 0.6,
             }}

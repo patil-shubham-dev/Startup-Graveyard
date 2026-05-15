@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { formatCurrencyCompact } from '@/lib/utils/format';
 
 interface FailureItem {
   name: string;
@@ -18,11 +19,6 @@ interface InsightsPreviewProps {
   topLiquidations?: LiquidationItem[];
 }
 
-function formatBig(n: number): string {
-  if (n >= 1_000_000_000) return `$${(n / 1_000_000_000).toFixed(1)}B`;
-  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(0)}M`;
-  return `$${n.toLocaleString()}`;
-}
 
 function HorizontalBars({ data, title }: { data: FailureItem[]; title: string }) {
   const barRef = useRef<HTMLDivElement>(null);
@@ -52,14 +48,14 @@ function HorizontalBars({ data, title }: { data: FailureItem[]; title: string })
           fontFamily: 'var(--font-dm-mono), monospace',
           fontSize: '9px',
           textTransform: 'uppercase',
-          letterSpacing: '0.14em',
+          letterSpacing: '0.16em',
           color: 'var(--ink-muted)',
-          marginBottom: '20px',
+          marginBottom: '24px',
         }}
       >
         {title}
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {data.slice(0, 5).map((item) => {
           const pct = Math.round((item.value / max) * 100);
           return (
@@ -68,7 +64,7 @@ function HorizontalBars({ data, title }: { data: FailureItem[]; title: string })
                 style={{
                   display: 'flex',
                   justifyContent: 'space-between',
-                  marginBottom: '5px',
+                  marginBottom: '7px',
                 }}
               >
                 <span
@@ -87,9 +83,10 @@ function HorizontalBars({ data, title }: { data: FailureItem[]; title: string })
                   {item.name}
                 </span>
                 <span
+                  className="t-num"
                   style={{
-                    fontFamily: 'var(--font-dm-mono), monospace',
-                    fontSize: '9px',
+                    fontSize: '11px',
+                    fontWeight: '600',
                     color: 'var(--ink-muted)',
                     flexShrink: 0,
                   }}
@@ -100,9 +97,9 @@ function HorizontalBars({ data, title }: { data: FailureItem[]; title: string })
               <div
                 style={{
                   width: '100%',
-                  height: '6px',
+                  height: '5px',
                   backgroundColor: 'var(--cream-dark)',
-                  borderRadius: '1px',
+                  borderRadius: '2px',
                   overflow: 'hidden',
                 }}
               >
@@ -113,8 +110,8 @@ function HorizontalBars({ data, title }: { data: FailureItem[]; title: string })
                     width: '0%',
                     height: '100%',
                     backgroundColor: 'var(--ochre-signal)',
-                    borderRadius: '1px',
-                    transition: 'width 0.8s cubic-bezier(0.22, 1, 0.36, 1)',
+                    borderRadius: '2px',
+                    transition: 'width 0.9s cubic-bezier(0.22, 1, 0.36, 1)',
                   }}
                 />
               </div>
@@ -128,15 +125,36 @@ function HorizontalBars({ data, title }: { data: FailureItem[]; title: string })
 
 export function InsightsPreview({ failureData = [], topLiquidations = [] }: InsightsPreviewProps) {
   return (
-    <section style={{ backgroundColor: 'var(--cream-base)' }}>
-      <div className="sg-container section-pad">
+    <section
+      style={{
+        backgroundColor: 'var(--cream-base)',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Subtle warm radial highlight */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          top: '30%',
+          left: '60%',
+          width: '600px',
+          height: '400px',
+          background: 'radial-gradient(ellipse, rgba(200,146,42,0.05) 0%, transparent 70%)',
+          pointerEvents: 'none',
+          transform: 'translate(-50%, -50%)',
+        }}
+      />
+
+      <div className="sg-container section-pad" style={{ position: 'relative', zIndex: 1 }}>
         {/* Section label */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: '12px',
-            marginBottom: '12px',
+            marginBottom: '16px',
           }}
         >
           <span
@@ -145,16 +163,16 @@ export function InsightsPreview({ failureData = [], topLiquidations = [] }: Insi
               fontSize: '10px',
               fontWeight: '500',
               textTransform: 'uppercase',
-              letterSpacing: '0.14em',
+              letterSpacing: '0.16em',
               color: 'var(--rust-accent)',
             }}
           >
-            SIGNALS AT A GLANCE / 003
+            SIGNALS AT A GLANCE / <span className="t-num">003</span>
           </span>
           <div style={{ height: '1px', flex: 1, background: 'var(--cream-dark)' }} />
         </div>
 
-        <h2 className="t-h2" style={{ marginBottom: '48px', maxWidth: '20ch' }}>
+        <h2 className="t-h2" style={{ marginBottom: '40px', maxWidth: '16ch', lineHeight: 1.02 }}>
           Failure, quantified.
         </h2>
 
@@ -162,44 +180,45 @@ export function InsightsPreview({ failureData = [], topLiquidations = [] }: Insi
         <div
           style={{
             display: 'grid',
-            gap: '32px',
-            alignItems: 'start',
+            gap: '24px',
+            alignItems: 'stretch',
           }}
           className="lg:grid-cols-[60fr_40fr]"
         >
-          {/* LEFT: Two bar charts */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {/* Chart 1: Failure distribution */}
-            <div
-              className="chart-card"
-              style={{ padding: '28px' }}
-            >
-              <HorizontalBars
-                data={failureData.length ? failureData : [
-                  { name: 'No Market Need', value: 42 },
-                  { name: 'Cash Exhaustion', value: 29 },
-                  { name: 'Team Fracture', value: 23 },
-                  { name: 'Competition', value: 19 },
-                  { name: 'Pricing Failure', value: 18 },
-                ]}
-                title="PRIMARY CAUSE DISTRIBUTION"
-              />
-            </div>
+          {/* LEFT: Bar chart */}
+          <div
+            className="chart-card"
+            style={{ padding: '36px' }}
+          >
+            <HorizontalBars
+              data={
+                failureData.length
+                  ? failureData
+                  : [
+                      { name: 'No Market Need', value: 42 },
+                      { name: 'Cash Exhaustion', value: 29 },
+                      { name: 'Team Fracture', value: 23 },
+                      { name: 'Competition', value: 19 },
+                      { name: 'Pricing Failure', value: 18 },
+                    ]
+              }
+              title="PRIMARY CAUSE DISTRIBUTION"
+            />
           </div>
 
           {/* RIGHT: Largest capital losses */}
           <div
             className="chart-card"
-            style={{ padding: '28px' }}
+            style={{ padding: '36px' }}
           >
             <div
               style={{
                 fontFamily: 'var(--font-dm-mono), monospace',
                 fontSize: '9px',
                 textTransform: 'uppercase',
-                letterSpacing: '0.14em',
+                letterSpacing: '0.16em',
                 color: 'var(--ink-muted)',
-                marginBottom: '20px',
+                marginBottom: '24px',
               }}
             >
               LARGEST CAPITAL LOSSES
@@ -221,17 +240,19 @@ export function InsightsPreview({ failureData = [], topLiquidations = [] }: Insi
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    padding: '14px 0',
+                    padding: '16px 0',
                     borderBottom: '1.5px dashed var(--cream-dark)',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <span
+                      className="t-num"
                       style={{
-                        fontFamily: 'var(--font-dm-mono), monospace',
-                        fontSize: '9px',
+                        fontSize: '11px',
+                        fontWeight: '600',
                         color: 'var(--rust-accent)',
-                        minWidth: '16px',
+                        minWidth: '18px',
+                        letterSpacing: '0.08em',
                       }}
                     >
                       {String(i + 1).padStart(2, '0')}
@@ -240,10 +261,11 @@ export function InsightsPreview({ failureData = [], topLiquidations = [] }: Insi
                       <div
                         style={{
                           fontFamily: 'var(--font-cormorant), Georgia, serif',
-                          fontSize: '18px',
+                          fontSize: '19px',
                           fontWeight: '700',
                           color: 'var(--ink-black)',
                           lineHeight: 1,
+                          letterSpacing: '-0.01em',
                         }}
                       >
                         {item.name}
@@ -253,9 +275,9 @@ export function InsightsPreview({ failureData = [], topLiquidations = [] }: Insi
                           fontFamily: 'var(--font-dm-mono), monospace',
                           fontSize: '8px',
                           textTransform: 'uppercase',
-                          letterSpacing: '0.1em',
+                          letterSpacing: '0.12em',
                           color: 'var(--ink-muted)',
-                          marginTop: '2px',
+                          marginTop: '3px',
                         }}
                       >
                         {item.reason}
@@ -263,14 +285,15 @@ export function InsightsPreview({ failureData = [], topLiquidations = [] }: Insi
                     </div>
                   </div>
                   <span
+                    className="t-num"
                     style={{
-                      fontFamily: 'var(--font-cormorant), Georgia, serif',
-                      fontSize: '20px',
-                      fontWeight: '700',
+                      fontSize: '21px',
+                      fontWeight: '600',
                       color: 'var(--rust-accent)',
+                      letterSpacing: '-0.02em',
                     }}
                   >
-                    {formatBig(item.amount)}
+                    {formatCurrencyCompact(item.amount)}
                   </span>
                 </div>
               ))}

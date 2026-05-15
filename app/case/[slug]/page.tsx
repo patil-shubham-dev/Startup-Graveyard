@@ -123,7 +123,7 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
                   category={s.industry || 'N/A'}
                   status="CLOSED"
                   description={s.summary}
-                  burnedAmount={`$${s.funding_raised}M`}
+                  burnedAmount={s.funding_raised || 0}
                   eolYear={s.shutdown_year?.toString() || 'N/A'}
                   primaryCause={s.failure_reasons?.[0] || 'UNSPECIFIED'}
                   slug={s.slug}

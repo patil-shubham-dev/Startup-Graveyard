@@ -40,10 +40,10 @@ export function VerdictBox({ reasons }: { reasons: string[] }) {
         {reasons.map((reason, i) => (
           <div key={i} style={{ display: 'flex', gap: '24px' }}>
             <span
+              className="t-num"
               style={{
-                fontFamily: 'var(--font-cormorant), Georgia, serif',
                 fontSize: '32px',
-                fontWeight: '700',
+                fontWeight: '600',
                 color: 'var(--rust-accent)',
                 lineHeight: 1,
                 opacity: 0.8,
