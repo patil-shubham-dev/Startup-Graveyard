@@ -74,14 +74,19 @@ export default function AskTheGraveyard() {
         body: JSON.stringify({ messages: newMessages }),
       });
 
-      if (!response.ok) throw new Error('Failed to fetch response');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Server Error:', errorData);
+        throw new Error(errorData.error || 'Failed to fetch response');
+      }
 
       const data = await response.json();
       const assistantMessage: Message = { role: 'assistant', content: data.text };
       setMessages([...newMessages, assistantMessage]);
-    } catch (error) {
+    } catch (error: any) {
       console.error('AI Chat Error:', error);
-      setMessages([...newMessages, { role: 'assistant', content: "I apologize, but my connection to the archive has been interrupted. Please try again." }]);
+      // Add error message to chat
+      setMessages([...newMessages, { role: 'assistant', content: `I apologize, but my connection to the archive has been interrupted: ${error.message}. Please try again.` }]);
     } finally {
       setIsLoading(false);
     }

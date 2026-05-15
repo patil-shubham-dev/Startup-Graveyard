@@ -1,11 +1,11 @@
 import { createOpenAI } from '@ai-sdk/openai';
-import { ModelMessage, generateObject, embed, streamText } from 'ai';
+import { CoreMessage, generateObject, embed, streamText } from 'ai';
 import { ZodSchema } from 'zod';
 
-export type Message = ModelMessage;
+export type Message = CoreMessage;
 
 // Default provider configuration
-const DEFAULT_MODEL = process.env.AI_DEFAULT_MODEL || 'nvidia/llama-3.1-nemotron-70b-instruct';
+const DEFAULT_MODEL = process.env.AI_DEFAULT_MODEL || 'meta/llama-3.1-70b-instruct';
 
 /**
  * NVIDIA NIM Provider Instance
@@ -37,7 +37,7 @@ export class AIService {
    */
   async chat(messages: Message[], system?: string): Promise<ReadableStream> {
     const result = streamText({
-      model: nvidia.chat(DEFAULT_MODEL),
+      model: nvidia(DEFAULT_MODEL),
       system,
       messages,
     });
@@ -50,7 +50,7 @@ export class AIService {
    */
   async embed(text: string): Promise<number[]> {
     const { embedding } = await embed({
-      model: nvidia.embedding('nvidia/nv-embedqa-e5-v5'),
+      model: nvidia.textEmbedding('nvidia/nv-embedqa-e5-v5'),
       value: text,
     });
     return embedding;
@@ -61,7 +61,7 @@ export class AIService {
    */
   async generate<T>(prompt: string, schema: ZodSchema<T>): Promise<T> {
     const { object } = await generateObject({
-      model: nvidia.chat(DEFAULT_MODEL),
+      model: nvidia(DEFAULT_MODEL),
       schema: schema,
       prompt: prompt,
     });
