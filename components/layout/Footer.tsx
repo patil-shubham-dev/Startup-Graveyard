@@ -1,6 +1,7 @@
 'use client';
 
 import { formatCurrencyCompact } from '@/lib/utils/format';
+import { usePathname } from 'next/navigation';
 
 interface FooterProps {
   stats?: {
@@ -12,6 +13,9 @@ interface FooterProps {
 
 export function Footer({ stats }: FooterProps) {
   const currentYear = new Date().getFullYear();
+  const pathname = usePathname();
+
+  if (pathname === '/ask') return null;
 
   return (
     <footer

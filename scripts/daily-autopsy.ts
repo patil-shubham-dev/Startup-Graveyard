@@ -38,7 +38,7 @@ const CaseStudySchema = z.object({
     burn_rate: z.string(),
     exit_value: z.string(),
   }),
-  risk_scores: z.record(z.number()),
+  risk_scores: z.record(z.string(), z.number()),
   timeline_events: z.array(z.object({
     date: z.string(),
     title: z.string(),
