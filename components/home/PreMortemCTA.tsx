@@ -86,8 +86,8 @@ export function PreMortemCTA() {
       <div
         className="sg-container"
         style={{
-          paddingTop: '120px',
-          paddingBottom: '120px',
+          paddingTop: '136px',
+          paddingBottom: '136px',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -99,11 +99,11 @@ export function PreMortemCTA() {
         {/* Kicker */}
         <div
           style={{
-            fontFamily: 'var(--font-dm-mono), monospace',
+            fontFamily: 'var(--font-mono)',
             fontSize: '10px',
             fontWeight: '500',
             textTransform: 'uppercase',
-            letterSpacing: '0.2em',
+            letterSpacing: '0.22em',
             color: 'var(--rust-accent)',
             marginBottom: '36px',
             display: 'flex',
@@ -136,10 +136,16 @@ export function PreMortemCTA() {
         <h2
           className="t-pullquote"
           style={{
+            fontFamily: 'var(--font-display)',
+            fontStyle: 'italic',
+            fontWeight: '400',
+            fontSize: 'clamp(38px, 6vw, 60px)',
             color: 'var(--cream-base)',
-            maxWidth: '18ch',
-            marginBottom: '24px',
-            lineHeight: 1.08,
+            maxWidth: '24ch',
+            marginBottom: '28px',
+            lineHeight: 1.15,
+            letterSpacing: '-0.02em',
+            textRendering: 'optimizeLegibility',
           }}
         >
           &quot;Test the idea while it is still cheap to change.&quot;
@@ -148,12 +154,13 @@ export function PreMortemCTA() {
         {/* Subtext */}
         <p
           style={{
-            fontFamily: 'var(--font-body), Georgia, serif',
-            fontSize: '16px',
-            lineHeight: 1.8,
-            color: 'rgba(217,207,192,0.65)',
-            maxWidth: '44ch',
-            marginBottom: '52px',
+            fontFamily: 'var(--font-body), system-ui, sans-serif',
+            fontSize: 'clamp(15px, 2.5vw, 17px)',
+            lineHeight: 1.75,
+            color: 'rgba(217, 207, 192, 0.7)',
+            maxWidth: '48ch',
+            marginBottom: '48px',
+            letterSpacing: '-0.01em',
           }}
         >
           Most startups commit avoidable mistakes. Our AI diagnostic surfaces the failure
@@ -163,24 +170,24 @@ export function PreMortemCTA() {
         {/* Pulse CTA */}
         <Link
           href="/pre-mortem"
-          className="pulse-border"
+          className="pulse-border hover:scale-[1.03] active:scale-[0.98]"
           style={{
-            fontFamily: 'var(--font-dm-mono), monospace',
-            fontSize: '11px',
-            fontWeight: '500',
+            fontFamily: 'var(--font-mono)',
+            fontSize: '12px',
+            fontWeight: '600',
             textTransform: 'uppercase',
-            letterSpacing: '0.16em',
+            letterSpacing: '0.18em',
             color: 'var(--cream-base)',
             backgroundColor: 'var(--rust-accent)',
             border: '1px solid var(--rust-accent)',
-            padding: '16px 40px',
+            padding: '18px 48px',
             borderRadius: '2px',
             textDecoration: 'none',
             display: 'inline-flex',
             alignItems: 'center',
             gap: '10px',
-            transition: 'background-color 0.25s ease, box-shadow 0.25s ease',
-            boxShadow: '0 4px 24px rgba(181,74,42,0.25)',
+            transition: 'all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)',
+            boxShadow: '0 4px 24px rgba(181,74,42,0.3)',
           }}
         >
           INITIATE DIAGNOSTIC →
@@ -189,12 +196,12 @@ export function PreMortemCTA() {
         {/* Archive note */}
         <div
           style={{
-            marginTop: '44px',
-            fontFamily: 'var(--font-dm-mono), monospace',
+            marginTop: '48px',
+            fontFamily: 'var(--font-mono)',
             fontSize: '9px',
             textTransform: 'uppercase',
-            letterSpacing: '0.16em',
-            color: 'rgba(122,111,101,0.6)',
+            letterSpacing: '0.18em',
+            color: 'rgba(122,111,101,0.65)',
             display: 'flex',
             alignItems: 'center',
             gap: '10px',
@@ -207,7 +214,7 @@ export function PreMortemCTA() {
               height: '5px',
               borderRadius: '50%',
               backgroundColor: 'var(--sage-neutral)',
-              opacity: 0.6,
+              opacity: 0.8,
             }}
           />
           AI-POWERED / PATTERN-MATCHED AGAINST THE ARCHIVE / NO SIGNUP REQUIRED

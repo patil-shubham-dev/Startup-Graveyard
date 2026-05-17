@@ -10,32 +10,36 @@ import { PageWrapper } from "@/components/layout/PageWrapper";
 import { Suspense } from "react";
 
 const cormorant = Cormorant_Garamond({
-  variable: "--font-cormorant",
   subsets: ["latin"],
-  weight: ["400", "600", "700"],
+  weight: ["400", "500", "600", "700"],
   style: ["normal", "italic"],
+  variable: "--font-cormorant",
   display: "swap",
+  preload: true,
 });
 
 const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-space-grotesk",
   display: "swap",
+  preload: true,
 });
 
 const inter = Inter({
-  variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["400", "500"],
+  weight: ["300", "400", "500", "600"],
+  variable: "--font-inter",
   display: "swap",
+  preload: true,
 });
 
 const spaceMono = Space_Mono({
-  variable: "--font-space-mono",
   subsets: ["latin"],
-  weight: ["400"],
+  weight: ["400", "700"],
+  variable: "--font-space-mono",
   display: "swap",
+  preload: true,
 });
 
 export const metadata: Metadata = {
@@ -96,7 +100,7 @@ export default async function RootLayout({
       className={`${cormorant.variable} ${spaceGrotesk.variable} ${inter.variable} ${spaceMono.variable} antialiased`}
       suppressHydrationWarning
     >
-      <body style={{ backgroundColor: "var(--cream-base)", color: "var(--ink-black)" }}>
+      <body className={`${cormorant.variable} ${spaceGrotesk.variable} ${inter.variable} ${spaceMono.variable}`} style={{ backgroundColor: "var(--cream-base)", color: "var(--ink-black)" }}>
         <AuthProvider>
           <div className="relative flex min-h-screen flex-col">
             <Suspense fallback={null}>

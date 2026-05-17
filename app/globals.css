@@ -7,10 +7,12 @@
 
 @theme inline {
   /* Typography */
-  --font-display: var(--font-cormorant);
-  --font-mono: var(--font-space-mono);
-  --font-body: var(--font-inter);
-  --font-grotesk: var(--font-space-grotesk);
+  --font-display: var(--font-cormorant), 'Georgia', serif;
+  --font-mono: var(--font-space-mono), 'Courier New', monospace;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-body: var(--font-inter), system-ui, sans-serif;
+  --font-subhead: var(--font-space-grotesk), sans-serif;
+
 
   /* Color Tokens */
   --color-cream-base: #F5F0E8;
@@ -41,12 +43,26 @@
   --sage-neutral: #6B7B6E;
   --paper-white: #FDFAF5;
   --failed-red: #980002;
+  --font-display: var(--font-cormorant), 'Georgia', serif;
+  --font-body: var(--font-inter), system-ui, sans-serif;
+  --font-mono: var(--font-space-mono), 'Courier New', monospace;
+  --font-subhead: var(--font-space-grotesk), sans-serif;
 }
 
 /* ============================================================
    BASE STYLES
    ============================================================ */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+  font-feature-settings: "kern" 1, "liga" 1;
+}
+
 html {
+  -webkit-text-size-adjust: 100%;
   font-size: 16px;
   scroll-behavior: smooth;
 }
@@ -55,10 +71,26 @@ body {
   min-height: 100vh;
   background-color: var(--cream-base);
   color: var(--ink-black);
-  font-family: var(--font-body), 'Inter', sans-serif;
+  font-family: var(--font-body), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   position: relative;
+}
+
+/* Prevent blurry text on transforms */
+.animate-step, [class*="motion"] {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  will-change: opacity, transform;
+}
+
+/* Step 1 placeholder helper */
+.textarea-step1::placeholder {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 15px;
+  color: #b8aa99 !important;
 }
 
 /* Paper Grain Texture Overlay — Simplified to a subtle gradient to avoid filter overhead */
@@ -569,6 +601,36 @@ body::before {
 /* ============================================================
    FORM STYLES (Pre-Mortem)
    ============================================================ */
+.premortem-left-panel {
+  background-color: #1a1a18;
+  padding: 64px 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  width: 38%;
+  border-right: 1px solid rgba(217, 207, 192, 0.12);
+  flex-shrink: 0;
+}
+
+.premortem-right-panel {
+  flex: 1;
+  height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: #f5f0e8;
+  padding: 40px 24px;
+}
+
+@media (min-width: 1024px) {
+  .premortem-right-panel {
+    padding: 64px 72px;
+  }
+}
+
 .sg-input {
   font-family: var(--font-mono), 'Courier New', monospace;
   font-size: 13px;
