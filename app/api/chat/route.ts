@@ -65,7 +65,12 @@ export async function POST(req: NextRequest) {
       ARCHIVE_CONTEXT:
       ${context}
       
-      Speak in a professional, clinical, yet slightly somber tone. Focus on forensic facts and patterns of failure.
+      Speak in a highly clear, professional, and engaging yet slightly somber tone. 
+      CRITICAL REQUIREMENT: Use simple, easy-to-understand, and highly accessible language. 
+      Avoid overly complex business jargon, dense academic phrasing, or unnecessary consulting buzzwords. 
+      Instead of saying "exhibited severe mismatch in cash flow runway optimization under market validation deficits," say "ran out of money because they built something people did not actually want to pay for."
+      Explain concepts, lessons, and patterns of failure in a direct, clear, and educational way so that any founder, investor, or student can immediately grasp them.
+      
       When mentioning a startup that exists in our archive, wrap its name in [[Startup Name]].
       
       CRITICAL INSTRUCTION:

@@ -20,6 +20,11 @@ export function Navigation() {
     router.prefetch(href);
   };
 
+  const isPreMortem = pathname === '/pre-mortem';
+  const navHeight = isPreMortem ? '80px' : '56px';
+  const headerBg = isPreMortem ? '#F7F4EE' : 'var(--cream-base)';
+  const borderCol = isPreMortem ? '#DDD3C5' : 'var(--cream-dark)';
+
   return (
     <>
       <header
@@ -27,9 +32,10 @@ export function Navigation() {
           position: 'sticky',
           top: 0,
           zIndex: 100,
-          height: '56px',
-          backgroundColor: 'var(--cream-base)',
-          borderBottom: '1px solid var(--cream-dark)',
+          height: navHeight,
+          backgroundColor: headerBg,
+          borderBottom: `1px solid ${borderCol}`,
+          transition: 'all 0.25s ease',
         }}
       >
         <div
@@ -38,8 +44,9 @@ export function Navigation() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            height: '56px',
+            height: navHeight,
             gap: '24px',
+            transition: 'all 0.25s ease',
           }}
         >
           {/* Logo */}
@@ -77,26 +84,26 @@ export function Navigation() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
               <span
                 style={{
-                  fontFamily: 'var(--font-dm-mono), monospace',
-                  fontSize: '10px',
-                  fontWeight: '500',
+                  fontFamily: 'var(--font-mono), monospace',
+                  fontSize: '12px',
+                  fontWeight: '600',
                   textTransform: 'uppercase',
                   letterSpacing: '0.12em',
                   color: 'var(--ink-black)',
-                  lineHeight: 1,
+                  lineHeight: 1.1,
                 }}
               >
                 STARTUP GRAVEYARD
               </span>
               <span
                 style={{
-                  fontFamily: 'var(--font-dm-mono), monospace',
+                  fontFamily: 'var(--font-mono), monospace',
                   fontSize: '9px',
-                  fontWeight: '300',
+                  fontWeight: '400',
                   textTransform: 'none',
                   letterSpacing: '0.04em',
                   color: 'var(--ink-muted)',
-                  lineHeight: 1,
+                  lineHeight: 1.1,
                 }}
               >
                 Forensic intelligence for failed companies
@@ -121,7 +128,7 @@ export function Navigation() {
                   href={link.href}
                   onMouseEnter={() => prefetch(link.href)}
                   style={{
-                    fontFamily: 'var(--font-dm-mono), monospace',
+                    fontFamily: 'var(--font-mono), monospace',
                     fontSize: '11px',
                     fontWeight: '500',
                     textTransform: 'uppercase',
@@ -129,7 +136,7 @@ export function Navigation() {
                     color: isActive ? 'var(--rust-accent)' : 'var(--ink-muted)',
                     textDecoration: 'none',
                     position: 'relative',
-                    paddingBottom: '2px',
+                    paddingBottom: '2.5px',
                     transition: 'color 0.15s ease',
                   }}
                   className="nav-link"
@@ -156,24 +163,53 @@ export function Navigation() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <Link
               href="/pre-mortem"
-              className="btn-stamp hidden sm:inline-flex"
+              className={isPreMortem ? "hidden sm:inline-flex" : "btn-stamp hidden sm:inline-flex"}
+              style={
+                isPreMortem
+                  ? {
+                      height: '48px',
+                      padding: '0 24px',
+                      backgroundColor: '#FCFAF6',
+                      border: '1.5px solid #D35A22',
+                      borderRadius: '8px',
+                      fontFamily: 'var(--font-mono), monospace',
+                      fontSize: '12px',
+                      fontWeight: '500',
+                      letterSpacing: '0.12em',
+                      textTransform: 'uppercase',
+                      color: '#D35A22',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      textDecoration: 'none',
+                      transition: 'all 0.2s ease',
+                      boxShadow: '0 2px 8px rgba(211,90,34,0.04)',
+                    }
+                  : undefined
+              }
             >
               RUN PRE-MORTEM →
             </Link>
 
-            {/* Mobile hamburger */}
+            {/* Menu trigger button next to CTA */}
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="lg:hidden"
+              className={isPreMortem ? "flex" : "lg:hidden flex"}
               style={{
-                background: 'none',
-                border: '1px solid var(--cream-dark)',
-                borderRadius: '2px',
+                background: isPreMortem ? '#FCFAF6' : 'none',
+                border: isPreMortem ? '1.5px solid #DDD3C5' : '1px solid var(--cream-dark)',
+                borderRadius: isPreMortem ? '8px' : '2px',
                 padding: '6px 8px',
                 cursor: 'pointer',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '4px',
+                gap: '4.5px',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: isPreMortem ? '48px' : '36px',
+                height: isPreMortem ? '48px' : '32px',
+                boxShadow: isPreMortem ? '0 2px 8px rgba(17,17,17,0.04)' : 'none',
+                transition: 'all 0.2s ease',
               }}
               aria-label="Toggle menu"
             >
@@ -182,9 +218,9 @@ export function Navigation() {
                   key={i}
                   style={{
                     display: 'block',
-                    width: '16px',
-                    height: '1.5px',
-                    backgroundColor: 'var(--ink-muted)',
+                    width: isPreMortem ? '18px' : '16px',
+                    height: isPreMortem ? '2px' : '1.5px',
+                    backgroundColor: isPreMortem ? '#111111' : 'var(--ink-muted)',
                     transition: 'all 0.2s ease',
                     transform:
                       mobileOpen && i === 0
@@ -207,13 +243,14 @@ export function Navigation() {
             className="lg:hidden"
             style={{
               position: 'absolute',
-              top: '56px',
+              top: navHeight,
               left: 0,
               right: 0,
-              backgroundColor: 'var(--cream-base)',
-              borderBottom: '1px solid var(--cream-dark)',
+              backgroundColor: isPreMortem ? '#F7F4EE' : 'var(--cream-base)',
+              borderBottom: `1px solid ${borderCol}`,
               zIndex: 99,
               padding: '16px 0',
+              boxShadow: '0 8px 24px rgba(17,17,17,0.04)',
             }}
           >
             {navLinks.map((link) => {
@@ -226,7 +263,7 @@ export function Navigation() {
                   style={{
                     display: 'block',
                     padding: '12px 24px',
-                    fontFamily: 'var(--font-dm-mono), monospace',
+                    fontFamily: 'var(--font-mono), monospace',
                     fontSize: '11px',
                     textTransform: 'uppercase',
                     letterSpacing: '0.12em',

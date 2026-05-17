@@ -8,7 +8,7 @@
 @theme inline {
   /* Typography */
   --font-display: var(--font-cormorant), 'Georgia', serif;
-  --font-mono: var(--font-space-mono), 'Courier New', monospace;
+  --font-mono: var(--font-ibm-plex-mono), 'IBM Plex Mono', monospace;
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-body: var(--font-inter), system-ui, sans-serif;
   --font-subhead: var(--font-space-grotesk), sans-serif;
@@ -26,6 +26,41 @@
   --color-sage-neutral: #6B7B6E;
   --color-paper-white: #FDFAF5;
   --color-failed-red: #980002;
+
+  /* Premium Pre-Mortem Redesign Tokens */
+  --color-bg-main: #F7F4EE;
+  --color-bg-card: #FCFAF6;
+  --color-border: #DDD3C5;
+  --color-text-primary: #111111;
+  --color-text-secondary: #6D655B;
+  --color-text-muted: #9A9187;
+
+  /* Dark Sidebar */
+  --color-sidebar-bg: #090B0F;
+  --color-sidebar-bg-2: #0F141B;
+  --color-sidebar-border: rgba(255,255,255,0.06);
+  --color-sidebar-text: #F7F4EE;
+  --color-sidebar-muted: rgba(247,244,238,0.72);
+
+  /* Accent Colors */
+  --color-accent: #D35A22;
+  --color-accent-hover: #BF4F1E;
+  --color-success: #3FAE5A;
+  --color-warning: #E6A43B;
+  --color-critical: #D84C2A;
+
+  /* Keep old values to be safe */
+  --color-premortem-bg: #F7F4EE;
+  --color-premortem-card: #FCFAF6;
+  --color-premortem-border: #DDD3C5;
+  --color-premortem-sidebar: #090B0F;
+  --color-premortem-orange: #D35A22;
+  --color-premortem-amber: #E6A43B;
+  --color-premortem-red: #D84C2A;
+  --color-premortem-green: #3FAE5A;
+  --color-premortem-text-primary: #111111;
+  --color-premortem-text-secondary: #6D655B;
+  --color-premortem-text-muted: #9A9187;
 }
 
 /* ============================================================
@@ -45,8 +80,43 @@
   --failed-red: #980002;
   --font-display: var(--font-cormorant), 'Georgia', serif;
   --font-body: var(--font-inter), system-ui, sans-serif;
-  --font-mono: var(--font-space-mono), 'Courier New', monospace;
+  --font-mono: var(--font-ibm-plex-mono), 'IBM Plex Mono', monospace;
   --font-subhead: var(--font-space-grotesk), sans-serif;
+
+  /* Premium Pre-Mortem Redesign Tokens */
+  --bg-main: #F7F4EE;
+  --bg-card: #FCFAF6;
+  --border: #DDD3C5;
+  --text-primary: #111111;
+  --text-secondary: #6D655B;
+  --text-muted: #9A9187;
+
+  /* Dark Sidebar */
+  --sidebar-bg: #090B0F;
+  --sidebar-bg-2: #0F141B;
+  --sidebar-border: rgba(255,255,255,0.06);
+  --sidebar-text: #F7F4EE;
+  --sidebar-muted: rgba(247,244,238,0.72);
+
+  /* Accent Colors */
+  --accent: #D35A22;
+  --accent-hover: #BF4F1E;
+  --success: #3FAE5A;
+  --warning: #E6A43B;
+  --critical: #D84C2A;
+
+  /* Keep old values to be safe */
+  --premortem-bg: #F7F4EE;
+  --premortem-card: #FCFAF6;
+  --premortem-border: #DDD3C5;
+  --premortem-sidebar: #090B0F;
+  --premortem-orange: #D35A22;
+  --premortem-amber: #E6A43B;
+  --premortem-red: #D84C2A;
+  --premortem-green: #3FAE5A;
+  --premortem-text-primary: #111111;
+  --premortem-text-secondary: #6D655B;
+  --premortem-text-muted: #9A9187;
 }
 
 /* ============================================================
@@ -855,5 +925,116 @@ body::before {
 
   article {
     width: 100% !important;
+  }
+}
+
+/* ============================================================
+   PREMIUM FORENSIC DESIGN UTILITIES
+   ============================================================ */
+.font-display-serif {
+  font-family: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
+}
+.font-monospace {
+  font-family: var(--font-ibm-plex-mono), "IBM Plex Mono", monospace;
+}
+.font-sans-body {
+  font-family: var(--font-inter), "Inter", sans-serif;
+}
+
+.hero-title-styles {
+  font-family: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
+  font-size: clamp(48px, 4vw, 76px);
+  line-height: 0.95;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}
+.question-title-styles {
+  font-family: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
+  font-size: clamp(34px, 3vw, 52px);
+  line-height: 1.15;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+.report-title-styles {
+  font-family: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
+  font-size: clamp(38px, 3.5vw, 60px);
+  line-height: 1.05;
+  font-weight: 500;
+}
+.monospace-label-styles {
+  font-family: var(--font-ibm-plex-mono), "IBM Plex Mono", monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.body-large-styles {
+  font-family: var(--font-inter), "Inter", sans-serif;
+  font-size: clamp(16px, 1vw, 20px);
+  line-height: 1.6;
+  font-weight: 400;
+}
+.body-normal-styles {
+  font-family: var(--font-inter), "Inter", sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  font-weight: 400;
+}
+.small-styles {
+  font-family: var(--font-inter), "Inter", sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.sidebar-title-styles {
+  font-family: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
+  font-size: clamp(40px, 3.5vw, 68px);
+  line-height: 0.98;
+  font-weight: 500;
+}
+.sidebar-description-styles {
+  font-family: var(--font-inter), "Inter", sans-serif;
+  font-size: clamp(15px, 1.2vw, 19px);
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+/* ============================================================
+   ADAPTIVE HEIGHT RESPONSIVE OVERRIDES
+   ============================================================ */
+@media (max-height: 900px) {
+  .hero-title-styles {
+    font-size: clamp(44px, 3.8vw, 68px);
+  }
+  .question-title-styles {
+    font-size: clamp(32px, 2.8vw, 46px);
+  }
+  .sidebar-title-styles {
+    font-size: clamp(36px, 3vw, 56px);
+  }
+  .sidebar-description-styles {
+    font-size: 15px;
+    line-height: 1.5;
+  }
+}
+
+@media (max-height: 800px) {
+  .hero-title-styles {
+    font-size: clamp(38px, 3.5vw, 58px);
+  }
+  .question-title-styles {
+    font-size: clamp(28px, 2.5vw, 38px);
+  }
+  .sidebar-title-styles {
+    font-size: clamp(30px, 2.5vw, 44px);
+  }
+  .sidebar-description-styles {
+    font-size: 13.5px;
+    line-height: 1.45;
+  }
+  .monospace-label-styles {
+    font-size: 10.5px;
+    letter-spacing: 0.12em;
   }
 }

@@ -225,27 +225,168 @@ export default function AskTheGraveyard() {
     setInput('');
   };
 
+  const preprocessText = (rawText: string) => {
+    if (!rawText) return '';
+    // Replace [[Startup Name]] with [Startup Name](/case/startup-name-slug)
+    let processed = rawText.replace(/\[\[(.*?)\]\]/g, (match, p1) => {
+      const slug = p1.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      return `[${p1}](/case/${slug})`;
+    });
+    return processed;
+  };
+
   const renderMarkdown = (text: string, role: string) => {
+    const processedText = preprocessText(text);
     return (
       <ReactMarkdown 
         remarkPlugins={[remarkGfm]}
         components={{
-          p: ({ node, ...props }) => <p style={{ margin: '0 0 12px 0', whiteSpace: 'pre-wrap' }} {...props} />,
-          h1: ({ node, ...props }) => <h1 style={{ fontFamily: 'var(--font-source-serif), serif', fontSize: '28px', fontWeight: '900', margin: '20px 0 10px 0', color: role === 'user' ? 'var(--cream-base)' : 'var(--ink-black)', lineHeight: 1.2 }} {...props} />,
-          h2: ({ node, ...props }) => <h2 style={{ fontFamily: 'var(--font-source-serif), serif', fontSize: '25px', fontWeight: '800', margin: '18px 0 8px 0', color: role === 'user' ? 'var(--cream-base)' : 'var(--ink-black)', lineHeight: 1.25 }} {...props} />,
-          h3: ({ node, ...props }) => <h3 style={{ fontFamily: 'var(--font-source-serif), serif', fontSize: '23px', fontWeight: '700', margin: '16px 0 6px 0', color: role === 'user' ? 'var(--cream-base)' : 'var(--ink-black)', lineHeight: 1.3 }} {...props} />,
-          ul: ({ node, ...props }) => <ul style={{ margin: '0 0 12px 0', paddingLeft: '20px', listStyleType: 'disc' }} {...props} />,
-          ol: ({ node, ...props }) => <ol style={{ margin: '0 0 12px 0', paddingLeft: '20px', listStyleType: 'decimal' }} {...props} />,
-          li: ({ node, ...props }) => <li style={{ margin: '4px 0', whiteSpace: 'pre-wrap' }} {...props} />,
-          strong: ({ node, ...props }) => <strong style={{ fontWeight: 'bold', color: role === 'user' ? 'var(--cream-base)' : 'var(--ink-black)' }} {...props} />,
+          p: ({ node, ...props }) => (
+            <p 
+              style={{ 
+                margin: '0 0 14px 0', 
+                whiteSpace: 'pre-wrap',
+                fontFamily: 'var(--font-sans), sans-serif',
+                fontSize: '14.5px',
+                lineHeight: '1.75',
+                color: role === 'user' ? 'var(--cream-base)' : '#1A1714'
+              }} 
+              {...props} 
+            />
+          ),
+          h1: ({ node, ...props }) => (
+            <h1 
+              style={{ 
+                fontFamily: 'var(--font-display), "Cormorant Garamond", Georgia, serif', 
+                fontSize: '28px', 
+                fontWeight: '900', 
+                margin: '22px 0 12px 0', 
+                color: role === 'user' ? 'var(--cream-base)' : 'var(--ink-black)', 
+                lineHeight: 1.2,
+                borderBottom: '1.5px solid var(--cream-dark)',
+                paddingBottom: '8px'
+              }} 
+              {...props} 
+            />
+          ),
+          h2: ({ node, ...props }) => (
+            <h2 
+              style={{ 
+                fontFamily: 'var(--font-display), "Cormorant Garamond", Georgia, serif', 
+                fontSize: '24px', 
+                fontWeight: '800', 
+                margin: '18px 0 10px 0', 
+                color: role === 'user' ? 'var(--cream-base)' : 'var(--ink-black)', 
+                lineHeight: 1.25,
+                borderBottom: '1px solid var(--cream-dark)',
+                paddingBottom: '6px'
+              }} 
+              {...props} 
+            />
+          ),
+          h3: ({ node, children, ...props }) => {
+            // Detect raw forensic headings e.g. "POST_MORTEM_SYNOPSIS"
+            const textStr = String(children || '');
+            const isForensicHeader = textStr.includes('_') || /^[A-Z0-9_\s📊📁🔎💀📊🔮🎯📑🗃️💀]+$/.test(textStr);
+            
+            if (isForensicHeader) {
+              return (
+                <h3 
+                  style={{ 
+                    fontFamily: 'var(--font-mono), monospace', 
+                    fontSize: '11px', 
+                    fontWeight: '700', 
+                    margin: '24px 0 12px 0', 
+                    color: 'var(--rust-accent)', 
+                    letterSpacing: '0.15em',
+                    textTransform: 'uppercase',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    borderBottom: '1px solid rgba(211, 90, 34, 0.15)',
+                    paddingBottom: '6px',
+                    width: '100%'
+                  }} 
+                  {...props}
+                >
+                  {children}
+                </h3>
+              );
+            }
+
+            return (
+              <h3 
+                style={{ 
+                  fontFamily: 'var(--font-display), "Cormorant Garamond", Georgia, serif', 
+                  fontSize: '20px', 
+                  fontWeight: '700', 
+                  margin: '16px 0 8px 0', 
+                  color: role === 'user' ? 'var(--cream-base)' : 'var(--ink-black)', 
+                  lineHeight: 1.3 
+                }} 
+                {...props} 
+              />
+            );
+          },
+          ul: ({ node, ...props }) => <ul style={{ margin: '0 0 14px 0', paddingLeft: '22px', listStyleType: 'square' }} {...props} />,
+          ol: ({ node, ...props }) => <ol style={{ margin: '0 0 14px 0', paddingLeft: '22px', listStyleType: 'decimal' }} {...props} />,
+          li: ({ node, ...props }) => (
+            <li 
+              style={{ 
+                margin: '6px 0', 
+                whiteSpace: 'pre-wrap',
+                fontFamily: 'var(--font-sans), sans-serif',
+                fontSize: '14px',
+                lineHeight: '1.7',
+                color: role === 'user' ? 'var(--cream-base)' : '#1A1714'
+              }} 
+              {...props} 
+            />
+          ),
+          strong: ({ node, ...props }) => <strong style={{ fontWeight: '700', color: role === 'user' ? 'var(--cream-base)' : 'var(--ink-black)' }} {...props} />,
           em: ({ node, ...props }) => <em style={{ fontStyle: 'italic' }} {...props} />,
+          a: ({ node, children, href, ...props }) => {
+            return (
+              <a 
+                href={href} 
+                style={{ 
+                  fontFamily: 'var(--font-mono), monospace', 
+                  fontSize: '11.5px',
+                  fontWeight: 'bold',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  color: 'var(--rust-accent)', 
+                  backgroundColor: 'rgba(211, 90, 34, 0.07)',
+                  border: '1px solid rgba(211, 90, 34, 0.2)',
+                  padding: '2px 6px',
+                  borderRadius: '3px',
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '2px',
+                  transition: 'all 0.15s ease'
+                }} 
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--rust-accent)';
+                  e.currentTarget.style.color = '#F7F4EE';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(211, 90, 34, 0.07)';
+                  e.currentTarget.style.color = 'var(--rust-accent)';
+                }}
+                {...props}
+              >
+                {children}
+              </a>
+            );
+          },
           code: ({ node, className, children, ...props }: any) => {
             const match = /language-(\w+)/.exec(className || '');
             const isInline = !match;
             return isInline ? (
-              <code style={{ fontFamily: 'var(--font-dm-mono), monospace', backgroundColor: role === 'user' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', padding: '2px 4px', borderRadius: '2px', fontSize: '0.9em' }} {...props}>{children}</code>
+              <code style={{ fontFamily: 'var(--font-mono), monospace', backgroundColor: role === 'user' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', padding: '2px 4px', borderRadius: '2px', fontSize: '0.9em' }} {...props}>{children}</code>
             ) : (
-              <pre style={{ fontFamily: 'var(--font-dm-mono), monospace', backgroundColor: role === 'user' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)', padding: '12px', borderRadius: '2px', overflowX: 'auto', margin: '8px 0', fontSize: '0.85em' }}>
+              <pre style={{ fontFamily: 'var(--font-mono), monospace', backgroundColor: role === 'user' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)', padding: '12px', borderRadius: '2px', overflowX: 'auto', margin: '8px 0', fontSize: '0.85em' }}>
                 <code {...props}>{children}</code>
               </pre>
             );
@@ -254,11 +395,11 @@ export default function AskTheGraveyard() {
           thead: ({ node, ...props }) => <thead style={{ borderBottom: '2px solid var(--cream-dark)' }} {...props} />,
           tbody: ({ node, ...props }) => <tbody {...props} />,
           tr: ({ node, ...props }) => <tr style={{ borderBottom: '1px solid var(--cream-dark)' }} {...props} />,
-          th: ({ node, ...props }) => <th style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 'bold', fontFamily: 'var(--font-dm-mono), monospace', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }} {...props} />,
-          td: ({ node, ...props }) => <td style={{ padding: '8px 12px', fontFamily: 'var(--font-dm-mono), monospace', fontSize: '12px' }} {...props} />
+          th: ({ node, ...props }) => <th style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 'bold', fontFamily: 'var(--font-mono), monospace', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }} {...props} />,
+          td: ({ node, ...props }) => <td style={{ padding: '8px 12px', fontFamily: 'var(--font-mono), monospace', fontSize: '12px' }} {...props} />
         }}
       >
-        {text}
+        {processedText}
       </ReactMarkdown>
     );
   };
@@ -365,7 +506,7 @@ export default function AskTheGraveyard() {
         >
           <span
             style={{
-              fontFamily: 'var(--font-dm-mono), monospace',
+              fontFamily: 'var(--font-mono), monospace',
               fontSize: '10px',
               fontWeight: '500',
               textTransform: 'uppercase',
@@ -381,7 +522,7 @@ export default function AskTheGraveyard() {
               background: 'none',
               border: 'none',
               cursor: 'pointer',
-              fontFamily: 'var(--font-dm-mono), monospace',
+              fontFamily: 'var(--font-mono), monospace',
               fontSize: '9px',
               color: 'var(--rust-accent)',
               textTransform: 'uppercase',
@@ -405,7 +546,7 @@ export default function AskTheGraveyard() {
               backgroundColor: 'var(--cream-base)',
               border: '1.5px dashed var(--cream-dark)',
               borderRadius: '2px',
-              fontFamily: 'var(--font-dm-mono), monospace',
+              fontFamily: 'var(--font-mono), monospace',
               fontSize: '11px',
               fontWeight: '500',
               textTransform: 'uppercase',
@@ -445,7 +586,7 @@ export default function AskTheGraveyard() {
               style={{
                 padding: '30px 20px',
                 textAlign: 'center',
-                fontFamily: 'var(--font-dm-mono), monospace',
+                fontFamily: 'var(--font-mono), monospace',
                 fontSize: '10px',
                 color: 'var(--ink-muted)',
                 lineHeight: 1.5,
@@ -492,7 +633,7 @@ export default function AskTheGraveyard() {
                   <MessageSquare size={12} style={{ color: activeChatId === c.id ? 'var(--rust-accent)' : 'var(--ink-muted)', flexShrink: 0 }} />
                   <span
                     style={{
-                      fontFamily: 'var(--font-dm-mono), monospace',
+                      fontFamily: 'var(--font-mono), monospace',
                       fontSize: '11px',
                       color: activeChatId === c.id ? 'var(--ink-black)' : 'var(--ink-soft)',
                       whiteSpace: 'nowrap',
@@ -561,7 +702,7 @@ export default function AskTheGraveyard() {
                 borderRadius: '1px',
                 padding: '4px 8px',
                 cursor: 'pointer',
-                fontFamily: 'var(--font-dm-mono), monospace',
+                fontFamily: 'var(--font-mono), monospace',
                 fontSize: '9px',
                 textTransform: 'uppercase',
                 letterSpacing: '0.1em',
@@ -583,7 +724,7 @@ export default function AskTheGraveyard() {
               />
               <span
                 style={{
-                  fontFamily: 'var(--font-dm-mono), monospace',
+                  fontFamily: 'var(--font-mono), monospace',
                   fontSize: '9px',
                   textTransform: 'uppercase',
                   letterSpacing: '0.12em',
@@ -596,13 +737,13 @@ export default function AskTheGraveyard() {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <span style={{ fontFamily: 'var(--font-dm-mono), monospace', fontSize: '9px', color: 'var(--ink-muted)' }}>
+            <span style={{ fontFamily: 'var(--font-mono), monospace', fontSize: '9px', color: 'var(--ink-muted)' }}>
               STABILITY: 99.4%
             </span>
-            <span style={{ fontFamily: 'var(--font-dm-mono), monospace', fontSize: '9px', color: 'var(--ink-muted)' }}>
+            <span style={{ fontFamily: 'var(--font-mono), monospace', fontSize: '9px', color: 'var(--ink-muted)' }}>
               LATENCY: {isPending ? '---' : '42MS'}
             </span>
-            <span style={{ fontFamily: 'var(--font-dm-mono), monospace', fontSize: '9px', color: 'var(--rust-accent)' }}>
+            <span style={{ fontFamily: 'var(--font-mono), monospace', fontSize: '9px', color: 'var(--rust-accent)' }}>
               INTERROGATED // {String(messages.length).padStart(2, '0')}
             </span>
           </div>
@@ -675,9 +816,9 @@ export default function AskTheGraveyard() {
               </h2>
               <p
                 style={{
-                  fontFamily: 'var(--font-source-serif), Georgia, serif',
-                  fontSize: '14px',
-                  lineHeight: 1.7,
+                  fontFamily: 'var(--font-sans), sans-serif',
+                  fontSize: '14.5px',
+                  lineHeight: '1.7',
                   color: 'var(--ink-muted)',
                   fontStyle: 'italic',
                   marginBottom: '32px',
@@ -710,7 +851,7 @@ export default function AskTheGraveyard() {
                       backgroundColor: 'var(--cream-base)',
                       border: '1px solid var(--cream-dark)',
                       borderRadius: '1px',
-                      fontFamily: 'var(--font-dm-mono), monospace',
+                      fontFamily: 'var(--font-mono), monospace',
                       fontSize: '9px',
                       textTransform: 'uppercase',
                       letterSpacing: '0.1em',
@@ -754,8 +895,8 @@ export default function AskTheGraveyard() {
                 >
                   <div
                     style={{
-                      fontFamily: m.role === 'user' ? 'var(--font-dm-mono), monospace' : 'var(--font-source-serif), Georgia, serif',
-                      fontSize: m.role === 'user' ? '12px' : '14px',
+                      fontFamily: m.role === 'user' ? 'var(--font-mono), monospace' : 'var(--font-sans), sans-serif',
+                      fontSize: m.role === 'user' ? '12px' : '14.5px',
                       lineHeight: m.role === 'user' ? 1.5 : 1.75,
                       color: m.role === 'user' ? 'var(--cream-base)' : 'var(--ink-black)',
                     }}
@@ -776,7 +917,7 @@ export default function AskTheGraveyard() {
                               borderLeft: '2px solid var(--cream-dark)',
                               paddingLeft: '12px',
                               margin: '8px 0',
-                              fontFamily: 'var(--font-dm-mono), monospace',
+                              fontFamily: 'var(--font-mono), monospace',
                               whiteSpace: 'pre-wrap',
                             }}
                           >
@@ -832,7 +973,7 @@ export default function AskTheGraveyard() {
                 backgroundColor: 'transparent',
                 border: 'none',
                 outline: 'none',
-                fontFamily: 'var(--font-dm-mono), monospace',
+                fontFamily: 'var(--font-mono), monospace',
                 fontSize: '13px',
                 color: isPending ? 'var(--ink-muted)' : 'var(--ink-black)',
                 resize: 'none',
@@ -895,7 +1036,7 @@ export default function AskTheGraveyard() {
                 />
                 <span
                   style={{
-                    fontFamily: 'var(--font-dm-mono), monospace',
+                    fontFamily: 'var(--font-mono), monospace',
                     fontSize: '8px',
                     textTransform: 'uppercase',
                     letterSpacing: '0.12em',
@@ -909,7 +1050,7 @@ export default function AskTheGraveyard() {
           </div>
           <span
             style={{
-              fontFamily: 'var(--font-dm-mono), monospace',
+              fontFamily: 'var(--font-mono), monospace',
               fontSize: '8px',
               textTransform: 'uppercase',
               letterSpacing: '0.12em',

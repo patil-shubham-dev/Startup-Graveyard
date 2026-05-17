@@ -1,6 +1,6 @@
 export const revalidate = 3600; // Revalidate every hour by default
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Space_Grotesk, Inter, Space_Mono } from "next/font/google";
+import { Cormorant_Garamond, Space_Grotesk, Inter, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { Navigation } from "@/components/layout/Navigation";
 import { Footer } from "@/components/layout/Footer";
@@ -34,10 +34,10 @@ const inter = Inter({
   preload: true,
 });
 
-const spaceMono = Space_Mono({
+const ibmPlexMono = IBM_Plex_Mono({
   subsets: ["latin"],
-  weight: ["400", "700"],
-  variable: "--font-space-mono",
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-ibm-plex-mono",
   display: "swap",
   preload: true,
 });
@@ -97,10 +97,10 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
-      className={`${cormorant.variable} ${spaceGrotesk.variable} ${inter.variable} ${spaceMono.variable} antialiased`}
+      className={`${cormorant.variable} ${spaceGrotesk.variable} ${inter.variable} ${ibmPlexMono.variable} antialiased`}
       suppressHydrationWarning
     >
-      <body className={`${cormorant.variable} ${spaceGrotesk.variable} ${inter.variable} ${spaceMono.variable}`} style={{ backgroundColor: "var(--cream-base)", color: "var(--ink-black)" }}>
+      <body className={`${cormorant.variable} ${spaceGrotesk.variable} ${inter.variable} ${ibmPlexMono.variable}`} style={{ backgroundColor: "var(--cream-base)", color: "var(--ink-black)" }}>
         <AuthProvider>
           <div className="relative flex min-h-screen flex-col">
             <Suspense fallback={null}>
