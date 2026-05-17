@@ -7,7 +7,8 @@ import { createPremortemSession, savePremortemReport } from '@/lib/db/premortem'
 const QuestionsSchema = z.object({
   questions: z.array(z.object({
     id: z.string(),
-    text: z.string()
+    text: z.string(),
+    options: z.array(z.string()).length(3)
   }))
 });
 
@@ -37,7 +38,13 @@ export async function POST(req: NextRequest) {
       const prompt = `
         You are the Graveyard Keeper AI. A founder just submitted a startup pitch: "${body.pitch}".
         Generate 3 forensic stress-test questions that expose the most likely failure modes for this specific business model.
-        Return a JSON object with a "questions" array. Each question should have an "id" (q1, q2, q3) and "text".
+        
+        For each question, also generate exactly 3 short, plausible answer options (each under 15 words) that a founder might realistically give for THIS specific pitch. Options must be distinct:
+        - Option 1: Optimistic (an idealistic or highly confident answer)
+        - Option 2: Realistic (a balanced, practical, or standard answer)
+        - Option 3: Pessimistic (an anxious, critical, or worst-case scenario answer)
+
+        Return a JSON object with a "questions" array. Each question should have an "id" (q1, q2, q3), "text" (stress-test question), and "options" (exactly 3 distinct answer options).
       `;
       const result = await ai.generate(prompt, QuestionsSchema);
       

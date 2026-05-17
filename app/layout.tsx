@@ -1,6 +1,6 @@
 export const revalidate = 3600; // Revalidate every hour by default
 import type { Metadata } from "next";
-import { Cormorant_Garamond, DM_Mono, Source_Serif_4, Crimson_Text } from "next/font/google";
+import { Cormorant_Garamond, Space_Grotesk, Inter, Space_Mono } from "next/font/google";
 import "./globals.css";
 import { Navigation } from "@/components/layout/Navigation";
 import { Footer } from "@/components/layout/Footer";
@@ -12,30 +12,29 @@ import { Suspense } from "react";
 const cormorant = Cormorant_Garamond({
   variable: "--font-cormorant",
   subsets: ["latin"],
-  weight: ["300", "400", "600", "700"],
-  style: ["normal", "italic"],
-  display: "swap",
-});
-
-const dmMono = DM_Mono({
-  variable: "--font-dm-mono",
-  weight: ["300", "400", "500"],
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const sourceSerif = Source_Serif_4({
-  variable: "--font-source-serif",
-  subsets: ["latin"],
-  weight: ["300", "400", "600"],
-  style: ["normal", "italic"],
-  display: "swap",
-});
-
-const crimsonText = Crimson_Text({
-  variable: "--font-crimson",
   weight: ["400", "600", "700"],
+  style: ["normal", "italic"],
+  display: "swap",
+});
+
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
   subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
+});
+
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  display: "swap",
+});
+
+const spaceMono = Space_Mono({
+  variable: "--font-space-mono",
+  subsets: ["latin"],
+  weight: ["400"],
   display: "swap",
 });
 
@@ -94,7 +93,7 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
-      className={`${cormorant.variable} ${dmMono.variable} ${sourceSerif.variable} ${crimsonText.variable} antialiased`}
+      className={`${cormorant.variable} ${spaceGrotesk.variable} ${inter.variable} ${spaceMono.variable} antialiased`}
       suppressHydrationWarning
     >
       <body style={{ backgroundColor: "var(--cream-base)", color: "var(--ink-black)" }}>

@@ -15,7 +15,7 @@ export function Footer({ stats }: FooterProps) {
   const currentYear = new Date().getFullYear();
   const pathname = usePathname();
 
-  if (pathname === '/ask') return null;
+  if (pathname === '/ask' || pathname === '/pre-mortem') return null;
 
   return (
     <footer

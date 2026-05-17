@@ -11,6 +11,7 @@ type Step = 'PITCH' | 'QUESTIONS' | 'ANALYSIS' | 'REPORT';
 interface Question {
   id: string;
   text: string;
+  options: string[];
 }
 
 // Animated SVG: failure vectors radiating from a central node
@@ -29,7 +30,7 @@ function FailureVectorDiagram() {
   return (
     <svg
       viewBox="0 0 300 300"
-      style={{ width: '100%', maxWidth: '320px', opacity: 0.6 }}
+      style={{ width: '100%', maxWidth: '280px', opacity: 0.6 }}
       aria-hidden="true"
     >
       {/* Dashed circles */}
@@ -76,7 +77,7 @@ function FailureVectorDiagram() {
               textAnchor="middle"
               dominantBaseline="middle"
               style={{
-                fontFamily: 'var(--font-dm-mono), monospace',
+                fontFamily: "'Space Mono', monospace",
                 fontSize: '7px',
                 fill: 'rgba(253,250,245,0.4)',
                 letterSpacing: '0.1em',
@@ -96,7 +97,7 @@ function FailureVectorDiagram() {
         textAnchor="middle"
         dominantBaseline="middle"
         style={{
-          fontFamily: 'var(--font-cormorant), Georgia, serif',
+          fontFamily: "'Cormorant Garamond', serif",
           fontSize: '12px',
           fontWeight: '700',
           fill: 'var(--cream-base)',
@@ -120,11 +121,15 @@ export default function PreMortemPage() {
   const [pitch, setPitch] = useState('');
   const [questions, setQuestions] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
+  const [customAnswers, setCustomAnswers] = useState<Record<string, string>>({});
   const [report, setReport] = useState<PremortemReport | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [reportId] = useState(() => Math.floor(Math.random() * 9000) + 1000);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
 
   const TOTAL_STEPS = 3;
 
@@ -141,6 +146,10 @@ export default function PreMortemPage() {
       setSessionId(data.sessionId);
       setStep('QUESTIONS');
       setCurrentStep(2);
+      setCurrentQuestionIndex(0);
+      setSelectedOptions({});
+      setCustomAnswers({});
+      setAnswers({});
     } catch (error) {
       console.error(error);
     } finally {
@@ -166,10 +175,27 @@ export default function PreMortemPage() {
     }
   };
 
+  const handleSelectOption = (questionId: string, optionIndex: string, optionText: string) => {
+    setSelectedOptions((prev) => ({ ...prev, [questionId]: optionIndex }));
+    setAnswers((prev) => ({ ...prev, [questionId]: optionText }));
+  };
+
+  const handleCustomTextChange = (questionId: string, text: string) => {
+    setCustomAnswers((prev) => ({ ...prev, [questionId]: text }));
+    setAnswers((prev) => ({ ...prev, [questionId]: text }));
+  };
+
+  const handleSelectOther = (questionId: string) => {
+    setSelectedOptions((prev) => ({ ...prev, [questionId]: 'other' }));
+    const customText = customAnswers[questionId] || '';
+    setAnswers((prev) => ({ ...prev, [questionId]: customText }));
+  };
+
   return (
     <main
       style={{
-        minHeight: 'calc(100vh - 56px)',
+        height: 'calc(100vh - 56px)',
+        overflow: 'hidden',
         display: 'grid',
       }}
       className="lg:grid-cols-2"
@@ -178,12 +204,13 @@ export default function PreMortemPage() {
       <div
         style={{
           backgroundColor: 'var(--ink-black)',
-          padding: '64px 48px',
+          padding: '40px 32px',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
-          gap: '48px',
-          minHeight: '400px',
+          gap: '24px',
+          height: '100%',
+          overflow: 'hidden',
         }}
         className="hidden lg:flex"
       >
@@ -191,12 +218,12 @@ export default function PreMortemPage() {
           {/* Kicker */}
           <div
             style={{
-              fontFamily: 'var(--font-dm-mono), monospace',
-              fontSize: '10px',
+              fontFamily: "'Space Mono', monospace",
+              fontSize: '11px',
               textTransform: 'uppercase',
-              letterSpacing: '0.16em',
+              letterSpacing: '0.15em',
               color: 'var(--rust-accent)',
-              marginBottom: '24px',
+              marginBottom: '16px',
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
@@ -219,7 +246,11 @@ export default function PreMortemPage() {
             style={{
               color: 'var(--cream-base)',
               maxWidth: '16ch',
-              marginBottom: '20px',
+              marginBottom: '12px',
+              fontSize: '24px',
+              lineHeight: 1.2,
+              fontFamily: "'Cormorant Garamond', serif",
+              fontStyle: 'italic',
             }}
           >
             Diagnose your startup before it&apos;s too late.
@@ -227,9 +258,10 @@ export default function PreMortemPage() {
 
           <p
             style={{
-              fontFamily: 'var(--font-source-serif), Georgia, serif',
-              fontSize: '15px',
-              lineHeight: 1.75,
+              fontFamily: "'Inter', sans-serif",
+              fontWeight: '400',
+              fontSize: '14px',
+              lineHeight: 1.6,
               color: 'var(--ink-muted)',
               maxWidth: '36ch',
             }}
@@ -241,7 +273,7 @@ export default function PreMortemPage() {
         </div>
 
         {/* SVG diagram */}
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1 }}>
           <FailureVectorDiagram />
         </div>
 
@@ -249,7 +281,7 @@ export default function PreMortemPage() {
         <div
           style={{
             borderTop: '1px solid rgba(217,207,192,0.12)',
-            paddingTop: '24px',
+            paddingTop: '16px',
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',
             gap: '16px',
@@ -262,8 +294,8 @@ export default function PreMortemPage() {
             <div key={s.label}>
               <div
                 style={{
-                  fontFamily: 'var(--font-cormorant), Georgia, serif',
-                  fontSize: '24px',
+                  fontFamily: "'Cormorant Garamond', serif",
+                  fontSize: '20px',
                   fontWeight: '700',
                   color: 'var(--cream-base)',
                   lineHeight: 1,
@@ -274,10 +306,10 @@ export default function PreMortemPage() {
               </div>
               <div
                 style={{
-                  fontFamily: 'var(--font-dm-mono), monospace',
-                  fontSize: '8px',
+                  fontFamily: "'Space Mono', monospace",
+                  fontSize: '11px',
                   textTransform: 'uppercase',
-                  letterSpacing: '0.12em',
+                  letterSpacing: '0.1em',
                   color: 'var(--ink-muted)',
                 }}
               >
@@ -292,21 +324,22 @@ export default function PreMortemPage() {
       <div
         style={{
           backgroundColor: 'var(--cream-base)',
-          padding: '48px 40px',
+          padding: '24px 32px',
           display: 'flex',
           flexDirection: 'column',
-          overflowY: 'auto',
+          height: '100%',
+          overflow: 'hidden',
         }}
       >
         {/* Step indicators */}
         {step !== 'ANALYSIS' && step !== 'REPORT' && (
-          <div style={{ marginBottom: '40px' }}>
+          <div style={{ marginBottom: '16px' }}>
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0',
-                marginBottom: '16px',
+                marginBottom: '8px',
               }}
             >
               {['STEP_01', 'STEP_02', 'STEP_03'].map((label, i) => {
@@ -320,10 +353,10 @@ export default function PreMortemPage() {
                   >
                     <span
                       style={{
-                        fontFamily: 'var(--font-dm-mono), monospace',
-                        fontSize: '9px',
+                        fontFamily: "'Space Mono', monospace",
+                        fontSize: '11px',
                         textTransform: 'uppercase',
-                        letterSpacing: '0.12em',
+                        letterSpacing: '0.1em',
                         color: isActive
                           ? 'var(--rust-accent)'
                           : isDone
@@ -361,7 +394,7 @@ export default function PreMortemPage() {
         )}
 
         {/* Step content */}
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, height: '100%', overflow: 'hidden' }}>
           <AnimatePresence mode="wait">
             {step === 'PITCH' && (
               <motion.div
@@ -370,46 +403,55 @@ export default function PreMortemPage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.28 }}
+                style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
               >
-                <div
-                  style={{
-                    fontFamily: 'var(--font-dm-mono), monospace',
-                    fontSize: '9px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.14em',
-                    color: 'var(--rust-accent)',
-                    marginBottom: '12px',
-                  }}
-                >
-                  THE_PITCH
+                <div>
+                  <div
+                    style={{
+                      fontFamily: "'Space Mono', monospace",
+                      fontSize: '11px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.15em',
+                      color: 'var(--rust-accent)',
+                      marginBottom: '8px',
+                    }}
+                  >
+                    THE_PITCH
+                  </div>
+                  <h2
+                    style={{
+                      fontFamily: "'Cormorant Garamond', serif",
+                      fontStyle: 'italic',
+                      fontSize: '28px',
+                      margin: '0 0 6px 0',
+                      color: 'var(--ink-black)',
+                    }}
+                  >
+                    Describe your venture.
+                  </h2>
+                  <p
+                    style={{
+                      fontFamily: "'Inter', sans-serif",
+                      fontWeight: '400',
+                      fontSize: '13px',
+                      lineHeight: 1.6,
+                      color: 'var(--ink-muted)',
+                      fontStyle: 'italic',
+                      margin: 0,
+                    }}
+                  >
+                    &quot;Most startups commit suicide. We help you identify the weapon before you use it.&quot;
+                  </p>
                 </div>
-                <h2
-                  className="t-h2"
-                  style={{ marginBottom: '8px' }}
-                >
-                  Describe your venture.
-                </h2>
-                <p
-                  style={{
-                    fontFamily: 'var(--font-source-serif), Georgia, serif',
-                    fontSize: '14px',
-                    lineHeight: 1.7,
-                    color: 'var(--ink-muted)',
-                    fontStyle: 'italic',
-                    marginBottom: '32px',
-                  }}
-                >
-                  &quot;Most startups commit suicide. We help you identify the weapon before you use it.&quot;
-                </p>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1, justifyContent: 'center' }}>
                   <div>
                     <label
                       style={{
-                        fontFamily: 'var(--font-dm-mono), monospace',
-                        fontSize: '9px',
+                        fontFamily: "'Space Grotesk', sans-serif",
+                        fontWeight: 500,
+                        fontSize: '11px',
                         textTransform: 'uppercase',
-                        letterSpacing: '0.14em',
                         color: 'var(--ink-muted)',
                         display: 'block',
                         marginBottom: '8px',
@@ -422,7 +464,12 @@ export default function PreMortemPage() {
                       placeholder="Describe your venture's core value proposition, target market, and execution strategy..."
                       value={pitch}
                       onChange={(e) => setPitch(e.target.value)}
-                      rows={7}
+                      style={{
+                        fontFamily: "'Inter', sans-serif",
+                        fontSize: '14px',
+                        height: '140px',
+                        resize: 'none',
+                      }}
                     />
                   </div>
 
@@ -433,7 +480,10 @@ export default function PreMortemPage() {
                     style={{
                       opacity: pitch.length < 20 || isGenerating ? 0.4 : 1,
                       justifyContent: 'center',
-                      padding: '16px 32px',
+                      padding: '12px 24px',
+                      fontFamily: "'Space Grotesk', sans-serif",
+                      fontSize: '13px',
+                      fontWeight: '500',
                     }}
                   >
                     {isGenerating ? 'ANALYZING...' : 'INITIATE DIAGNOSTIC →'}
@@ -442,84 +492,336 @@ export default function PreMortemPage() {
               </motion.div>
             )}
 
-            {step === 'QUESTIONS' && (
-              <motion.div
-                key="questions"
-                initial={{ opacity: 0, x: 16 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -16 }}
-                transition={{ duration: 0.28 }}
-              >
-                <div
-                  style={{
-                    fontFamily: 'var(--font-dm-mono), monospace',
-                    fontSize: '9px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.14em',
-                    color: 'var(--rust-accent)',
-                    marginBottom: '12px',
-                  }}
-                >
-                  INTERROGATION
-                </div>
-                <h2 className="t-h2" style={{ marginBottom: '36px' }}>
-                  Forensic questions.
-                </h2>
+            {step === 'QUESTIONS' && questions.length > 0 && (
+              (() => {
+                const q = questions[currentQuestionIndex];
+                const selected = selectedOptions[q.id];
+                const isCurrentQuestionAnswered = selected !== undefined && selected !== null && (selected !== 'other' || (customAnswers[q.id] || '').trim().length > 0);
+                const isLastQuestion = currentQuestionIndex === questions.length - 1;
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '36px' }}>
-                  {questions.map((q, i) => (
-                    <div key={q.id}>
+                return (
+                  <motion.div
+                    key="questions"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    style={{
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    {/* Step header / progress dot tracker */}
+                    <div>
                       <div
                         style={{
                           display: 'flex',
+                          justifyContent: 'space-between',
                           alignItems: 'center',
-                          gap: '10px',
-                          marginBottom: '12px',
+                          marginBottom: '16px',
                         }}
                       >
                         <span
                           style={{
-                            fontFamily: 'var(--font-dm-mono), monospace',
-                            fontSize: '9px',
+                            fontFamily: "'Space Grotesk', sans-serif",
+                            fontWeight: 500,
+                            fontSize: '11px',
+                            textTransform: 'uppercase',
                             color: 'var(--rust-accent)',
-                            flexShrink: 0,
                           }}
                         >
-                          VEC_<span className="t-num">0{i + 1}</span>
+                          INTERROGATION
                         </span>
-                        <div style={{ flex: 1, height: '1px', borderTop: '1px dashed var(--cream-dark)' }} />
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          <span
+                            style={{
+                              fontFamily: "'Space Mono', monospace",
+                              fontSize: '11px',
+                              letterSpacing: '0.1em',
+                              color: 'var(--ink-muted)',
+                            }}
+                          >
+                            QUESTION_0{currentQuestionIndex + 1} / 03
+                          </span>
+                          <div style={{ display: 'flex', gap: '4px' }}>
+                            {[0, 1, 2].map((idx) => (
+                              <span
+                                key={idx}
+                                style={{
+                                  width: '6px',
+                                  height: '6px',
+                                  borderRadius: '50%',
+                                  backgroundColor: idx === currentQuestionIndex ? 'var(--rust-accent)' : 'var(--cream-dark)',
+                                  transition: 'background-color 0.2s ease',
+                                }}
+                              />
+                            ))}
+                          </div>
+                        </div>
                       </div>
-                      <label
+
+                      <div
                         style={{
-                          fontFamily: 'var(--font-cormorant), Georgia, serif',
-                          fontSize: '20px',
-                          fontWeight: '600',
-                          color: 'var(--ink-black)',
-                          lineHeight: 1.2,
-                          display: 'block',
-                          marginBottom: '12px',
+                          height: '1px',
+                          width: '100%',
+                          backgroundColor: 'var(--cream-dark)',
+                          marginBottom: '20px',
                         }}
-                      >
-                        {q.text}
-                      </label>
-                      <textarea
-                        className="sg-textarea"
-                        placeholder="Input forensic detail..."
-                        rows={3}
-                        onChange={(e) => setAnswers({ ...answers, [q.id]: e.target.value })}
                       />
                     </div>
-                  ))}
-                </div>
 
-                <button
-                  onClick={handleFinalize}
-                  className="btn-rust"
-                  style={{ marginTop: '40px', justifyContent: 'center', padding: '16px 32px', width: '100%' }}
-                >
-                  GENERATE REPORT →
-                </button>
-              </motion.div>
+                    {/* Paginated Animated Container */}
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={currentQuestionIndex}
+                          initial={{ opacity: 0, x: 40 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -40 }}
+                          transition={{ duration: 0.2, ease: 'easeOut' }}
+                          style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}
+                        >
+                          <div>
+                            {/* Option Header */}
+                            <div
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                marginBottom: '12px',
+                              }}
+                            >
+                              <span
+                                style={{
+                                  fontFamily: "'Space Mono', monospace",
+                                  fontSize: '11px',
+                                  letterSpacing: '0.15em',
+                                  color: 'var(--rust-accent)',
+                                }}
+                              >
+                                VEC_0{currentQuestionIndex + 1}
+                              </span>
+                              <span
+                                style={{
+                                  fontFamily: "'Space Mono', monospace",
+                                  fontSize: '11px',
+                                  color: 'var(--ink-muted)',
+                                }}
+                              >
+                                Q {currentQuestionIndex + 1} of 3
+                              </span>
+                            </div>
+
+                            {/* Question text clamped */}
+                            <h3
+                              style={{
+                                fontFamily: "'Cormorant Garamond', serif",
+                                fontStyle: 'italic',
+                                fontSize: '20px',
+                                lineHeight: '1.35',
+                                color: 'var(--ink-black)',
+                                marginBottom: '20px',
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                                height: '54px',
+                              }}
+                            >
+                              {q.text}
+                            </h3>
+
+                            {/* 2x2 Option Grid */}
+                            <div
+                              style={{
+                                display: 'grid',
+                                gridTemplateColumns: '1fr 1fr',
+                                gap: '12px',
+                                marginBottom: '20px',
+                              }}
+                            >
+                              {q.options && q.options.map((option, idx) => {
+                                const isSelected = selectedOptions[q.id] === String(idx);
+                                return (
+                                  <button
+                                    key={idx}
+                                    onClick={() => handleSelectOption(q.id, String(idx), option)}
+                                    style={{
+                                      padding: '12px 16px',
+                                      fontSize: '13px',
+                                      fontFamily: "'Inter', sans-serif",
+                                      fontWeight: '400',
+                                      textAlign: 'left',
+                                      backgroundColor: isSelected ? 'rgba(181, 74, 42, 0.08)' : 'var(--paper-white)',
+                                      border: isSelected ? '1.5px solid var(--rust-accent)' : '1px solid var(--cream-dark)',
+                                      color: 'var(--ink-black)',
+                                      borderRadius: '4px',
+                                      cursor: 'pointer',
+                                      transition: 'all 150ms ease',
+                                      height: '80px',
+                                      display: '-webkit-box',
+                                      WebkitLineClamp: 3,
+                                      WebkitBoxOrient: 'vertical',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                    }}
+                                    className="mcq-option-btn"
+                                  >
+                                    {option}
+                                  </button>
+                                );
+                              })}
+
+                              {/* Other Button - replacing inline */}
+                              {selected === 'other' ? (
+                                <div
+                                  style={{
+                                    height: '80px',
+                                    border: '1.5px solid var(--rust-accent)',
+                                    backgroundColor: 'rgba(181, 74, 42, 0.08)',
+                                    borderRadius: '4px',
+                                    padding: '12px 16px',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    justifyContent: 'center',
+                                  }}
+                                >
+                                  <input
+                                    type="text"
+                                    placeholder="Type custom answer..."
+                                    value={customAnswers[q.id] || ''}
+                                    onChange={(e) => handleCustomTextChange(q.id, e.target.value)}
+                                    autoFocus
+                                    style={{
+                                      width: '100%',
+                                      backgroundColor: 'transparent',
+                                      border: 'none',
+                                      borderBottom: '1px solid var(--rust-accent)',
+                                      color: 'var(--ink-black)',
+                                      fontFamily: "'Inter', sans-serif",
+                                      fontSize: '13px',
+                                      outline: 'none',
+                                      padding: '4px 0',
+                                    }}
+                                  />
+                                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedOptions((prev) => {
+                                          const u = { ...prev };
+                                          delete u[q.id];
+                                          return u;
+                                        });
+                                        setAnswers((prev) => {
+                                          const u = { ...prev };
+                                          delete u[q.id];
+                                          return u;
+                                        });
+                                      }}
+                                      style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        color: 'var(--rust-accent)',
+                                        fontSize: '9px',
+                                        cursor: 'pointer',
+                                        fontFamily: "'Space Mono', monospace",
+                                      }}
+                                    >
+                                      RESET
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => handleSelectOther(q.id)}
+                                  style={{
+                                    padding: '12px 16px',
+                                    fontSize: '13px',
+                                    fontFamily: "'Inter', sans-serif",
+                                    fontWeight: '400',
+                                    textAlign: 'left',
+                                    backgroundColor: 'var(--paper-white)',
+                                    border: '1px solid var(--cream-dark)',
+                                    color: 'var(--ink-black)',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    transition: 'all 150ms ease',
+                                    height: '80px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                  }}
+                                  className="mcq-option-btn"
+                                >
+                                  <span>✏️</span>
+                                  <span style={{ fontWeight: '500' }}>Other</span>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Pagination controls inside */}
+                          <div
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              marginTop: 'auto',
+                              paddingTop: '16px',
+                            }}
+                          >
+                            {currentQuestionIndex > 0 ? (
+                              <button
+                                onClick={() => setCurrentQuestionIndex((prev) => prev - 1)}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: 'var(--ink-muted)',
+                                  fontFamily: "'Space Mono', monospace",
+                                  fontSize: '11px',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                }}
+                              >
+                                ← BACK
+                              </button>
+                            ) : (
+                              <div />
+                            )}
+
+                            <button
+                              onClick={isLastQuestion ? handleFinalize : () => setCurrentQuestionIndex((prev) => prev + 1)}
+                              disabled={!isCurrentQuestionAnswered}
+                              className="btn-rust"
+                              style={{
+                                padding: '12px 24px',
+                                fontFamily: "'Space Grotesk', sans-serif",
+                                fontSize: '13px',
+                                fontWeight: '500',
+                                opacity: isCurrentQuestionAnswered ? 1 : 0.4,
+                                cursor: isCurrentQuestionAnswered ? 'pointer' : 'not-allowed',
+                              }}
+                            >
+                              {isLastQuestion ? 'GENERATE REPORT →' : 'NEXT →'}
+                            </button>
+                          </div>
+                        </motion.div>
+                      </AnimatePresence>
+                    </div>
+
+                    <style>{`
+                      .mcq-option-btn:hover {
+                        transform: scale(1.02) !important;
+                        border-color: var(--rust-accent) !important;
+                      }
+                    `}</style>
+                  </motion.div>
+                );
+              })()
             )}
 
             {step === 'ANALYSIS' && (
@@ -568,7 +870,7 @@ export default function PreMortemPage() {
                   >
                     <span
                       style={{
-                        fontFamily: 'var(--font-cormorant), Georgia, serif',
+                        fontFamily: "'Cormorant Garamond', serif",
                         fontSize: '18px',
                         fontWeight: '700',
                         color: 'var(--ink-black)',
@@ -581,7 +883,7 @@ export default function PreMortemPage() {
 
                 <h2
                   style={{
-                    fontFamily: 'var(--font-cormorant), Georgia, serif',
+                    fontFamily: "'Cormorant Garamond', serif",
                     fontSize: '28px',
                     fontWeight: '700',
                     fontStyle: 'italic',
@@ -613,10 +915,10 @@ export default function PreMortemPage() {
                       />
                       <span
                         style={{
-                          fontFamily: 'var(--font-dm-mono), monospace',
-                          fontSize: '9px',
+                          fontFamily: "'Space Mono', monospace",
+                          fontSize: '11px',
                           textTransform: 'uppercase',
-                          letterSpacing: '0.14em',
+                          letterSpacing: '0.1em',
                           color: 'var(--ink-muted)',
                         }}
                       >
@@ -634,129 +936,322 @@ export default function PreMortemPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.32 }}
-                style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                  height: '100%',
+                  overflow: 'hidden',
+                }}
               >
-                {/* Header */}
+                {/* Header (fixed) */}
                 <div
                   style={{
                     borderLeft: '3px solid var(--rust-accent)',
                     paddingLeft: '16px',
-                    marginBottom: '8px',
+                    marginBottom: '2px',
                   }}
                 >
                   <div
                     style={{
-                      fontFamily: 'var(--font-dm-mono), monospace',
-                      fontSize: '9px',
+                      fontFamily: "'Space Mono', monospace",
+                      fontSize: '11px',
                       textTransform: 'uppercase',
-                      letterSpacing: '0.14em',
+                      letterSpacing: '0.1em',
                       color: 'var(--rust-accent)',
-                      marginBottom: '4px',
+                      marginBottom: '2px',
                     }}
                   >
                     VERDICT_REPORT {'//'} CONFIDENTIAL
                   </div>
                   <div
                     style={{
-                      fontFamily: 'var(--font-dm-mono), monospace',
-                      fontSize: '9px',
+                      fontFamily: "'Space Mono', monospace",
+                      fontSize: '11px',
                       color: 'var(--ink-muted)',
+                      letterSpacing: '0.1em',
                     }}
                   >
                     #PRM-<span className="t-num">{reportId}</span>
                   </div>
                 </div>
 
-                <h2 className="t-h2">Forensic Verdict</h2>
+                <h2
+                  style={{
+                    fontFamily: "'Cormorant Garamond', serif",
+                    fontStyle: 'italic',
+                    fontSize: '24px',
+                    margin: '0 0 4px 0',
+                    color: 'var(--ink-black)',
+                  }}
+                >
+                  Forensic Verdict
+                </h2>
 
-                {/* Risk score */}
+                {/* Risk Score Card (fixed) */}
                 <div
                   style={{
                     display: 'grid',
                     gridTemplateColumns: '1fr 1fr',
-                    gap: '16px',
-                    padding: '20px',
+                    gap: '12px',
+                    padding: '12px',
                     backgroundColor: 'var(--cream-deep)',
                     border: '1px solid var(--cream-dark)',
                     borderRadius: '2px',
                   }}
                 >
                   <div>
-                    <div style={{ fontFamily: 'var(--font-dm-mono)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--ink-muted)', marginBottom: '6px' }}>
+                    <div
+                      style={{
+                        fontFamily: "'Space Mono', monospace",
+                        fontSize: '11px',
+                        letterSpacing: '0.1em',
+                        color: 'var(--ink-muted)',
+                        marginBottom: '4px',
+                      }}
+                    >
                       RISK_SCORE
                     </div>
-                    <div className="t-num" style={{ fontSize: '40px', fontWeight: '600', color: 'var(--rust-accent)', lineHeight: 1 }}>
+                    <div className="t-num" style={{ fontSize: '32px', fontWeight: '600', color: 'var(--rust-accent)', lineHeight: 1 }}>
                       {report.risk_score}%
                     </div>
                   </div>
                   <div>
-                    <div style={{ fontFamily: 'var(--font-dm-mono)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--ink-muted)', marginBottom: '6px' }}>
+                    <div
+                      style={{
+                        fontFamily: "'Space Mono', monospace",
+                        fontSize: '11px',
+                        letterSpacing: '0.1em',
+                        color: 'var(--ink-muted)',
+                        marginBottom: '4px',
+                      }}
+                    >
                       PROBABILITY
                     </div>
-                    <div style={{ fontFamily: 'var(--font-cormorant)', fontSize: '28px', fontWeight: '700', color: 'var(--ochre-signal)', lineHeight: 1 }}>
+                    <div
+                      style={{
+                        fontFamily: "'Cormorant Garamond', serif",
+                        fontStyle: 'italic',
+                        fontSize: '22px',
+                        fontWeight: '700',
+                        color: 'var(--ochre-signal)',
+                        lineHeight: 1.2,
+                      }}
+                    >
                       {report.risk_score > 70 ? 'HIGH' : report.risk_score > 40 ? 'MEDIUM' : 'LOW'}
                     </div>
                   </div>
                 </div>
 
-                {/* Verdict */}
+                {/* Executive Summary Card (fixed) */}
                 <div
                   style={{
-                    padding: '24px',
+                    padding: '12px 16px',
                     backgroundColor: 'var(--paper-white)',
                     border: '1px solid var(--cream-dark)',
                     borderRadius: '2px',
                   }}
                 >
-                  <div style={{ fontFamily: 'var(--font-dm-mono)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--ink-muted)', marginBottom: '12px' }}>
-                    EXECUTIVE_SUMMARY
-                  </div>
-                  <p style={{ fontFamily: 'var(--font-source-serif)', fontSize: '16px', lineHeight: 1.75, color: 'var(--ink-black)', fontStyle: 'italic' }}>
-                    &quot;{report.verdict}&quot;
-                  </p>
-                </div>
-
-                {/* Risk vectors */}
-                {report.primary_risks.map((risk: { category: string; description: string; mitigation: string }, i: number) => (
                   <div
-                    key={i}
                     style={{
-                      padding: '20px',
-                      backgroundColor: 'var(--cream-deep)',
-                      border: '1px solid var(--cream-dark)',
-                      borderLeft: '3px solid var(--rust-accent)',
-                      borderRadius: '2px',
+                      fontFamily: "'Space Mono', monospace",
+                      fontSize: '11px',
+                      letterSpacing: '0.1em',
+                      color: 'var(--ink-muted)',
+                      marginBottom: '4px',
                     }}
                   >
-                    <div style={{ fontFamily: 'var(--font-dm-mono)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--rust-accent)', marginBottom: '8px' }}>
-                      VECTOR_<span className="t-num">0{i + 1}</span> {'//'} {risk.category}
-                    </div>
-                    <h4 style={{ fontFamily: 'var(--font-cormorant)', fontSize: '18px', fontWeight: '600', color: 'var(--ink-black)', marginBottom: '12px', fontStyle: 'italic' }}>
-                      {risk.description}
-                    </h4>
-                    <div style={{ borderTop: '1.5px dashed var(--cream-dark)', paddingTop: '12px' }}>
-                      <div style={{ fontFamily: 'var(--font-dm-mono)', fontSize: '8px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--ink-muted)', marginBottom: '6px' }}>
-                        MITIGATION
-                      </div>
-                      <p style={{ fontFamily: 'var(--font-source-serif)', fontSize: '13px', lineHeight: 1.65, color: 'var(--ink-muted)' }}>
-                        {risk.mitigation}
-                      </p>
-                    </div>
+                    EXECUTIVE_SUMMARY
                   </div>
-                ))}
+                  <p
+                    style={{
+                      fontFamily: "'Inter', sans-serif",
+                      fontWeight: '400',
+                      fontSize: '13px',
+                      lineHeight: 1.5,
+                      color: 'var(--ink-black)',
+                      fontStyle: 'italic',
+                      margin: 0,
+                      display: isSummaryExpanded ? 'block' : '-webkit-box',
+                      WebkitLineClamp: isSummaryExpanded ? undefined : 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    &quot;{report.verdict}&quot;
+                  </p>
+                  {report.verdict.length > 120 && (
+                    <button
+                      onClick={() => setIsSummaryExpanded((prev) => !prev)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--rust-accent)',
+                        fontFamily: "'Space Mono', monospace",
+                        fontSize: '9px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        padding: 0,
+                        marginTop: '4px',
+                        display: 'block',
+                      }}
+                    >
+                      {isSummaryExpanded ? 'READ LESS' : 'READ MORE'}
+                    </button>
+                  )}
+                </div>
 
-                {/* Actions */}
-                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                {/* Scrollable Risk Vectors Box */}
+                <div style={{ position: 'relative', flex: 1, overflow: 'hidden' }}>
+                  <div
+                    style={{
+                      height: '100%',
+                      overflowY: 'auto',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '10px',
+                      maxHeight: 'calc(100vh - 380px)',
+                      paddingRight: '6px',
+                    }}
+                    className="custom-scrollbar"
+                  >
+                    {report.primary_risks.map((risk: { category: string; description: string; mitigation: string }, i: number) => (
+                      <div
+                        key={i}
+                        style={{
+                          padding: '12px 16px',
+                          backgroundColor: 'var(--cream-deep)',
+                          border: '1px solid var(--cream-dark)',
+                          borderLeft: '3px solid var(--rust-accent)',
+                          borderRadius: '2px',
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontFamily: "'Space Mono', monospace",
+                            fontSize: '11px',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.15em',
+                            color: 'var(--rust-accent)',
+                            marginBottom: '4px',
+                          }}
+                        >
+                          VECTOR_0{i + 1} {'//'} {risk.category}
+                        </div>
+                        <h4
+                          style={{
+                            fontFamily: "'Cormorant Garamond', serif",
+                            fontStyle: 'italic',
+                            fontSize: '16px',
+                            fontWeight: '600',
+                            color: 'var(--ink-black)',
+                            marginBottom: '8px',
+                          }}
+                        >
+                          {risk.description}
+                        </h4>
+                        <div style={{ borderTop: '1px dashed var(--cream-dark)', paddingTop: '8px' }}>
+                          <div
+                            style={{
+                              fontFamily: "'Space Mono', monospace",
+                              fontSize: '9px',
+                              letterSpacing: '0.1em',
+                              color: 'var(--ink-muted)',
+                              marginBottom: '4px',
+                            }}
+                          >
+                            MITIGATION
+                          </div>
+                          <p
+                            style={{
+                              fontFamily: "'Inter', sans-serif",
+                              fontWeight: '400',
+                              fontSize: '12px',
+                              lineHeight: 1.5,
+                              color: 'var(--ink-muted)',
+                              margin: 0,
+                            }}
+                          >
+                            {risk.mitigation}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Gradient Fade Overlay at bottom */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      height: '24px',
+                      background: 'linear-gradient(to top, var(--cream-base), transparent)',
+                      pointerEvents: 'none',
+                    }}
+                  />
+                </div>
+
+                {/* Fixed Action Buttons */}
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: '12px',
+                    flexWrap: 'wrap',
+                    paddingTop: '12px',
+                    borderTop: '1px solid var(--cream-dark)',
+                    backgroundColor: 'var(--cream-base)',
+                  }}
+                >
                   <button
-                    onClick={() => { setStep('PITCH'); setCurrentStep(1); setPitch(''); setAnswers({}); setReport(null); }}
+                    onClick={() => {
+                      setStep('PITCH');
+                      setCurrentStep(1);
+                      setPitch('');
+                      setAnswers({});
+                      setSelectedOptions({});
+                      setCustomAnswers({});
+                      setReport(null);
+                      setCurrentQuestionIndex(0);
+                    }}
                     className="btn-rust"
+                    style={{
+                      padding: '12px 24px',
+                      fontFamily: "'Space Grotesk', sans-serif",
+                      fontSize: '13px',
+                      fontWeight: '500',
+                    }}
                   >
                     NEW SCAN →
                   </button>
-                  <button className="btn-outline-ink">
+                  <button
+                    className="btn-outline-ink"
+                    style={{
+                      padding: '12px 24px',
+                      fontFamily: "'Space Grotesk', sans-serif",
+                      fontSize: '13px',
+                      fontWeight: '500',
+                    }}
+                  >
                     EXPORT PDF
                   </button>
                 </div>
+
+                <style>{`
+                  .custom-scrollbar::-webkit-scrollbar {
+                    width: 2px;
+                  }
+                  .custom-scrollbar::-webkit-scrollbar-track {
+                    background: rgba(26,23,20,0.05);
+                  }
+                  .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: var(--rust-accent);
+                    border-radius: 1px;
+                  }
+                  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                    background: #9f3d22;
+                  }
+                `}</style>
               </motion.div>
             )}
           </AnimatePresence>
