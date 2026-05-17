@@ -1091,6 +1091,7 @@ export default function PreMortemPage() {
                   style={{
                     fontFamily: 'var(--font-display)',
                     fontStyle: 'italic',
+                    fontWeight: '700',
                     fontSize: '22px',
                     lineHeight: '1.4',
                     color: 'var(--ink-black)',
@@ -1167,7 +1168,7 @@ export default function PreMortemPage() {
                           margin: 0,
                         }}
                       >
-                        <span style={{ fontWeight: '600', color: 'var(--ink-soft)', display: 'block', fontSize: '11px', fontFamily: 'var(--font-mono)', letterSpacing: '0.05em', marginBottom: '4px' }}>
+                        <span style={{ fontWeight: '400', color: 'var(--ink-soft)', display: 'block', fontSize: '11px', fontFamily: 'var(--font-mono)', letterSpacing: '0.05em', marginBottom: '4px' }}>
                           MITIGATION:
                         </span>
                         {risk.mitigation}
