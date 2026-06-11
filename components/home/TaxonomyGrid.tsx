@@ -134,7 +134,6 @@ export function TaxonomyGrid({ failureData }: { failureData?: Array<{ name: stri
           ref={ref}
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
             gap: '16px',
           }}
           className="pattern-grid"

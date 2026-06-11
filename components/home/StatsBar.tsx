@@ -135,32 +135,34 @@ export function StatsBar({ totalCases, totalBurned, avgLifespan, patternCount }:
       />
 
       <div
-        className="sg-container"
+        className="sg-container grid grid-cols-2 md:grid-cols-4"
         style={{
-          display: 'flex',
-          flexWrap: 'nowrap',
-          alignItems: 'stretch',
           position: 'relative',
           zIndex: 1,
         }}
       >
-        <StatItem label="PUBLISHED CASES" rawValue={totalCases} isVisible={isVisible} />
-        <div style={{ width: '1px', background: 'var(--cream-dark)', margin: '16px 0', flexShrink: 0 }} />
-        <StatItem
-          label="CAPITAL LOST"
-          rawValue={burnedNum}
-          displayValue={isVisible ? formatCurrencyCompact(burnedNum) : '$0'}
-          isVisible={isVisible}
-        />
-        <div style={{ width: '1px', background: 'var(--cream-dark)', margin: '16px 0', flexShrink: 0 }} />
-        <StatItem
-          label="AVG. LIFESPAN (YRS)"
-          rawValue={Math.round(lifespanNum * 10)}
-          displayValue={isVisible ? `${lifespanNum.toFixed(1)} YRS` : '0 YRS'}
-          isVisible={isVisible}
-        />
-        <div style={{ width: '1px', background: 'var(--cream-dark)', margin: '16px 0', flexShrink: 0 }} />
-        <StatItem label="FAILURE PATTERNS" rawValue={patternCount} isVisible={isVisible} />
+        <div className="border-r border-b md:border-b-0 border-cream-dark">
+          <StatItem label="PUBLISHED CASES" rawValue={totalCases} isVisible={isVisible} />
+        </div>
+        <div className="border-b md:border-b-0 md:border-r border-cream-dark">
+          <StatItem
+            label="CAPITAL LOST"
+            rawValue={burnedNum}
+            displayValue={isVisible ? formatCurrencyCompact(burnedNum) : '$0'}
+            isVisible={isVisible}
+          />
+        </div>
+        <div className="border-r border-cream-dark">
+          <StatItem
+            label="AVG. LIFESPAN (YRS)"
+            rawValue={Math.round(lifespanNum * 10)}
+            displayValue={isVisible ? `${lifespanNum.toFixed(1)} YRS` : '0 YRS'}
+            isVisible={isVisible}
+          />
+        </div>
+        <div>
+          <StatItem label="FAILURE PATTERNS" rawValue={patternCount} isVisible={isVisible} />
+        </div>
       </div>
     </div>
   );

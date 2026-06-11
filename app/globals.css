@@ -3,6 +3,7 @@
 @theme inline {
   --font-display: var(--font-cormorant), 'Georgia', serif;
   --font-mono: var(--font-ibm-plex-mono), 'IBM Plex Mono', monospace;
+  --font-dm-mono: var(--font-ibm-plex-mono), 'IBM Plex Mono', monospace;
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-body: var(--font-inter), system-ui, sans-serif;
   --font-subhead: var(--font-space-grotesk), sans-serif;
@@ -54,6 +55,7 @@
   --font-display: var(--font-cormorant), 'Georgia', serif;
   --font-body: var(--font-inter), system-ui, sans-serif;
   --font-mono: var(--font-ibm-plex-mono), 'IBM Plex Mono', monospace;
+  --font-dm-mono: var(--font-ibm-plex-mono), 'IBM Plex Mono', monospace;
   --font-subhead: var(--font-space-grotesk), sans-serif;
 }
 
@@ -70,20 +72,12 @@ html {
 body {
   min-height: 100vh;
   background-color: var(--cream-base);
+  background-image: radial-gradient(rgba(26, 23, 20, 0.015) 0.5px, transparent 0.5px);
+  background-size: 3px 3px;
+  background-attachment: fixed;
   color: var(--ink-black);
   font-family: var(--font-body), system-ui, sans-serif;
   position: relative;
-}
-
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 9999;
-  opacity: 0.015;
-  background-image: radial-gradient(#1A1714 0.5px, transparent 0.5px);
-  background-size: 3px 3px;
 }
 
 .textarea-step1::placeholder {
@@ -115,13 +109,13 @@ body::before {
 }
 
 .section-pad {
-  padding-top: clamp(72px, 8vw, 128px);
-  padding-bottom: clamp(72px, 8vw, 128px);
+  padding-top: clamp(48px, 5vw, 80px);
+  padding-bottom: clamp(48px, 5vw, 80px);
 }
 
 .section-pad-sm {
-  padding-top: clamp(40px, 5vw, 80px);
-  padding-bottom: clamp(40px, 5vw, 80px);
+  padding-top: clamp(24px, 3vw, 48px);
+  padding-bottom: clamp(24px, 3vw, 48px);
 }
 
 .hero-grid {

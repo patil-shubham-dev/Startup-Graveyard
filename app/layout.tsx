@@ -33,7 +33,7 @@ const spaceGrotesk = Space_Grotesk({
 
 const inter = Inter({
   subsets: ["latin"],
-  weight: ["400"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-inter",
   display: "swap",
   preload: true,
@@ -41,7 +41,7 @@ const inter = Inter({
 
 const ibmPlexMono = IBM_Plex_Mono({
   subsets: ["latin"],
-  weight: ["400", "500"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-ibm-plex-mono",
   display: "swap",
   preload: false,

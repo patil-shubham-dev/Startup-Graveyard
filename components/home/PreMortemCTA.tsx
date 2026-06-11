@@ -86,8 +86,8 @@ export function PreMortemCTA() {
       <div
         className="sg-container"
         style={{
-          paddingTop: '136px',
-          paddingBottom: '136px',
+          paddingTop: '80px',
+          paddingBottom: '80px',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',

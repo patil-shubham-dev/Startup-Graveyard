@@ -1,8 +1,4 @@
-<p align="center">
-  <img src="public/logo.png" alt="Startup Graveyard AI" width="500px">
-</p>
-
-# Startup Graveyard AI
+# 💀 Startup Graveyard AI
 
 > **"He who does not learn from history is condemned to repeat it. He who learns from failure is destined to survive."**
 
@@ -10,8 +6,15 @@ Startup Graveyard AI is a professional forensic intelligence platform designed t
 
 ---
 
-### ⚠️ Project Status: Improvement Stage
-This project is currently under active development. Core modules for forensic analysis and intelligence archiving are operational, but we are continuously refining the predictive models and data high-fidelity.
+## 📸 Platform Interface
+
+### 1. Forensic Archive Dashboard
+Our minimalist dashboard offers real-time visualization of startup mortality rates, total venture capital lost, and failure case archives.
+![Forensic Archive Dashboard](public/screenshots/homepage.png)
+
+### 2. Forensic Autopsy Case Study
+Classified dossier layout featuring Failure DNA profiles, capital decay charts, and chronological post-mortem analysis.
+![Case Study Dossier](public/screenshots/dossier.png)
 
 ---
 
@@ -21,6 +24,20 @@ This project is currently under active development. Core modules for forensic an
 - **AI Pre-Mortem Engine**: An interactive interrogation module. Submit your venture details to receive a 4-stage forensic risk report, comparing your strategy against 1,000+ historical fail-points.
 - **The Graveyard Keeper (AI Assistant)**: A streaming, contextual intelligence officer capable of answering complex research queries about market hazards and execution errors.
 - **Insights Dashboard**: Real-time visualization of startup mortality rates, industry-specific risks, and capital burn taxonomies.
+
+---
+
+## 📐 Design System & CSS Philosophy
+The UI is inspired by classified intelligence dossiers and investigative boards:
+* **Anti-Aliased Typography:** Explicitly configures pixel-perfect font scaling. Avoids overlay layers that disrupt subpixel antialiasing.
+* **Refined Grids:** Uses fluid responsive grids (`featured-cases-grid` and `pattern-grid`) scaling dynamically from 4-columns on desktop to 1-column on mobile.
+* **Tactile Texture:** Displays a subtle dot pattern directly inside the page background rather than z-index viewport overlays, ensuring crisp text legibility.
+* **Palette:**
+  * **Background Base:** `#F5F0E8` (Warm Cream Base)
+  * **Text Primary:** `#1A1714` (Deep Charcoal Ink)
+  * **Primary Accent:** `#B54A2A` (Rust Red)
+
+---
 
 ## 🛠️ Technical Architecture
 
@@ -36,6 +53,8 @@ The platform is built on top of the **Vercel AI SDK**, making it completely prov
 - **Anthropic** (Claude 3.5 Sonnet)
 - **Google** (Gemini 1.5 Pro)
 - **Groq/Local Models** (Llama 3)
+
+---
 
 ## 📦 Installation & Setup
 
@@ -65,12 +84,6 @@ Execute the migrations found in `supabase/migrations/` and seed the database wit
 npm install
 npm run dev
 ```
-
-## 📐 Design Philosophy: "Forensic Intelligence"
-The UI is inspired by classified intelligence dossiers and investigative boards:
-- **Monospace Precision**: Technical data is rendered in `JetBrains Mono`.
-- **Editorial Narrative**: Strategic insights use `Fraunces` for weighted authority.
-- **Signal Logic**: Interactive elements use a disciplined color system (Amber for Caution, Violet for Intelligence, Red for Failure).
 
 ---
 

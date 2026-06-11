@@ -97,6 +97,7 @@ export function FeaturedCases({ initialCases = [] }: { initialCases?: CaseStudy[
         <div ref={ref}>
           {isLoading ? (
             <div
+              className="featured-cases-grid"
               style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(3, 1fr)',
@@ -113,6 +114,7 @@ export function FeaturedCases({ initialCases = [] }: { initialCases?: CaseStudy[
             </div>
           ) : (
             <div
+              className="featured-cases-grid"
               style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(3, 1fr)',
