@@ -45,20 +45,20 @@ export default async function Home() {
         patternCount={insights.patternCount}
       />
 
-      {/* 3. Featured cases archive */}
+      {/* 3. Pre-mortem CTA — only dark section */}
+      <PreMortemCTA />
+
+      {/* 4. Featured cases archive */}
       <FeaturedCases initialCases={featuredCases} />
 
-      {/* 4. Failure pattern taxonomy */}
+      {/* 5. Failure pattern taxonomy */}
       <TaxonomyGrid failureData={insights.failureData} />
 
-      {/* 5. Insights preview — charts + liquidations */}
+      {/* 6. Insights preview — charts + liquidations */}
       <InsightsPreview
         failureData={insights.failureData}
         topLiquidations={insights.topLiquidations}
       />
-
-      {/* 6. Pre-mortem CTA — only dark section */}
-      <PreMortemCTA />
     </main>
   );
 }

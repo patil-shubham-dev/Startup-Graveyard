@@ -1,13 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { DossierCard } from '@/components/ui/DossierCard';
+import { useState, useMemo } from 'react';
+import dynamic from 'next/dynamic';
+import { useQuery } from '@tanstack/react-query';
 import { listCaseStudies, CaseStudy } from '@/lib/db/case-studies';
+import { useDebounce } from '@/lib/hooks/useDebounce';
+
+const DossierCard = dynamic(() => import('@/components/ui/DossierCard').then(m => m.DossierCard), {
+  loading: () => <div className="skeleton-cream" style={{ height: '200px', borderRadius: '2px' }} />,
+});
 
 const INDUSTRIES = ['Fintech', 'SaaS', 'Hardware', 'Healthtech', 'E-commerce', 'Social', 'Logistics'];
 const FAIL_TYPES = ['No Market Need', 'Cash Exhaustion', 'Team Fracture', 'Competition', 'Pricing Failure', 'Regulatory'];
 
-// Tombstone SVG for empty state
 function TombstoneSVG() {
   return (
     <svg width="64" height="80" viewBox="0 0 64 80" fill="none" aria-hidden="true">
@@ -28,42 +33,32 @@ export function ExploreClient({ initialCases = [] }: ExploreClientProps) {
   const [search, setSearch] = useState('');
   const [industry, setIndustry] = useState('');
   const [failType, setFailType] = useState('');
-  const [cases, setCases] = useState<CaseStudy[]>(initialCases);
-  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    // Only fetch if filters change and we aren't using the initial state
-    if (industry) {
-      const loadCases = async () => {
-        setLoading(true);
-        try {
-          const data = await listCaseStudies({ industry: industry || undefined });
-          setCases(data);
-        } catch (error) {
-          console.error('Failed to load case studies:', error);
-        } finally {
-          setLoading(false);
-        }
-      };
-      loadCases();
-    } else if (cases !== initialCases && !industry) {
-        setCases(initialCases);
-    }
-  }, [industry, initialCases]);
+  const debouncedSearch = useDebounce(search, 300);
+  const debouncedIndustry = useDebounce(industry, 300);
 
-  const filteredCases = cases.filter((c) => {
-    const matchesSearch =
-      !search ||
-      c.company_name.toLowerCase().includes(search.toLowerCase()) ||
-      c.summary.toLowerCase().includes(search.toLowerCase()) ||
-      c.industry?.toLowerCase().includes(search.toLowerCase());
-
-    const matchesFailType =
-      !failType ||
-      c.failure_reasons?.some((r) => r.toLowerCase().includes(failType.toLowerCase()));
-
-    return matchesSearch && matchesFailType;
+  const { data: cases, isLoading } = useQuery({
+    queryKey: ['case-studies', debouncedIndustry],
+    queryFn: () => listCaseStudies({ industry: debouncedIndustry || undefined }),
+    initialData: initialCases,
+    staleTime: 5 * 60 * 1000,
   });
+
+  const filteredCases = useMemo(() => {
+    return cases.filter((c) => {
+      const matchesSearch =
+        !debouncedSearch ||
+        c.company_name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        c.summary.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        c.industry?.toLowerCase().includes(debouncedSearch.toLowerCase());
+
+      const matchesFailType =
+        !failType ||
+        c.failure_reasons?.some((r) => r.toLowerCase().includes(failType.toLowerCase()));
+
+      return matchesSearch && matchesFailType;
+    });
+  }, [cases, debouncedSearch, failType]);
 
   return (
     <main
@@ -72,7 +67,6 @@ export function ExploreClient({ initialCases = [] }: ExploreClientProps) {
         backgroundColor: 'var(--cream-base)',
       }}
     >
-      {/* Page Header */}
       <div
         style={{
           backgroundColor: 'var(--cream-deep)',
@@ -81,7 +75,6 @@ export function ExploreClient({ initialCases = [] }: ExploreClientProps) {
         }}
       >
         <div className="sg-container">
-          {/* Top row: title + count */}
           <div
             style={{
               display: 'flex',
@@ -120,34 +113,31 @@ export function ExploreClient({ initialCases = [] }: ExploreClientProps) {
               <h1 className="t-h1">Archives</h1>
             </div>
 
-            {/* File count */}
             <div
               className="t-num"
               style={{
                 fontSize: '11px',
                 textTransform: 'uppercase',
                 letterSpacing: '0.14em',
-                color: loading ? 'var(--ink-muted)' : 'var(--rust-accent)',
+                color: isLoading ? 'var(--ink-muted)' : 'var(--rust-accent)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
               }}
             >
-              {loading ? 'SYNCING...' : <>{filteredCases.length}_FILES</>}
+              {isLoading ? 'SYNCING...' : <>{filteredCases.length}_FILES</>}
               <span
                 style={{
                   width: '6px',
                   height: '6px',
                   borderRadius: '50%',
-                  backgroundColor: loading ? 'var(--ochre-signal)' : 'var(--rust-accent)',
+                  backgroundColor: isLoading ? 'var(--ochre-signal)' : 'var(--rust-accent)',
                   display: 'inline-block',
-                  animation: loading ? 'pulse 1s ease-in-out infinite' : 'none',
                 }}
               />
             </div>
           </div>
 
-          {/* Filter bar */}
           <div
             style={{
               display: 'flex',
@@ -156,7 +146,6 @@ export function ExploreClient({ initialCases = [] }: ExploreClientProps) {
               alignItems: 'center',
             }}
           >
-            {/* Search */}
             <div style={{ position: 'relative', flex: '1', minWidth: '200px', maxWidth: '360px' }}>
               <span
                 style={{
@@ -193,7 +182,6 @@ export function ExploreClient({ initialCases = [] }: ExploreClientProps) {
               />
             </div>
 
-            {/* Industry dropdown */}
             <select
               value={industry}
               onChange={(e) => setIndustry(e.target.value)}
@@ -207,7 +195,6 @@ export function ExploreClient({ initialCases = [] }: ExploreClientProps) {
               ))}
             </select>
 
-            {/* Fail type dropdown */}
             <select
               value={failType}
               onChange={(e) => setFailType(e.target.value)}
@@ -221,7 +208,6 @@ export function ExploreClient({ initialCases = [] }: ExploreClientProps) {
               ))}
             </select>
 
-            {/* Reset */}
             {(search || industry || failType) && (
               <button
                 onClick={() => { setSearch(''); setIndustry(''); setFailType(''); }}
@@ -245,9 +231,8 @@ export function ExploreClient({ initialCases = [] }: ExploreClientProps) {
         </div>
       </div>
 
-      {/* Grid */}
       <div className="sg-container" style={{ paddingTop: '40px', paddingBottom: '80px' }}>
-        {loading ? (
+        {isLoading ? (
           <div
             style={{
               display: 'grid',

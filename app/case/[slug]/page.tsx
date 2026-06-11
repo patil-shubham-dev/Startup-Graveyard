@@ -234,13 +234,16 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
           
           <Marginalia notes={study.marginalia || []} />
 
-          <div className="paper-dossier border border-ink-black/10 p-8 rounded-[4px] bg-paper-white relative overflow-hidden shadow-lg group hover:shadow-xl transition-shadow">
+            <div className="paper-dossier border border-ink-black/10 p-8 rounded-[4px] bg-paper-white relative overflow-hidden shadow-lg group hover:shadow-xl transition-shadow">
             <div className="absolute top-0 left-0 w-[4px] h-full bg-failed-red" />
             <h3 className="t-hero text-2xl mb-4 italic">Post-Mortem Analysis</h3>
             <p className="t-body-sm text-ink-muted mb-8 leading-relaxed">
               Every failure is a data point. Use our AI analyzer to stress-test your own startup idea against the patterns that killed {study.company_name}.
             </p>
-            <ScanButton href="/pre-mortem" label="RUN PRE-MORTEM" fullWidth />
+            <div className="flex flex-col gap-3">
+              <ScanButton href="/pre-mortem" label="RUN PRE-MORTEM" fullWidth />
+              <ScanButton href={`/ask?context=${encodeURIComponent(study.company_name)}`} label="ASK THE ARCHIVE" fullWidth />
+            </div>
           </div>
         </aside>
       </div>

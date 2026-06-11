@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import { cn } from '@/lib/utils/index';
 
 export const LogoImage = ({ 
@@ -32,9 +31,11 @@ export const LogoImage = ({
 
   return (
     <div className={cn("relative overflow-hidden bg-white p-1 rounded-sm border border-cream-dark/20", className)}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={displaySrc}
         alt={`${name} logo`}
+        loading="lazy"
         className="w-full h-full object-contain filter grayscale contrast-125"
         onError={() => setError(true)}
       />

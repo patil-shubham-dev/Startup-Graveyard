@@ -22,7 +22,7 @@ export function Marginalia({ notes }: MarginaliaProps) {
           key={note.id}
           initial={{ opacity: 0, x: 20 }}
           whileInView={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.5 + Math.random() * 0.5, duration: 0.8 }}
+          transition={{ delay: 0.5 + (note.id.charCodeAt(0) % 5) * 0.1, duration: 0.8 }}
           viewport={{ once: true }}
           className="absolute left-0 w-full pointer-events-auto"
           style={{ top: `${note.position_y}%` }}
@@ -35,7 +35,7 @@ export function Marginalia({ notes }: MarginaliaProps) {
                  <div className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
                </div>
                <p className="text-[12px] font-handwriting leading-tight text-ink-black/80 font-medium italic">
-                 "{note.text}"
+                  {'\u201C'}{note.text}{'\u201D'}
                </p>
             </div>
             

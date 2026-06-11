@@ -1,15 +1,23 @@
-import { cn } from '@/lib/utils/index';
 import { TrendingDown, Users, DollarSign, Calendar, Target, Activity } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 interface Metric {
   label: string;
   value: string | number;
-  icon?: any;
+  icon?: LucideIcon;
   trend?: 'up' | 'down' | 'neutral';
   description?: string;
 }
 
-export const MetricsDashboard = ({ metrics }: { metrics: any }) => {
+interface MetricsData {
+  capital_raised?: string;
+  monthly_burn?: string;
+  valuation?: string;
+  founding_date?: string;
+  [key: string]: string | number | undefined;
+}
+
+export const MetricsDashboard = ({ metrics }: { metrics: MetricsData }) => {
   if (!metrics) return null;
 
   const data: Metric[] = [

@@ -1,37 +1,60 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createOpenAI } from '@ai-sdk/openai';
-import { generateObject, embed, streamText } from 'ai';
+import { generateObject, streamText } from 'ai';
 import { ZodSchema } from 'zod';
 import OpenAI from 'openai';
+import { LRUCache } from 'lru-cache';
+import { searchCaseStudies } from '@/lib/db/case-studies';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Message = any;
 
-// Default provider configuration
+const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY || '';
+const hasValidKey = NVIDIA_API_KEY.length > 20 && !NVIDIA_API_KEY.includes('your-nvidia');
+
 const DEFAULT_MODEL = process.env.AI_DEFAULT_MODEL || 'meta/llama-3.1-70b-instruct';
 
-/**
- * NVIDIA NIM Provider Instance (AI SDK)
- */
-export const nvidia = createOpenAI({
-  apiKey: process.env.NVIDIA_API_KEY || '',
-  baseURL: 'https://integrate.api.nvidia.com/v1',
+let nvidiaInstance: ReturnType<typeof createOpenAI> | null = null;
+let openaiInstance: OpenAI | null = null;
+
+if (hasValidKey) {
+  nvidiaInstance = createOpenAI({
+    apiKey: NVIDIA_API_KEY,
+    baseURL: 'https://integrate.api.nvidia.com/v1',
+  });
+
+  openaiInstance = new OpenAI({
+    apiKey: NVIDIA_API_KEY,
+    baseURL: 'https://integrate.api.nvidia.com/v1',
+    timeout: 30000,
+    maxRetries: 2,
+  });
+}
+
+export { hasValidKey };
+
+const embeddingCache = new LRUCache<string, number[]>({
+  max: 500,
+  ttl: 1000 * 60 * 5,
 });
 
-/**
- * Standard OpenAI Client (for specific parameter support like input_type)
- */
-const openai = new OpenAI({
-  apiKey: process.env.NVIDIA_API_KEY || '',
-  baseURL: 'https://integrate.api.nvidia.com/v1',
+const responseCache = new LRUCache<string, string>({
+  max: 200,
+  ttl: 1000 * 60 * 60,
 });
 
-/**
- * AI Service Layer - Provider Agnostic Interface
- * Refactored for AI SDK v6 compatibility and NVIDIA NIM specific requirements.
- */
+function normalizeQuery(text: string): string {
+  return text.toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+function buildCacheKey(prefix: string, messages: Message[], system?: string): string {
+  const lastMsg = messages[messages.length - 1];
+  const text = typeof lastMsg?.content === 'string' ? lastMsg.content : '';
+  return `${prefix}:${normalizeQuery(text)}:${(system || '').slice(0, 100)}`;
+}
+
 export class AIService {
   private static instance: AIService;
-  
+
   private constructor() {}
 
   public static getInstance(): AIService {
@@ -41,12 +64,24 @@ export class AIService {
     return AIService.instance;
   }
 
-  /**
-   * Simple chat completion (streaming)
-   */
   async chat(messages: Message[], system?: string): Promise<ReadableStream> {
+    if (!nvidiaInstance || !hasValidKey) {
+      throw new Error('AI service: NVIDIA_API_KEY not configured');
+    }
+
+    const cacheKey = buildCacheKey('chat', messages, system);
+    const cached = responseCache.get(cacheKey);
+    if (cached) {
+      return new ReadableStream({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode(cached));
+          controller.close();
+        },
+      });
+    }
+
     const result = streamText({
-      model: nvidia.chat(DEFAULT_MODEL), // Use .chat() for standard OpenAI compatibility in v6
+      model: nvidiaInstance.chat(DEFAULT_MODEL),
       system,
       messages,
     });
@@ -54,30 +89,83 @@ export class AIService {
     return result.toUIMessageStreamResponse().body!;
   }
 
-  /**
-   * Generate embeddings using standard OpenAI client to support input_type
-   */
   async embed(text: string): Promise<number[]> {
-    const response = await openai.embeddings.create({
-      model: 'nvidia/nv-embedqa-e5-v5',
-      input: text,
-      // @ts-ignore - input_type is required by NVIDIA NIM but not in standard OpenAI types
-      input_type: 'query'
-    });
-    return response.data[0].embedding;
+    if (!openaiInstance || !hasValidKey) {
+      throw new Error('AI service: NVIDIA_API_KEY not configured');
+    }
+
+    const normalized = normalizeQuery(text);
+    const cached = embeddingCache.get(normalized);
+    if (cached) {
+      return cached;
+    }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+
+    try {
+      const response = await openaiInstance.embeddings.create({
+        model: 'nvidia/nv-embedqa-e5-v5',
+        input: text,
+        input_type: 'query',
+      } as never, {
+        signal: controller.signal,
+      });
+
+      const embedding = response.data[0].embedding;
+      embeddingCache.set(normalized, embedding);
+      return embedding;
+    } finally {
+      clearTimeout(timeout);
+    }
   }
 
-  /**
-   * Structured data generation with Zod validation
-   */
   async generate<T>(prompt: string, schema: ZodSchema<T>): Promise<T> {
+    if (!nvidiaInstance || !hasValidKey) {
+      throw new Error('AI service: NVIDIA_API_KEY not configured');
+    }
+
+    const cacheKey = `generate:${normalizeQuery(prompt)}`;
+    const cached = responseCache.get(cacheKey);
+    if (cached) {
+      return JSON.parse(cached) as T;
+    }
+
     const { object } = await generateObject({
-      model: nvidia.chat(DEFAULT_MODEL), // Use .chat() to avoid /responses 404
+      model: nvidiaInstance.chat(DEFAULT_MODEL),
       schema: schema,
       prompt: prompt,
     });
 
+    responseCache.set(cacheKey, JSON.stringify(object));
     return object as T;
+  }
+
+  async search(text: string): Promise<Array<{ company_name: string; summary: string; slug: string; similarity: number }>> {
+    const normalized = normalizeQuery(text);
+    const cacheKey = `search:${normalized}`;
+    const cached = responseCache.get(cacheKey);
+    if (cached) {
+      return JSON.parse(cached);
+    }
+
+    const embedText = text.length > 1000
+      ? text.substring(0, 500) + '\n...\n' + text.substring(text.length - 500)
+      : text;
+
+    const embedding = await this.embed(embedText);
+    const results = await searchCaseStudies(embedding, 3);
+
+    responseCache.set(cacheKey, JSON.stringify(results));
+    return results;
+  }
+
+  getEmbeddingCache() {
+    return embeddingCache;
+  }
+
+  getResponseCache() {
+    return responseCache;
   }
 }
 

@@ -1,20 +1,12 @@
 @import "tailwindcss";
 
-/* ============================================================
-   STARTUP GRAVEYARD — DESIGN SYSTEM
-   Forensic intelligence for failed companies.
-   ============================================================ */
-
 @theme inline {
-  /* Typography */
   --font-display: var(--font-cormorant), 'Georgia', serif;
   --font-mono: var(--font-ibm-plex-mono), 'IBM Plex Mono', monospace;
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-body: var(--font-inter), system-ui, sans-serif;
   --font-subhead: var(--font-space-grotesk), sans-serif;
 
-
-  /* Color Tokens */
   --color-cream-base: #F5F0E8;
   --color-cream-deep: #EDE6D6;
   --color-cream-dark: #D9CFC0;
@@ -27,7 +19,6 @@
   --color-paper-white: #FDFAF5;
   --color-failed-red: #980002;
 
-  /* Premium Pre-Mortem Redesign Tokens */
   --color-bg-main: #F7F4EE;
   --color-bg-card: #FCFAF6;
   --color-border: #DDD3C5;
@@ -35,37 +26,19 @@
   --color-text-secondary: #6D655B;
   --color-text-muted: #9A9187;
 
-  /* Dark Sidebar */
   --color-sidebar-bg: #090B0F;
   --color-sidebar-bg-2: #0F141B;
   --color-sidebar-border: rgba(255,255,255,0.06);
   --color-sidebar-text: #F7F4EE;
   --color-sidebar-muted: rgba(247,244,238,0.72);
 
-  /* Accent Colors */
   --color-accent: #D35A22;
   --color-accent-hover: #BF4F1E;
   --color-success: #3FAE5A;
   --color-warning: #E6A43B;
   --color-critical: #D84C2A;
-
-  /* Keep old values to be safe */
-  --color-premortem-bg: #F7F4EE;
-  --color-premortem-card: #FCFAF6;
-  --color-premortem-border: #DDD3C5;
-  --color-premortem-sidebar: #090B0F;
-  --color-premortem-orange: #D35A22;
-  --color-premortem-amber: #E6A43B;
-  --color-premortem-red: #D84C2A;
-  --color-premortem-green: #3FAE5A;
-  --color-premortem-text-primary: #111111;
-  --color-premortem-text-secondary: #6D655B;
-  --color-premortem-text-muted: #9A9187;
 }
 
-/* ============================================================
-   CSS CUSTOM PROPERTIES
-   ============================================================ */
 :root {
   --cream-base: #F5F0E8;
   --cream-deep: #EDE6D6;
@@ -82,59 +55,16 @@
   --font-body: var(--font-inter), system-ui, sans-serif;
   --font-mono: var(--font-ibm-plex-mono), 'IBM Plex Mono', monospace;
   --font-subhead: var(--font-space-grotesk), sans-serif;
-
-  /* Premium Pre-Mortem Redesign Tokens */
-  --bg-main: #F7F4EE;
-  --bg-card: #FCFAF6;
-  --border: #DDD3C5;
-  --text-primary: #111111;
-  --text-secondary: #6D655B;
-  --text-muted: #9A9187;
-
-  /* Dark Sidebar */
-  --sidebar-bg: #090B0F;
-  --sidebar-bg-2: #0F141B;
-  --sidebar-border: rgba(255,255,255,0.06);
-  --sidebar-text: #F7F4EE;
-  --sidebar-muted: rgba(247,244,238,0.72);
-
-  /* Accent Colors */
-  --accent: #D35A22;
-  --accent-hover: #BF4F1E;
-  --success: #3FAE5A;
-  --warning: #E6A43B;
-  --critical: #D84C2A;
-
-  /* Keep old values to be safe */
-  --premortem-bg: #F7F4EE;
-  --premortem-card: #FCFAF6;
-  --premortem-border: #DDD3C5;
-  --premortem-sidebar: #090B0F;
-  --premortem-orange: #D35A22;
-  --premortem-amber: #E6A43B;
-  --premortem-red: #D84C2A;
-  --premortem-green: #3FAE5A;
-  --premortem-text-primary: #111111;
-  --premortem-text-secondary: #6D655B;
-  --premortem-text-muted: #9A9187;
-}
-
-/* ============================================================
-   BASE STYLES
-   ============================================================ */
-* {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-  -webkit-text-size-adjust: none;
-  text-size-adjust: none;
-  font-feature-settings: "kern" 1, "liga" 1;
 }
 
 html {
   -webkit-text-size-adjust: 100%;
   font-size: 16px;
   scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "kern" 1, "liga" 1;
 }
 
 body {
@@ -142,28 +72,9 @@ body {
   background-color: var(--cream-base);
   color: var(--ink-black);
   font-family: var(--font-body), system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
   position: relative;
 }
 
-/* Prevent blurry text on transforms */
-.animate-step, [class*="motion"] {
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  transform: translateZ(0);
-  will-change: opacity, transform;
-}
-
-/* Step 1 placeholder helper */
-.textarea-step1::placeholder {
-  font-family: var(--font-body);
-  font-style: italic;
-  font-size: 15px;
-  color: #b8aa99 !important;
-}
-
-/* Paper Grain Texture Overlay — Simplified to a subtle gradient to avoid filter overhead */
 body::before {
   content: '';
   position: fixed;
@@ -173,12 +84,15 @@ body::before {
   opacity: 0.015;
   background-image: radial-gradient(#1A1714 0.5px, transparent 0.5px);
   background-size: 3px 3px;
-  will-change: opacity;
 }
 
-/* ============================================================
-   SCROLLBAR
-   ============================================================ */
+.textarea-step1::placeholder {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 15px;
+  color: #b8aa99 !important;
+}
+
 ::-webkit-scrollbar {
   width: 3px;
   height: 3px;
@@ -191,15 +105,8 @@ body::before {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--ink-muted);
-  font-variant-numeric: tabular-nums lining-nums;
-  -moz-font-feature-settings: "tnum", "lnum";
-  -webkit-font-feature-settings: "tnum", "lnum";
-  font-feature-settings: "tnum", "lnum";
 }
 
-/* ============================================================
-   LAYOUT UTILITIES
-   ============================================================ */
 .sg-container {
   max-width: 1440px;
   margin: 0 auto;
@@ -217,72 +124,39 @@ body::before {
   padding-bottom: clamp(40px, 5vw, 80px);
 }
 
-/* ============================================================
-   HERO GRID — Two-column split for homepage hero
-   ============================================================ */
 .hero-grid {
   grid-template-columns: 54fr 46fr;
 }
 
 @media (max-width: 960px) {
-  .hero-grid {
-    grid-template-columns: 1fr;
-  }
+  .hero-grid { grid-template-columns: 1fr; }
 }
 
-/* Hero headline — 3-line forced structure on desktop */
 .hero-headline {
   white-space: nowrap;
 }
 
 @media (max-width: 960px) {
-  .hero-headline {
-    white-space: normal;
-  }
+  .hero-headline { white-space: normal; }
 }
 
-
-/* ============================================================
-   PATTERN GRID — Responsive 4-col / 2-col
-   ============================================================ */
 .pattern-grid {
   grid-template-columns: repeat(4, 1fr);
 }
 
 @media (max-width: 1024px) {
-  .pattern-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  .pattern-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 640px) {
-  .pattern-grid {
-    grid-template-columns: 1fr;
-  }
+  .pattern-grid { grid-template-columns: 1fr; }
 }
 
-/* ============================================================
-   BORDER UTILITIES
-   ============================================================ */
-.dashed-border-t {
-  border-top: 1.5px dashed var(--cream-dark);
-}
+.dashed-border-t { border-top: 1.5px dashed var(--cream-dark); }
+.dashed-border-b { border-bottom: 1.5px dashed var(--cream-dark); }
+.dashed-border { border: 1.5px dashed var(--cream-dark); }
+.solid-border { border: 1px solid var(--cream-dark); }
 
-.dashed-border-b {
-  border-bottom: 1.5px dashed var(--cream-dark);
-}
-
-.dashed-border {
-  border: 1.5px dashed var(--cream-dark);
-}
-
-.solid-border {
-  border: 1px solid var(--cream-dark);
-}
-
-/* ============================================================
-   CARD STYLES
-   ============================================================ */
 .sg-card {
   background-color: var(--cream-deep);
   border: 1px solid var(--cream-dark);
@@ -291,7 +165,6 @@ body::before {
   transition: all 0.2s ease;
 }
 
-/* Simplified paper grain for cards */
 .sg-card::before {
   content: '';
   position: absolute;
@@ -304,20 +177,14 @@ body::before {
   background-size: 4px 4px;
 }
 
-.sg-card > * {
-  position: relative;
-  z-index: 1;
-}
+.sg-card > * { position: relative; z-index: 1; }
 
 .sg-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 4px 20px rgba(26, 23, 20, 0.06);
+  transform: translateY(-5px);
+  box-shadow: 0 12px 40px rgba(26, 23, 20, 0.10);
   border-left: 3px solid var(--rust-accent);
 }
 
-/* ============================================================
-   STAMP / TAG STYLES
-   ============================================================ */
 .stamp-closed {
   font-family: var(--font-mono), 'Courier New', monospace;
   font-size: 9px;
@@ -345,11 +212,6 @@ body::before {
   display: inline-block;
 }
 
-/* ============================================================
-   BUTTON STYLES
-   ============================================================ */
-
-/* Standard rust button */
 .btn-rust {
   font-family: var(--font-mono), 'Courier New', monospace;
   font-size: 11px;
@@ -375,35 +237,6 @@ body::before {
   transform: translateY(-1px);
 }
 
-/* Hero primary CTA — slightly larger */
-.btn-rust-hero {
-  font-family: var(--font-mono), 'Courier New', monospace;
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  color: var(--paper-white);
-  background: var(--rust-accent);
-  border: 1px solid var(--rust-accent);
-  padding: 15px 30px;
-  border-radius: 2px;
-  cursor: pointer;
-  transition: background-color 0.25s ease, transform 0.2s ease, box-shadow 0.25s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  text-decoration: none;
-  box-shadow: 0 2px 12px rgba(181, 74, 42, 0.2);
-}
-
-.btn-rust-hero:hover {
-  background: #9f3d22;
-  border-color: #9f3d22;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(181, 74, 42, 0.28);
-}
-
-/* Standard outline button */
 .btn-outline-ink {
   font-family: var(--font-mono), 'Courier New', monospace;
   font-size: 11px;
@@ -427,33 +260,6 @@ body::before {
   background: var(--ink-black);
   color: var(--cream-base);
   transform: translateY(-1px);
-}
-
-/* Hero outline CTA — slightly larger */
-.btn-outline-hero {
-  font-family: var(--font-mono), 'Courier New', monospace;
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  color: var(--ink-black);
-  background: transparent;
-  border: 1px solid rgba(26,23,20,0.4);
-  padding: 15px 30px;
-  border-radius: 2px;
-  cursor: pointer;
-  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, transform 0.2s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  text-decoration: none;
-}
-
-.btn-outline-hero:hover {
-  background: var(--ink-black);
-  color: var(--cream-base);
-  border-color: var(--ink-black);
-  transform: translateY(-2px);
 }
 
 .btn-stamp {
@@ -482,90 +288,57 @@ body::before {
   transform: translateY(-1px);
 }
 
-/* ============================================================
-   ANIMATIONS
-   ============================================================ */
-
-/* Fade up — used for section entrance */
 @keyframes fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .animate-fade-up {
   animation: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  will-change: transform, opacity;
 }
 
-/* Stagger delays for section groups */
 .stagger-1 { animation-delay: 0.08s; }
 .stagger-2 { animation-delay: 0.16s; }
 .stagger-3 { animation-delay: 0.24s; }
 .stagger-4 { animation-delay: 0.32s; }
 .stagger-5 { animation-delay: 0.40s; }
 
-/* Initially hidden for JS-triggered entrance */
 .will-fade-up {
   opacity: 0;
   transform: translateY(20px);
 }
 
-/* Skeleton shimmer in cream */
 @keyframes shimmer-cream {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
 
 .skeleton-cream {
-  background: linear-gradient(
-    90deg,
-    var(--cream-deep) 0%,
-    var(--cream-dark) 50%,
-    var(--cream-deep) 100%
-  );
+  background: linear-gradient(90deg, var(--cream-deep) 0%, var(--cream-dark) 50%, var(--cream-deep) 100%);
   background-size: 200% 100%;
   animation: shimmer-cream 1.5s ease-in-out infinite;
   border-radius: 2px;
 }
 
-/* Pulse border for Pre-Mortem CTA */
 @keyframes pulse-border {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(181, 74, 42, 0.4);
-  }
-  50% {
-    box-shadow: 0 0 0 8px rgba(181, 74, 42, 0);
-  }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(181, 74, 42, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(181, 74, 42, 0); }
 }
 
-.pulse-border {
-  animation: pulse-border 2.5s ease-in-out infinite;
-}
+.pulse-border { animation: pulse-border 2.5s ease-in-out infinite; }
 
-
-/* Slow spin for analysis state */
 @keyframes spin-slow {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
 
-.animate-spin-slow {
-  animation: spin-slow 8s linear infinite;
-}
+.animate-spin-slow { animation: spin-slow 8s linear infinite; }
 
-/* Bar chart grow animation — use scaleY for better performance */
 @keyframes bar-grow {
   from { transform: scaleY(0); transform-origin: bottom; }
   to { transform: scaleY(1); transform-origin: bottom; }
 }
 
-/* Nav underline slide */
 .nav-link-active::after {
   content: '';
   position: absolute;
@@ -582,15 +355,6 @@ body::before {
   to { transform: scaleX(1); transform-origin: left; }
 }
 
-/* Rust border slide-in from top on card hover */
-@keyframes rust-border-in {
-  from { clip-path: inset(0 0 100% 0); }
-  to { clip-path: inset(0); }
-}
-
-/* ============================================================
-   GRID BACKGROUND (Intel page)
-   ============================================================ */
 .bg-graph-paper {
   background-image:
     linear-gradient(to right, rgba(217, 207, 192, 0.15) 1px, transparent 1px),
@@ -598,9 +362,6 @@ body::before {
   background-size: 40px 40px;
 }
 
-/* ============================================================
-   SECTION DIVIDER (torn paper effect via clip-path)
-   ============================================================ */
 .torn-edge {
   clip-path: polygon(
     0% 0%, 2% 4%, 5% 1%, 8% 5%, 11% 2%, 15% 6%, 18% 2%,
@@ -612,9 +373,6 @@ body::before {
   );
 }
 
-/* ============================================================
-   CHART CUSTOM STYLES
-   ============================================================ */
 .chart-card {
   background: var(--cream-deep);
   border: 1.5px dashed var(--cream-dark);
@@ -633,12 +391,11 @@ body::before {
   background-size: 4px 4px;
 }
 
+.chart-card > * { position: relative; z-index: 1; }
+
 .paper-dossier {
   background-color: var(--paper-white);
-  box-shadow: 
-    0 0 0 1px rgba(0,0,0,0.05),
-    4px 4px 0 var(--cream-dark),
-    8px 8px 0 var(--cream-deep);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.05), 4px 4px 0 var(--cream-dark), 8px 8px 0 var(--cream-deep);
   position: relative;
 }
 
@@ -647,30 +404,19 @@ body::before {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.05;
-  background-image: url("https://www.transparenttextures.com/patterns/natural-paper.png");
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
 }
 
-.chart-card > * {
-  position: relative;
-  z-index: 1;
+.archive-link:hover span { transform: translateX(4px); }
+
+.featured-case-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 40px rgba(26, 23, 20, 0.10);
+  border-left: 3px solid var(--rust-accent);
 }
 
-.archive-link:hover span {
-  transform: translateX(4px);
-}
-
-.archive-link {
-  will-change: gap;
-}
-
-.featured-case-card {
-  will-change: transform, box-shadow;
-}
-
-/* ============================================================
-   FORM STYLES (Pre-Mortem)
-   ============================================================ */
 .premortem-left-panel {
   background-color: #1a1a18;
   padding: 64px 48px;
@@ -696,9 +442,7 @@ body::before {
 }
 
 @media (min-width: 1024px) {
-  .premortem-right-panel {
-    padding: 64px 72px;
-  }
+  .premortem-right-panel { padding: 64px 72px; }
 }
 
 .sg-input {
@@ -715,14 +459,8 @@ body::before {
   transition: border-color 0.2s ease;
 }
 
-.sg-input:focus {
-  border-bottom-color: var(--rust-accent);
-}
-
-.sg-input::placeholder {
-  color: var(--ink-muted);
-  font-size: 12px;
-}
+.sg-input:focus { border-bottom-color: var(--rust-accent); }
+.sg-input::placeholder { color: var(--ink-muted); font-size: 12px; }
 
 .sg-textarea {
   font-family: var(--font-body), 'Georgia', serif;
@@ -740,9 +478,7 @@ body::before {
   transition: border-color 0.2s ease;
 }
 
-.sg-textarea:focus {
-  border-bottom-color: var(--rust-accent);
-}
+.sg-textarea:focus { border-bottom-color: var(--rust-accent); }
 
 .sg-select {
   font-family: var(--font-mono), 'Courier New', monospace;
@@ -763,13 +499,8 @@ body::before {
   background-position: right 10px center;
 }
 
-.sg-select:focus {
-  border-color: var(--rust-accent);
-}
+.sg-select:focus { border-color: var(--rust-accent); }
 
-/* ============================================================
-   PROGRESS BAR (Pre-Mortem wizard)
-   ============================================================ */
 .progress-track {
   width: 100%;
   height: 2px;
@@ -784,257 +515,65 @@ body::before {
   transition: width 0.4s ease;
 }
 
-/* ============================================================
-   UTILITY CLASSES
-   ============================================================ */
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.line-clamp-3 {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-/* Selection color */
 ::selection {
   background: rgba(181, 74, 42, 0.2);
   color: var(--ink-black);
 }
 
-/* ============================================================
-   HOVER UTILITIES
-   ============================================================ */
-.dossier-hover-card:hover {
-  border-left: 3px solid var(--rust-accent);
-  box-shadow: 0 8px 32px rgba(26, 23, 20, 0.08);
-  transform: translateY(-2px);
-}
-
-.taxonomy-card-hover:hover {
-  border-left: 3px solid var(--rust-accent);
-  box-shadow: 0 6px 20px rgba(26, 23, 20, 0.07);
-  transform: translateY(-2px);
-}
-
-/* Featured case card lift */
-.featured-case-card:hover {
-  transform: translateY(-5px) !important;
-  box-shadow: 0 12px 40px rgba(26, 23, 20, 0.10) !important;
-  border-left: 3px solid var(--rust-accent) !important;
-}
-
-/* Archive link arrow nudge */
-.archive-link:hover span {
-  transform: translateX(4px);
-}
-
-/* Refined sg-card hover (override default) */
-.sg-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 12px 40px rgba(26, 23, 20, 0.10);
-  border-left: 3px solid var(--rust-accent);
-}
-
-/* ============================================================
-   RESPONSIVE
-   ============================================================ */
 @media (max-width: 1024px) {
-  /* Featured cases: 2-col on tablet */
-  .featured-cases-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-  }
+  .featured-cases-grid { grid-template-columns: repeat(2, 1fr) !important; }
 }
 
 @media (max-width: 768px) {
-  .t-hero {
-    font-size: clamp(38px, 10vw, 60px);
-    line-height: 0.95;
-  }
-
-  .t-h1 {
-    font-size: clamp(32px, 8vw, 48px);
-  }
-
-  .t-h2 {
-    font-size: clamp(26px, 6vw, 36px);
-  }
-
-  .section-pad {
-    padding-top: 64px;
-    padding-bottom: 64px;
-  }
-
-  /* Hero grid single column on mobile */
+  .t-hero { font-size: clamp(38px, 10vw, 60px); line-height: 0.95; }
+  .t-h1 { font-size: clamp(32px, 8vw, 48px); }
+  .t-h2 { font-size: clamp(26px, 6vw, 36px); }
+  .section-pad { padding-top: 64px; padding-bottom: 64px; }
   .hero-grid {
     grid-template-columns: 1fr;
     padding-top: 48px !important;
     padding-bottom: 40px !important;
   }
-
-  /* Stats bar allows wrap on mobile */
-  .sg-container > .stats-nowrap {
-    flex-wrap: wrap;
-  }
-
-  /* Featured cases single column on mobile */
-  .featured-cases-grid {
-    grid-template-columns: 1fr !important;
-  }
-
-  /* Buttons full width on mobile */
-  .btn-rust-hero,
-  .btn-outline-hero {
-    width: 100%;
-    justify-content: center;
-  }
+  .sg-container > .stats-nowrap { flex-wrap: wrap; }
+  .featured-cases-grid { grid-template-columns: 1fr !important; }
+  .btn-rust { width: 100%; justify-content: center; }
+  .btn-outline-ink, .btn-stamp { width: 100%; justify-content: center; }
 }
 
-/* ============================================================
-   PRINT STYLES
-   ============================================================ */
 @media print {
-  nav, button, aside, .no-print {
-    display: none !important;
-  }
-  
-  body {
-    background: white !important;
-    color: black !important;
-  }
-  
-  .paper-dossier {
-    box-shadow: none !important;
-    border: none !important;
-    padding: 0 !important;
-  }
-  
-  main {
-    padding: 0 !important;
-  }
-  
-  .sg-container {
-    max-width: 100% !important;
-    padding: 0 !important;
-  }
-
-  article {
-    width: 100% !important;
-  }
+  nav, button, aside, .no-print { display: none !important; }
+  body { background: white !important; color: black !important; }
+  .paper-dossier { box-shadow: none !important; border: none !important; padding: 0 !important; }
+  main { padding: 0 !important; }
+  .sg-container { max-width: 100% !important; padding: 0 !important; }
+  article { width: 100% !important; }
 }
 
-/* ============================================================
-   PREMIUM FORENSIC DESIGN UTILITIES
-   ============================================================ */
-.font-display-serif {
-  font-family: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
-}
-.font-monospace {
-  font-family: var(--font-ibm-plex-mono), "IBM Plex Mono", monospace;
-}
-.font-sans-body {
-  font-family: var(--font-inter), "Inter", sans-serif;
-}
+.font-display-serif { font-family: var(--font-cormorant), "Cormorant Garamond", Georgia, serif; }
+.font-monospace { font-family: var(--font-ibm-plex-mono), "IBM Plex Mono", monospace; }
+.font-sans-body { font-family: var(--font-inter), "Inter", sans-serif; }
 
-.hero-title-styles {
-  font-family: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
-  font-size: clamp(48px, 4vw, 76px);
-  line-height: 0.95;
-  font-weight: 500;
-  letter-spacing: -0.03em;
-}
-.question-title-styles {
-  font-family: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
-  font-size: clamp(34px, 3vw, 52px);
-  line-height: 1.15;
-  font-weight: 500;
-  letter-spacing: -0.02em;
-}
-.report-title-styles {
-  font-family: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
-  font-size: clamp(38px, 3.5vw, 60px);
-  line-height: 1.05;
-  font-weight: 500;
-}
-.monospace-label-styles {
-  font-family: var(--font-ibm-plex-mono), "IBM Plex Mono", monospace;
-  font-size: 12px;
-  line-height: 1.4;
-  font-weight: 500;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
-.body-large-styles {
-  font-family: var(--font-inter), "Inter", sans-serif;
-  font-size: clamp(16px, 1vw, 20px);
-  line-height: 1.6;
-  font-weight: 400;
-}
-.body-normal-styles {
-  font-family: var(--font-inter), "Inter", sans-serif;
-  font-size: 16px;
-  line-height: 1.6;
-  font-weight: 400;
-}
-.small-styles {
-  font-family: var(--font-inter), "Inter", sans-serif;
-  font-size: 13px;
-  line-height: 1.5;
-}
+.hero-title-styles { font-family: var(--font-cormorant), "Cormorant Garamond", Georgia, serif; font-size: clamp(48px, 4vw, 76px); line-height: 0.95; font-weight: 500; letter-spacing: -0.03em; }
+.question-title-styles { font-family: var(--font-cormorant), "Cormorant Garamond", Georgia, serif; font-size: clamp(34px, 3vw, 52px); line-height: 1.15; font-weight: 500; letter-spacing: -0.02em; }
+.report-title-styles { font-family: var(--font-cormorant), "Cormorant Garamond", Georgia, serif; font-size: clamp(38px, 3.5vw, 60px); line-height: 1.05; font-weight: 500; }
+.monospace-label-styles { font-family: var(--font-ibm-plex-mono), "IBM Plex Mono", monospace; font-size: 12px; line-height: 1.4; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; }
+.body-large-styles { font-family: var(--font-inter), "Inter", sans-serif; font-size: clamp(16px, 1vw, 20px); line-height: 1.6; font-weight: 400; }
+.body-normal-styles { font-family: var(--font-inter), "Inter", sans-serif; font-size: 16px; line-height: 1.6; font-weight: 400; }
+.small-styles { font-family: var(--font-inter), "Inter", sans-serif; font-size: 13px; line-height: 1.5; }
+.sidebar-title-styles { font-family: var(--font-cormorant), "Cormorant Garamond", Georgia, serif; font-size: clamp(40px, 3.5vw, 68px); line-height: 0.98; font-weight: 500; }
+.sidebar-description-styles { font-family: var(--font-inter), "Inter", sans-serif; font-size: clamp(15px, 1.2vw, 19px); line-height: 1.6; color: rgba(255, 255, 255, 0.78); }
 
-.sidebar-title-styles {
-  font-family: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
-  font-size: clamp(40px, 3.5vw, 68px);
-  line-height: 0.98;
-  font-weight: 500;
-}
-.sidebar-description-styles {
-  font-family: var(--font-inter), "Inter", sans-serif;
-  font-size: clamp(15px, 1.2vw, 19px);
-  line-height: 1.6;
-  color: rgba(255, 255, 255, 0.78);
-}
-
-/* ============================================================
-   ADAPTIVE HEIGHT RESPONSIVE OVERRIDES
-   ============================================================ */
 @media (max-height: 900px) {
-  .hero-title-styles {
-    font-size: clamp(44px, 3.8vw, 68px);
-  }
-  .question-title-styles {
-    font-size: clamp(32px, 2.8vw, 46px);
-  }
-  .sidebar-title-styles {
-    font-size: clamp(36px, 3vw, 56px);
-  }
-  .sidebar-description-styles {
-    font-size: 15px;
-    line-height: 1.5;
-  }
+  .hero-title-styles { font-size: clamp(44px, 3.8vw, 68px); }
+  .question-title-styles { font-size: clamp(32px, 2.8vw, 46px); }
+  .sidebar-title-styles { font-size: clamp(36px, 3vw, 56px); }
+  .sidebar-description-styles { font-size: 15px; line-height: 1.5; }
 }
 
 @media (max-height: 800px) {
-  .hero-title-styles {
-    font-size: clamp(38px, 3.5vw, 58px);
-  }
-  .question-title-styles {
-    font-size: clamp(28px, 2.5vw, 38px);
-  }
-  .sidebar-title-styles {
-    font-size: clamp(30px, 2.5vw, 44px);
-  }
-  .sidebar-description-styles {
-    font-size: 13.5px;
-    line-height: 1.45;
-  }
-  .monospace-label-styles {
-    font-size: 10.5px;
-    letter-spacing: 0.12em;
-  }
+  .hero-title-styles { font-size: clamp(38px, 3.5vw, 58px); }
+  .question-title-styles { font-size: clamp(28px, 2.5vw, 38px); }
+  .sidebar-title-styles { font-size: clamp(30px, 2.5vw, 44px); }
+  .sidebar-description-styles { font-size: 13.5px; line-height: 1.45; }
+  .monospace-label-styles { font-size: 10.5px; letter-spacing: 0.12em; }
 }

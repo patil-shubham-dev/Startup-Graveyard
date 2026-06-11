@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { Paperclip, Eye } from 'lucide-react';
 
 interface EvidenceFolderProps {
@@ -24,10 +25,11 @@ export function EvidenceFolder({ images }: EvidenceFolderProps) {
           >
             <div className="absolute inset-0 bg-ink-black/20 group-hover:bg-transparent transition-colors z-10" />
             
-            <img 
+            <Image 
               src={img} 
               alt={`Evidence Item ${i + 1}`}
-              className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
+              fill
+              className="object-cover transform group-hover:scale-105 transition-transform duration-700"
             />
 
             {/* Evidence Tag */}

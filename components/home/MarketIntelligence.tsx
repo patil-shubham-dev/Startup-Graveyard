@@ -85,7 +85,6 @@ export function MarketIntelligence({ failureData = [], topLiquidations = [] }: M
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {bars.map((item, index) => {
-              const width = `${Math.max(12, Math.round((item.value / maxValue) * 100))}%`;
 
               return (
                 <div key={item.name}>
@@ -157,7 +156,7 @@ export function MarketIntelligence({ failureData = [], topLiquidations = [] }: M
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {topLiquidations.map((item, index) => (
+            {topLiquidations.map((item) => (
               <div
                 key={item.name}
                 style={{

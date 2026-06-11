@@ -1,45 +1,25 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { listCaseStudies, CaseStudy } from '@/lib/db/case-studies';
 import { formatCurrencyCompact } from '@/lib/utils/format';
-
-function useScrollReveal(threshold = 0.12) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect(); } },
-      { threshold }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [threshold]);
-  return { ref, visible };
-}
+import { useScrollReveal } from '@/lib/hooks/useScrollReveal';
 
 export function FeaturedCases({ initialCases = [] }: { initialCases?: CaseStudy[] }) {
-  const [cases, setCases] = useState<CaseStudy[]>(initialCases);
-  const [loading, setLoading] = useState(initialCases.length === 0);
-  const { ref, visible } = useScrollReveal();
+  const { data: cases, isLoading } = useQuery({
+    queryKey: ['featured-cases'],
+    queryFn: () => listCaseStudies({ limit: 3 }),
+    initialData: initialCases,
+    staleTime: 10 * 60 * 1000,
+  });
 
-  useEffect(() => {
-    if (initialCases.length === 0) {
-      listCaseStudies({ limit: 3 })
-        .then(setCases)
-        .catch(console.error)
-        .finally(() => setLoading(false));
-    }
-  }, [initialCases.length]);
+  const { ref, visible } = useScrollReveal();
 
   return (
     <section
       style={{ backgroundColor: 'var(--cream-base)', position: 'relative', overflow: 'hidden' }}
     >
-      {/* Subtle section texture */}
       <div
         aria-hidden="true"
         style={{
@@ -55,8 +35,7 @@ export function FeaturedCases({ initialCases = [] }: { initialCases?: CaseStudy[
         }}
       />
 
-      <div className="sg-container section-pad" style={{ position: 'relative', zIndex: 1 }}>
-        {/* Section label */}
+      <div className="sg-container section-pad" style={{ position: 'relative', zIndex: 1, contentVisibility: 'auto' }}>
         <div
           style={{
             display: 'flex',
@@ -80,7 +59,6 @@ export function FeaturedCases({ initialCases = [] }: { initialCases?: CaseStudy[
           <div style={{ height: '1px', flex: 1, background: 'var(--cream-dark)' }} />
         </div>
 
-        {/* Heading row */}
         <div
           style={{
             display: 'flex',
@@ -116,9 +94,8 @@ export function FeaturedCases({ initialCases = [] }: { initialCases?: CaseStudy[
           </Link>
         </div>
 
-        {/* Cards */}
         <div ref={ref}>
-          {loading ? (
+          {isLoading ? (
             <div
               style={{
                 display: 'grid',
@@ -166,7 +143,6 @@ export function FeaturedCases({ initialCases = [] }: { initialCases?: CaseStudy[
                       cursor: 'pointer',
                     }}
                   >
-                    {/* Top meta row */}
                     <div
                       style={{
                         display: 'flex',
@@ -190,7 +166,6 @@ export function FeaturedCases({ initialCases = [] }: { initialCases?: CaseStudy[
                       <span className="stamp-closed">CLOSED</span>
                     </div>
 
-                    {/* Company name */}
                     <h3
                       style={{
                         fontFamily: 'var(--font-cormorant), Georgia, serif',
@@ -206,7 +181,6 @@ export function FeaturedCases({ initialCases = [] }: { initialCases?: CaseStudy[
                       {study.company_name}
                     </h3>
 
-                    {/* Description — grows to fill */}
                     <p
                       className="line-clamp-3"
                       style={{
@@ -220,7 +194,6 @@ export function FeaturedCases({ initialCases = [] }: { initialCases?: CaseStudy[
                       {study.summary}
                     </p>
 
-                    {/* Dashed divider — pinned before footer */}
                     <div
                       style={{
                         borderTop: '1.5px dashed var(--cream-dark)',
@@ -229,7 +202,6 @@ export function FeaturedCases({ initialCases = [] }: { initialCases?: CaseStudy[
                       }}
                     />
 
-                    {/* Data row — pinned footer */}
                     <div
                       style={{
                         display: 'grid',
@@ -293,7 +265,6 @@ export function FeaturedCases({ initialCases = [] }: { initialCases?: CaseStudy[
                       </div>
                     </div>
 
-                    {/* Pattern tag — pinned absolute bottom */}
                     {study.failure_reasons?.[0] && (
                       <span className="stamp-tag" style={{ alignSelf: 'flex-start', flexShrink: 0 }}>
                         {study.failure_reasons[0]}

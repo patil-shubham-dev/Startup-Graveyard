@@ -100,7 +100,7 @@ export function TaxonomyGrid({ failureData }: { failureData?: Array<{ name: stri
         }}
       />
 
-      <div className="sg-container section-pad" style={{ position: 'relative', zIndex: 1 }}>
+      <div className="sg-container section-pad" style={{ position: 'relative', zIndex: 1, contentVisibility: 'auto' }}>
         {/* Section label */}
         <div
           style={{

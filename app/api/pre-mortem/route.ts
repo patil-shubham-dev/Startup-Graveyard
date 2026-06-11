@@ -1,8 +1,24 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
-import { ai } from '@/lib/ai';
+import { ai, hasValidKey } from '@/lib/ai';
 import { z } from 'zod';
-import { getGlobalStats } from '@/lib/db/case-studies';
 import { createPremortemSession, savePremortemReport } from '@/lib/db/premortem';
+import { checkRateLimit, getRateLimitKey } from '@/lib/rate-limiter';
+
+const NO_KEY_RESPONSE = NextResponse.json({
+  risk_score: 50,
+  risk_breakdown: { product: 50, market: 50, team: 50, financial: 50 },
+  primary_risks: [
+    { category: 'AI_UNAVAILABLE', description: 'Pre-mortem engine requires a valid NVIDIA_API_KEY.', mitigation: 'Set NVIDIA_API_KEY in environment variables.' },
+    { category: 'CONFIGURATION_GAP', description: 'The forensic AI model is not connected.', mitigation: 'Configure API credentials in .env.local and restart the server.' },
+    { category: 'INFRASTRUCTURE', description: 'Vector database currently in standby mode.', mitigation: 'No action required once API key is configured.' },
+  ],
+  failure_scenarios: [],
+  historical_cases: [],
+  competitors: [],
+  verdict: 'The Pre-Mortem Engine is offline. Configure a valid NVIDIA API key to generate forensic risk diagnostics.',
+  diagnosticId: 'OFFLINE',
+});
 
 const QuestionsSchema = z.object({
   questions: z.array(z.object({
@@ -46,13 +62,20 @@ const ReportSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const rateLimit = checkRateLimit(getRateLimitKey(req));
+  if (!rateLimit.allowed) {
+    return NextResponse.json({ error: 'Rate limit exceeded. Try again shortly.' }, {
+      status: 429,
+      headers: { 'Retry-After': String(Math.ceil((rateLimit.resetAt - Date.now()) / 1000)) },
+    });
+  }
+
   try {
+    if (!hasValidKey) {
+      return NO_KEY_RESPONSE;
+    }
+
     const body = await req.json();
-    const stats = await getGlobalStats();
-    
-    // Ensure we are using the most stable model
-    const MODEL_ID = process.env.AI_DEFAULT_MODEL || 'nvidia/llama-3.1-nemotron-70b-instruct';
-    
     if (body.action === 'GET_QUESTIONS') {
       const prompt = `
         You are the Graveyard Keeper AI. A founder just submitted a startup pitch: "${body.pitch}".

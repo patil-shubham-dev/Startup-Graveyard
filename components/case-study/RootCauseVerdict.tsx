@@ -1,8 +1,18 @@
 'use client';
 import { motion } from 'framer-motion';
-import { ShieldAlert, Fingerprint, AlertCircle } from 'lucide-react';
+import { Fingerprint } from 'lucide-react';
 
-export const RootCauseVerdict = ({ verdict, companyName }: { verdict: any, companyName: string }) => {
+interface VerdictReason {
+  title: string;
+  description: string;
+}
+
+interface Verdict {
+  top_reasons?: VerdictReason[];
+  final_word?: string;
+}
+
+export const RootCauseVerdict = ({ verdict, companyName }: { verdict: Verdict, companyName: string }) => {
   if (!verdict) return null;
 
   const { top_reasons = [], final_word = "" } = verdict;
@@ -26,7 +36,7 @@ export const RootCauseVerdict = ({ verdict, companyName }: { verdict: any, compa
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-16">
-            {top_reasons.map((reason: any, i: number) => (
+            {top_reasons.map((reason: VerdictReason, i: number) => (
               <div key={i} className="flex gap-6">
                 <span className="t-hero text-4xl text-cream-dark opacity-40">0{i+1}</span>
                 <div>
@@ -41,9 +51,9 @@ export const RootCauseVerdict = ({ verdict, companyName }: { verdict: any, compa
 
           <div className="bg-cream-base/30 border-l-4 border-ink-black p-8 relative overflow-hidden">
             <div className="absolute top-2 right-4 t-label-sm opacity-20">Summary_Memo</div>
-            <p className="t-pullquote text-2xl md:text-3xl text-ink-soft leading-tight">
-              "{final_word}"
-            </p>
+              <p className="t-pullquote text-2xl md:text-3xl text-ink-soft leading-tight">
+                {'\u201C'}{final_word}{'\u201D'}
+              </p>
           </div>
         </div>
 

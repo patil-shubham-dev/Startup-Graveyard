@@ -91,6 +91,7 @@ export function PreMortemCTA() {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
+          contentVisibility: 'auto',
           textAlign: 'center',
           position: 'relative',
           zIndex: 1,

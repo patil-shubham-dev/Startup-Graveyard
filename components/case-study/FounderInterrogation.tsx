@@ -1,178 +1,79 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Send, User, Bot, RefreshCcw, Fingerprint } from 'lucide-react';
-import { cn } from '@/lib/utils/index';
-import ReactMarkdown from 'react-markdown';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import remarkGfm from 'remark-gfm';
+import ReactMarkdown from 'react-markdown';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { Send, RefreshCw } from 'lucide-react';
 import { AutopsyLoader } from '@/components/ui/AutopsyLoader';
+import { useChat } from '@ai-sdk/react';
+import type { UIMessage } from 'ai';
 
 export const FounderInterrogation = ({ companyName }: { companyName: string }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [input, setInput] = useState('');
-  
-  const [messages, setMessages] = useState<any[]>([
-    {
-      id: 'welcome',
-      role: 'assistant',
-      content: `Forensic archive for ${companyName} initialized. I have indexed all available records regarding their collapse. What would you like to interrogate?`
-    }
-  ]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
-  const [error, setError] = useState<any>(null);
 
-  const sendMessage = async (options: { text: string }) => {
-    if (isLoading || isTyping) return;
-    
-    const userMessage = {
-      id: `msg-${Date.now()}-user`,
-      role: 'user',
-      content: options.text,
-    };
-    
-    const updatedMessages = [...messages, userMessage];
-    setMessages(updatedMessages);
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: updatedMessages,
-          context: `You are an expert startup forensic analyst. You are currently discussing the failure of ${companyName}. Provide objective, data-driven insights based on the case study. Keep your tone professional, archival, and slightly clinical.`
-        }),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to retrieve intelligence from archive');
-      }
-      
-      const data = await response.json();
-      
-      const assistantMessageId = `msg-${Date.now()}-assistant`;
-      const assistantMessagePlaceholder = {
-        id: assistantMessageId,
+  const chat = useChat({
+    messages: [
+      {
+        id: 'welcome',
         role: 'assistant',
-        content: '',
-      };
-      
-      setMessages((prev) => [...prev, assistantMessagePlaceholder]);
-      setIsLoading(false);
-      setIsTyping(true);
-      
-      const fullText = data.content || '';
-      let currentIdx = 0;
-      
-      // Calculate speed of fake streaming based on text size (balancing reading experience)
-      const step = fullText.length > 2000 
-        ? 15 
-        : fullText.length > 1000 
-        ? 9 
-        : fullText.length > 500 
-        ? 6 
-        : 3;
-        
-      const intervalTime = 8;
-      
-      const interval = setInterval(() => {
-        currentIdx += step;
-        if (currentIdx >= fullText.length) {
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === assistantMessageId ? { ...msg, content: fullText } : msg
-            )
-          );
-          clearInterval(interval);
-          setIsTyping(false);
-        } else {
-          const chunk = fullText.substring(0, currentIdx);
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === assistantMessageId ? { ...msg, content: chunk } : msg
-            )
-          );
-        }
-      }, intervalTime);
-      
-    } catch (err: any) {
-      console.error('Interrogation failed:', err);
-      setError(err);
-      setIsLoading(false);
-      setIsTyping(false);
-      
-      const errorMessage = {
-        id: `msg-${Date.now()}-error`,
-        role: 'assistant',
-        content: `⚠️ ERROR: Interrogation disrupted: "${err.message || 'Unknown network error'}"`,
-      };
-      setMessages((prev) => [...prev, errorMessage]);
-    }
-  };
+        parts: [{ type: 'text', text: `Forensic archive for ${companyName} initialized. I have indexed all available records regarding their collapse. What would you like to interrogate?` }],
+      } as unknown as UIMessage,
+    ],
+  });
 
-  const isPending = isLoading || isTyping;
+  const messages = chat.messages;
+  const error = chat.error;
+  const isPending = chat.status === 'submitted' || chat.status === 'streaming';
 
-  useEffect(() => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-    textarea.style.height = 'auto';
-    const newHeight = Math.min(textarea.scrollHeight, 120);
-    textarea.style.height = `${newHeight}px`;
-  }, [input]);
-
-  const renderMarkdown = (text: string, role: string) => {
+  const renderMarkdown = useCallback((text: string) => {
     return (
-      <ReactMarkdown 
+      <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
-          p: ({ node, ...props }) => <p style={{ margin: '0 0 12px 0', whiteSpace: 'pre-wrap' }} {...props} />,
-          h1: ({ node, ...props }) => <h1 style={{ fontFamily: 'var(--font-source-serif), serif', fontSize: '28px', fontWeight: '900', margin: '20px 0 10px 0', color: role === 'user' ? 'var(--cream-base)' : 'var(--ink-black)', lineHeight: 1.2 }} {...props} />,
-          h2: ({ node, ...props }) => <h2 style={{ fontFamily: 'var(--font-source-serif), serif', fontSize: '25px', fontWeight: '800', margin: '18px 0 8px 0', color: role === 'user' ? 'var(--cream-base)' : 'var(--ink-black)', lineHeight: 1.25 }} {...props} />,
-          h3: ({ node, ...props }) => <h3 style={{ fontFamily: 'var(--font-source-serif), serif', fontSize: '23px', fontWeight: '700', margin: '16px 0 6px 0', color: role === 'user' ? 'var(--cream-base)' : 'var(--ink-black)', lineHeight: 1.3 }} {...props} />,
-          ul: ({ node, ...props }) => <ul style={{ margin: '0 0 12px 0', paddingLeft: '20px', listStyleType: 'disc' }} {...props} />,
-          ol: ({ node, ...props }) => <ol style={{ margin: '0 0 12px 0', paddingLeft: '20px', listStyleType: 'decimal' }} {...props} />,
-          li: ({ node, ...props }) => <li style={{ margin: '4px 0', whiteSpace: 'pre-wrap' }} {...props} />,
-          strong: ({ node, ...props }) => <strong style={{ fontWeight: 'bold', color: role === 'user' ? 'var(--cream-base)' : 'var(--ink-black)' }} {...props} />,
-          em: ({ node, ...props }) => <em style={{ fontStyle: 'italic' }} {...props} />,
-          code: ({ node, className, children, ...props }: any) => {
+          p: ({ ...props }) => <p className="text-[15px] leading-relaxed mb-3 last:mb-0 text-gray-900" {...props} />,
+          h1: ({ ...props }) => <h1 className="text-[22px] font-bold mt-6 mb-3 text-gray-900 leading-tight" {...props} />,
+          h2: ({ ...props }) => <h2 className="text-[18px] font-semibold mt-5 mb-2 text-gray-900 leading-tight" {...props} />,
+          h3: ({ ...props }) => <h3 className="text-[16px] font-semibold mt-4 mb-2 text-gray-900 leading-tight" {...props} />,
+          ul: ({ ...props }) => <ul className="list-disc pl-6 mb-3 space-y-1" {...props} />,
+          ol: ({ ...props }) => <ol className="list-decimal pl-6 mb-3 space-y-1" {...props} />,
+          li: ({ ...props }) => <li className="text-[15px] leading-relaxed text-gray-900" {...props} />,
+          strong: ({ ...props }) => <strong className="font-semibold text-gray-900" {...props} />,
+          em: ({ ...props }) => <em className="italic" {...props} />,
+          a: ({ children, href, ...props }) => (
+            <a href={href} className="text-blue-600 hover:text-blue-800 underline underline-offset-2" {...props}>{children}</a>
+          ),
+          code: ({ className, children, ...props }: any) => {
             const match = /language-(\w+)/.exec(className || '');
             const isInline = !match;
             return isInline ? (
-              <code style={{ fontFamily: 'var(--font-dm-mono), monospace', backgroundColor: role === 'user' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', padding: '2px 4px', borderRadius: '2px', fontSize: '0.9em' }} {...props}>{children}</code>
+              <code className="bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-[13px] font-mono" {...props}>{children}</code>
             ) : (
-              <pre style={{ fontFamily: 'var(--font-dm-mono), monospace', backgroundColor: role === 'user' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)', padding: '12px', borderRadius: '2px', overflowX: 'auto', margin: '8px 0', fontSize: '0.85em' }}>
-                <code {...props}>{children}</code>
-              </pre>
+              <pre className="bg-gray-50 border border-gray-200 rounded-lg p-4 overflow-x-auto my-3 text-sm font-mono"><code {...props}>{children}</code></pre>
             );
           },
-          table: ({ node, ...props }) => <table style={{ width: '100%', borderCollapse: 'collapse', margin: '16px 0', fontSize: '13px' }} {...props} />,
-          thead: ({ node, ...props }) => <thead style={{ borderBottom: '2px solid var(--cream-dark)' }} {...props} />,
-          tbody: ({ node, ...props }) => <tbody {...props} />,
-          tr: ({ node, ...props }) => <tr style={{ borderBottom: '1px solid var(--cream-dark)' }} {...props} />,
-          th: ({ node, ...props }) => <th style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 'bold', fontFamily: 'var(--font-dm-mono), monospace', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }} {...props} />,
-          td: ({ node, ...props }) => <td style={{ padding: '8px 12px', fontFamily: 'var(--font-dm-mono), monospace', fontSize: '12px' }} {...props} />
+          hr: ({ ...props }) => <hr className="my-6 border-gray-200" {...props} />,
+          blockquote: ({ ...props }) => <blockquote className="border-l-3 border-gray-300 pl-4 italic text-gray-600 my-4" {...props} />,
+          table: ({ ...props }) => <div className="overflow-x-auto my-4"><table className="min-w-full text-sm border-collapse" {...props} /></div>,
+          thead: ({ ...props }) => <thead className="bg-gray-50" {...props} />,
+          tbody: ({ ...props }) => <tbody {...props} />,
+          tr: ({ ...props }) => <tr className="border-b border-gray-200" {...props} />,
+          th: ({ ...props }) => <th className="px-4 py-2 text-left font-semibold text-gray-700 text-xs uppercase tracking-wider" {...props} />,
+          td: ({ ...props }) => <td className="px-4 py-2 text-gray-700" {...props} />,
         }}
       >
         {text}
       </ReactMarkdown>
     );
-  };
+  }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement> | { target: { value: string } }) => {
-    setInput(e.target.value);
-  };
-
-  const handleSubmit = (e?: React.FormEvent) => {
+  const onSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!input.trim() || isPending) return;
-    
-    sendMessage({
-      text: input.trim(),
-    });
+    chat.sendMessage({ text: input });
     setInput('');
   };
 
@@ -183,93 +84,105 @@ export const FounderInterrogation = ({ companyName }: { companyName: string }) =
   }, [messages, isPending]);
 
   return (
-    <div className="mt-32 mb-32 border border-cream-dark/50 rounded-sm overflow-hidden bg-cream-deep/20 paper-dossier">
-      <div className="bg-ink-black p-6 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-rust-accent/20 border border-rust-accent/30 rounded-sm flex items-center justify-center text-rust-accent">
-            <Fingerprint size={20} />
+    <div className="my-16 rounded-xl border border-gray-200 overflow-hidden bg-white shadow-sm">
+      <div className="px-6 py-4 border-b border-gray-100">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
+            <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
           </div>
           <div>
-            <h3 className="t-label text-cream-base text-[10px]">Active_Investigation</h3>
-            <p className="t-h3 text-paper-white text-lg">Interrogate the Archive: {companyName}</p>
+            <p className="text-sm font-medium text-gray-900">Interrogate the Archive</p>
+            <p className="text-xs text-gray-500">{companyName}</p>
           </div>
         </div>
-        <div className="flex items-center gap-4 hidden md:flex">
-          <span className="t-label text-[9px] text-sage-neutral flex items-center gap-2">
-            <span className="w-1.5 h-1.5 bg-sage-neutral rounded-full animate-pulse" />
-            DIRECT_NEURAL_LINK
-          </span>
+      </div>
+
+      <div
+        ref={scrollRef}
+        className="h-[500px] overflow-y-auto"
+      >
+        <div className="max-w-[680px] mx-auto px-6 py-6">
+          {messages.filter(m => m.role !== 'system').map((m: any) => (
+            <div key={m.id} className="mb-6 last:mb-0">
+              {m.role === 'user' ? (
+                <div className="flex justify-end">
+                  <div className="bg-gray-900 text-white rounded-2xl rounded-br-sm px-4 py-2.5 max-w-[85%]">
+                    {m.content ? (
+                      <p className="text-[15px] leading-relaxed text-white whitespace-pre-wrap">{m.content}</p>
+                    ) : (
+                      m.parts && m.parts.map((part: any, pIdx: number) => {
+                        if (part.type === 'text') {
+                          return <p key={pIdx} className="text-[15px] leading-relaxed text-white whitespace-pre-wrap">{part.text}</p>;
+                        }
+                        return null;
+                      })
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="ml-2 text-[15px] leading-relaxed text-gray-900">
+                  {m.content && renderMarkdown(m.content)}
+                  {m.parts && m.parts.map((part: any, pIdx: number) => {
+                    if (part.type === 'text') {
+                      return <div key={pIdx}>{renderMarkdown(part.text)}</div>;
+                    }
+                    return null;
+                  })}
+                  {isPending && m === messages[messages.length - 1] && m.role === 'assistant' && (
+                    <div className="flex items-center gap-1.5 py-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <div className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <div className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+          {isPending && !messages.filter(m => m.role === 'assistant').some(m => m === messages[messages.length - 1]) && (
+            <AutopsyLoader customContext={companyName} />
+          )}
+          {error && (
+            <div className="flex justify-center">
+              <button
+                onClick={() => chat.sendMessage({ text: input })}
+                className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1 px-3 py-1.5 border border-gray-200 rounded-lg transition-colors"
+              >
+                <RefreshCw size={10} /> Retry
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      <div 
-        ref={scrollRef}
-        className="h-[500px] overflow-y-auto p-8 space-y-6 bg-graph-paper"
-      >
-        <AnimatePresence initial={false}>
-          {messages.map((m: any) => (
-            <motion.div
-              key={m.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={cn(
-                "flex gap-4 max-w-[85%]",
-                m.role === 'user' ? "ml-auto flex-row-reverse" : "mr-auto"
-              )}
-            >
-              <div className={cn(
-                "w-8 h-8 rounded-sm flex items-center justify-center flex-shrink-0 mt-1",
-                m.role === 'user' ? "bg-ink-black text-cream-base" : "bg-rust-accent text-paper-white"
-              )}>
-                {m.role === 'user' ? <User size={14} /> : <Bot size={14} />}
-              </div>
-              <div className={cn(
-                "p-4 rounded-sm text-[14px] leading-relaxed",
-                m.role === 'user' ? "bg-ink-black text-cream-base" : "bg-paper-white border border-cream-dark/50 text-ink-soft shadow-sm"
-              )}>
-                {m.content && renderMarkdown(m.content, m.role)}
-                {m.parts && m.parts.map((part: any, pIdx: number) => {
-                  if (part.type === 'text') {
-                    return <div key={pIdx}>{renderMarkdown(part.text, m.role)}</div>;
-                  }
-                  return null;
-                })}
-              </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-        {isLoading && (
-          <AutopsyLoader customContext={companyName} />
-        )}
-      </div>
-
-      <div className="p-6 bg-paper-white border-t border-cream-dark/50">
-        <form onSubmit={handleSubmit} className="flex gap-4">
+      <div className="border-t border-gray-100 px-4 py-3">
+        <form onSubmit={onSubmit} className="flex items-end gap-2 bg-white border border-gray-300 rounded-xl px-4 py-2 focus-within:border-gray-400 focus-within:shadow-sm transition-all">
           <textarea
             ref={textareaRef}
             value={input || ''}
             disabled={isPending}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => { setInput(e.target.value); }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                handleSubmit(e);
+                onSubmit(e);
               }
             }}
             rows={1}
-            placeholder={isPending ? "Retrieving intelligence archives..." : `Ask a question about ${companyName}'s failure...`}
-            className="flex-1 bg-cream-base/30 border-b border-cream-dark px-4 py-2 t-mono text-[13px] outline-none focus:border-rust-accent transition-colors resize-none overflow-hidden"
-            style={{ maxHeight: '120px', alignSelf: 'center', minHeight: '38px', paddingTop: '8px', paddingBottom: '8px', color: isPending ? 'var(--ink-muted)' : 'var(--ink-black)' }}
+            placeholder={isPending ? "Waiting for response..." : `Ask about ${companyName}...`}
+            className="flex-1 bg-transparent border-none outline-none resize-none text-sm text-gray-900 placeholder-gray-400 py-1.5 max-h-[120px] font-sans"
           />
           <button
             type="submit"
             disabled={isPending || !input?.trim()}
-            className="btn-rust h-10 w-10 p-0 flex items-center justify-center disabled:opacity-50"
+            className="shrink-0 w-8 h-8 flex items-center justify-center bg-gray-900 hover:bg-gray-800 rounded-lg transition-colors disabled:bg-gray-200"
           >
-            <Send size={16} />
+            <Send size={12} className={input?.trim() && !isPending ? 'text-white' : 'text-gray-400'} />
           </button>
         </form>
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 mt-3">
           {[
             `Why did ${companyName} fail?`,
             `Key lesson for founders?`,
@@ -278,10 +191,13 @@ export const FounderInterrogation = ({ companyName }: { companyName: string }) =
             <button
               key={suggestion}
               onClick={() => {
-                const event = { target: { value: suggestion } } as any;
-                handleInputChange(event);
+                setInput(suggestion);
+                setTimeout(() => {
+                  const form = textareaRef.current?.closest('form');
+                  form?.requestSubmit();
+                }, 0);
               }}
-              className="t-label-sm px-3 py-1 bg-cream-deep/40 hover:bg-cream-deep/60 rounded-full transition-colors text-[9px] opacity-70"
+              className="text-xs text-gray-500 hover:text-gray-700 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors"
             >
               {suggestion}
             </button>

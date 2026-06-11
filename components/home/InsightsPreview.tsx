@@ -130,6 +130,7 @@ export function InsightsPreview({ failureData = [], topLiquidations = [] }: Insi
         backgroundColor: 'var(--cream-base)',
         position: 'relative',
         overflow: 'hidden',
+        contentVisibility: 'auto',
       }}
     >
       {/* Subtle warm radial highlight */}

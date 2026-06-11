@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { MessageSquare, User, Bot, Send } from 'lucide-react';
+import { User, Bot, Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Message {

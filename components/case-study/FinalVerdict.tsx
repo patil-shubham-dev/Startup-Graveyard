@@ -56,7 +56,7 @@ export function FinalVerdict({ status = 'CASE_CLOSED' }: FinalVerdictProps) {
 
       <div className="mt-24 max-w-[500px] text-center">
         <p className="text-[13px] text-ink-muted leading-relaxed italic">
-          "The archives never lie. We only fail to read them."
+          {'\u201C'}The archives never lie. We only fail to read them.{'\u201D'}
         </p>
         <div className="mt-6 flex justify-center gap-2">
           <div className="w-1 h-1 rounded-full bg-cream-dark" />

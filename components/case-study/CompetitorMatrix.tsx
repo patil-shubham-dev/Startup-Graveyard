@@ -1,4 +1,3 @@
-import { Check, X, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils/index';
 
 interface Competitor {
@@ -42,7 +41,7 @@ export const CompetitorMatrix = ({ competitors, companyName }: { competitors: Co
                 {comp.moat}
               </td>
               <td className="p-6 t-body-sm text-ink-soft italic">
-                "{comp.advantage_over_failed}"
+                {'\u201C'}{comp.advantage_over_failed}{'\u201D'}
               </td>
             </tr>
           ))}

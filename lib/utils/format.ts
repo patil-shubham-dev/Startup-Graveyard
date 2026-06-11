@@ -43,7 +43,7 @@ export function formatDate(dateStr: string): string {
       month: 'short',
       year: 'numeric',
     }).toUpperCase();
-  } catch (e) {
+  } catch {
     return dateStr;
   }
 }

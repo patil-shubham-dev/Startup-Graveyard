@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
   experimental: {
+    viewTransition: true,
     optimizePackageImports: [
       'lucide-react',
       'framer-motion',
@@ -17,11 +18,8 @@ const nextConfig: NextConfig = {
       'tailwind-merge'
     ],
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   }
 };
 
