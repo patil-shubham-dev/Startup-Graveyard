@@ -1,4 +1,5 @@
 import { supabase } from './config';
+import { nanoid } from 'nanoid';
 
 interface Question {
   id: string;
@@ -13,7 +14,7 @@ export interface PremortemReport {
     description: string;
     mitigation: string;
   }>;
-  similar_cases: Array<{
+  similar_cases?: Array<{
     name: string;
     correlation: string;
   }>;
@@ -68,7 +69,7 @@ export async function savePremortemReport(id: string, report: PremortemReport, r
     .update({ 
       report, 
       risk_score: riskScore,
-      share_token: crypto.randomUUID().split('-')[0] // Simple share token
+      share_token: nanoid(12)
     })
     .eq('id', id);
 

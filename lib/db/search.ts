@@ -9,130 +9,122 @@ export interface HybridSearchResult {
   score: number;
 }
 
-/**
- * Perform a hybrid search combining pgvector semantic search with structured SQL metadata filters
- * (e.g. industry matching, funding thresholds, or specific keyword overlaps).
- */
+const VALID_INDUSTRIES = [
+  'fintech', 'biotech', 'health', 'e-commerce', 'crypto', 'delivery',
+  'transport', 'logistics', 'education', 'social', 'software',
+  'hardware', 'gaming', 'real estate', 'proptech', 'saas', 'sharing',
+];
+
+const STOP_WORDS = new Set(['what', 'that', 'with', 'this', 'have', 'from', 'were', 'their', 'they', 'them']);
+
+const RANKING_OFFSET = 60;
+const VECTOR_BOOST_MULTIPLIER = 0.25;
+
+function detectIndustry(query: string): string | null {
+  const lower = query.toLowerCase();
+  return VALID_INDUSTRIES.find((ind) => lower.includes(ind)) ?? null;
+}
+
+function detectMinFunding(query: string): number | null {
+  const lower = query.toLowerCase();
+  if (lower.includes('100m') || lower.includes('100 million')) return 10000000000;
+  if (lower.includes('50m') || lower.includes('50 million')) return 5000000000;
+  if (lower.includes('10m') || lower.includes('10 million')) return 1000000000;
+  if (lower.includes('1m') || lower.includes('1 million')) return 100000000;
+  return null;
+}
+
+function extractKeywords(query: string): string[] {
+  return query
+    .toLowerCase()
+    .split(/[\s,.\-?]+/)
+    .map((w) => w.trim())
+    .filter((w) => w.length > 3 && !STOP_WORDS.has(w))
+    .slice(0, 4);
+}
+
+function sanitizeKeyword(kw: string): string {
+  return kw.replace(/[^a-z0-9\s]/gi, '').trim();
+}
+
 export async function hybridSearchCaseStudies(
   query: string,
   embedding: number[],
   limit = 5
 ): Promise<HybridSearchResult[]> {
   try {
-    // 1. Fetch semantic vector search matches
     const vectorResults = await searchCaseStudies(embedding, limit * 2);
-    
-    // 2. Build structured SQL metadata filters
-    const lowerQuery = query.toLowerCase();
+
     let dbQuery = supabase
       .from('case_studies')
       .select('id, slug, company_name, summary, industry, funding_raised, published, tags')
       .eq('published', true);
-    
-    // Identify potential industry matches
-    const industries = [
-      'fintech', 'biotech', 'health', 'e-commerce', 'crypto', 'delivery', 
-      'transport', 'logistics', 'education', 'social', 'software', 
-      'hardware', 'gaming', 'real estate', 'proptech', 'saas', 'sharing'
-    ];
-    const matchedIndustry = industries.find(ind => lowerQuery.includes(ind));
+
+    const matchedIndustry = detectIndustry(query);
     if (matchedIndustry) {
       dbQuery = dbQuery.ilike('industry', `%${matchedIndustry}%`);
     }
-    
-    // Identify potential funding thresholds (USD cents in database)
-    let minFunding: number | null = null;
-    if (lowerQuery.includes('100m') || lowerQuery.includes('100 million')) {
-      minFunding = 10000000000; // $100M
-    } else if (lowerQuery.includes('50m') || lowerQuery.includes('50 million')) {
-      minFunding = 5000000000; // $50M
-    } else if (lowerQuery.includes('10m') || lowerQuery.includes('10 million')) {
-      minFunding = 1000000000; // $10M
-    } else if (lowerQuery.includes('1m') || lowerQuery.includes('1 million')) {
-      minFunding = 100000000; // $1M
-    }
-    
+
+    const minFunding = detectMinFunding(query);
     if (minFunding !== null) {
       dbQuery = dbQuery.gte('funding_raised', minFunding);
     }
 
-    // Match keywords directly if no specific industry or funding filters were identified
-    const keywords = lowerQuery
-      .split(/[\s,.\-?]/)
-      .map(w => w.trim())
-      .filter(w => w.length > 3 && !['what', 'that', 'with', 'this', 'have', 'from', 'were', 'their'].includes(w));
-
-    if (keywords.length > 0 && !matchedIndustry && minFunding === null) {
-      const orConditions = keywords
-        .slice(0, 4) // cap keywords to keep query optimized
-        .map(kw => `company_name.ilike.%${kw}%,summary.ilike.%${kw}%`)
-        .join(',');
-      dbQuery = dbQuery.or(orConditions);
+    if (!matchedIndustry && minFunding === null) {
+      const keywords = extractKeywords(query);
+      if (keywords.length > 0) {
+        const sanitized = keywords.map(sanitizeKeyword).filter(Boolean);
+        if (sanitized.length > 0) {
+          const orParts = sanitized.flatMap((kw) => [
+            `company_name.ilike.%${kw}%`,
+            `summary.ilike.%${kw}%`,
+          ]);
+          dbQuery = dbQuery.or(orParts.join(','));
+        }
+      }
     }
 
     const { data: sqlResults, error } = await dbQuery.limit(limit * 2);
-    if (error) {
-      console.error('[Hybrid Search] SQL metadata query error:', error);
-    }
+    const resultMap = new Map<string, { item: Omit<HybridSearchResult, 'score'>; vectorScore: number; sqlScore: number }>();
 
-    // 3. Merge, rank, and score (Reciprocal Rank Fusion + Cosine similarity boost)
-    const combinedMap = new Map<string, { item: Omit<HybridSearchResult, 'score'>; vectorScore: number; sqlScore: number }>();
-    
     vectorResults.forEach((v, index) => {
-      const rankScore = 1 / (index + 60);
-      combinedMap.set(v.id, {
-        item: {
-          id: v.id,
-          slug: v.slug,
-          company_name: v.company_name,
-          summary: v.summary,
-        },
+      const rankScore = 1 / (index + RANKING_OFFSET);
+      resultMap.set(v.id, {
+        item: { id: v.id, slug: v.slug, company_name: v.company_name, summary: v.summary },
         vectorScore: rankScore + (v.similarity || 0),
-        sqlScore: 0
+        sqlScore: 0,
       });
     });
-    
-    if (sqlResults && sqlResults.length > 0) {
+
+    if (sqlResults && !error) {
       sqlResults.forEach((s, index) => {
-        const rankScore = 1 / (index + 60);
-        const existing = combinedMap.get(s.id);
+        const rankScore = 1 / (index + RANKING_OFFSET);
+        const existing = resultMap.get(s.id);
         if (existing) {
           existing.sqlScore = rankScore;
-          // Apply significant boost if both semantic and SQL search matched
-          existing.vectorScore += 0.25;
+          existing.vectorScore += VECTOR_BOOST_MULTIPLIER;
         } else {
-          combinedMap.set(s.id, {
-            item: {
-              id: s.id,
-              slug: s.slug,
-              company_name: s.company_name,
-              summary: s.summary,
-            },
+          resultMap.set(s.id, {
+            item: { id: s.id, slug: s.slug, company_name: s.company_name, summary: s.summary },
             vectorScore: 0,
-            sqlScore: rankScore
+            sqlScore: rankScore,
           });
         }
       });
     }
 
-    return Array.from(combinedMap.values())
-      .map(entry => ({
-        ...entry.item,
-        score: entry.vectorScore + entry.sqlScore
-      }))
+    return Array.from(resultMap.values())
+      .map((entry) => ({ ...entry.item, score: entry.vectorScore + entry.sqlScore }))
       .sort((a, b) => b.score - a.score)
       .slice(0, limit);
-
-  } catch (err) {
-    console.error('[Hybrid Search] Overall failure, falling back to simple vector search:', err);
-    // Dynamic fallback to simple vector search if any step fails
+  } catch {
     const vecFallback = await searchCaseStudies(embedding, limit);
     return vecFallback.map((v, i) => ({
       id: v.id,
       slug: v.slug,
       company_name: v.company_name,
       summary: v.summary,
-      score: 1 / (i + 60) + (v.similarity || 0)
+      score: 1 / (i + RANKING_OFFSET) + (v.similarity || 0),
     }));
   }
 }

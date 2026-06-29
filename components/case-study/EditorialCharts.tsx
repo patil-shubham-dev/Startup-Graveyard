@@ -1,7 +1,5 @@
 'use client';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { 
   AreaChart, 
   Area, 
@@ -16,7 +14,20 @@ import {
 } from 'recharts';
 import { formatCurrencyCompact } from '@/lib/utils/format';
 
-const CustomTooltip = ({ active, payload, label, prefix = '$' }: any) => {
+interface TooltipPayloadItem {
+  value: number;
+  name: string;
+  color: string;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayloadItem[];
+  label?: string;
+  prefix?: string;
+}
+
+const CustomTooltip = ({ active, payload, label, prefix = '$' }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-ink-black border border-ink-muted/30 p-3 shadow-2xl rounded-sm">
@@ -30,7 +41,17 @@ const CustomTooltip = ({ active, payload, label, prefix = '$' }: any) => {
   return null;
 };
 
-export const FundingChart = ({ data }: { data: any[] }) => {
+interface ChartDataPoint {
+  date: string;
+  amount?: number;
+  count?: number;
+}
+
+interface FundingChartProps {
+  data: ChartDataPoint[];
+}
+
+export const FundingChart = ({ data }: FundingChartProps) => {
   if (!data || data.length === 0) return null;
 
   return (
@@ -77,7 +98,11 @@ export const FundingChart = ({ data }: { data: any[] }) => {
   );
 };
 
-export const HeadcountChart = ({ data }: { data: any[] }) => {
+interface HeadcountChartProps {
+  data: ChartDataPoint[];
+}
+
+export const HeadcountChart = ({ data }: HeadcountChartProps) => {
   if (!data || data.length === 0) return null;
 
   return (

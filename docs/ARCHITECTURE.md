@@ -186,11 +186,11 @@ Framework:   Next.js 15 App Router — TypeScript strict
 Styling:     Tailwind CSS v4 + CSS variables
 Components:  shadcn/ui — customized to design system above
 Animation:   Framer Motion — page transitions + scroll reveals only
-Charts:      Recharts — all dark-themed to match design tokens
+Charts:      Recharts — all themed to match forensic design tokens
 Content:     MDX via next-mdx-remote
-Backend:     Supabase (Postgres + Auth + Edge Functions + pgvector)
-AI:          Gemini 2.0 Flash via OpenRouter (primary); provider-agnostic layer
-Search:      Fuse.js local index + pgvector semantic fallback
+Backend:     Supabase (Postgres + Auth + pgvector)
+AI:          NVIDIA NIM (primary); provider-agnostic layer via AI SDK
+Search:      pgvector semantic search + keyword fallback
 Deployment:  Vercel
 ```
 
@@ -229,7 +229,7 @@ CREATE TABLE case_studies (
   published      BOOLEAN DEFAULT false,
   published_at   TIMESTAMPTZ,
   created_at     TIMESTAMPTZ DEFAULT now(),
-  embedding      vector(768)                  -- Gemini text-embedding-004
+  embedding      vector(1024)                 -- NVIDIA nv-embedqa-e5-v5
 );
 
 -- Pre-Mortem sessions
@@ -484,7 +484,7 @@ Companies that scaled before validating demand:
 // GET  /api/premortem/[id]/report    — stream structured JSON report
 // GET  /pre-mortem/[shareToken]      — public read-only report view
 
-// AI: Gemini 2.0 Flash via /lib/ai
+// AI: NVIDIA NIM via /lib/ai
 // Output: structured JSON (not markdown) — parse with Zod schema
 // Similarity search: pgvector cosine on case_studies.embedding
 // Store full session in premortem_sessions table
@@ -529,10 +529,10 @@ Two-panel desktop layout:
 
 **API: `POST /api/chat` (streaming SSE)**
 ```typescript
-// 1. Embed user query — Gemini text-embedding-004 (768-dim)
+// 1. Embed user query — NVIDIA nv-embedqa-e5-v5
 // 2. pgvector cosine similarity search on case_studies.embedding — top 5
 // 3. Build system prompt with retrieved context + conversation history
-// 4. Stream Gemini 2.0 Flash response via /lib/ai
+// 4. Stream NVIDIA NIM response via /lib/ai
 // 5. Post-process: detect company name mentions → attach case study card data
 // 6. Persist to chat_sessions (append message pair)
 ```
@@ -580,11 +580,11 @@ interface AIProvider {
   generate<T>(prompt: string, schema: ZodSchema<T>): Promise<T>
 }
 
-// /lib/ai/providers/gemini.ts    — default via OpenRouter
-// /lib/ai/providers/openai.ts    — fallback
-// /lib/ai/providers/anthropic.ts — fallback
+// OpenAI-compatible provider via NVIDIA NIM
+// Provider selection via AI_DEFAULT_MODEL env var
+// Embedding via NVIDIA nv-embedqa-e5-v5
 
-// Zero direct OpenRouter/API calls outside /lib/ai/
+// Zero direct API calls outside /lib/ai/
 // Provider selection via AI_DEFAULT_MODEL env var
 ```
 
@@ -608,7 +608,7 @@ interface AIProvider {
 ## AUTH FLOW
 
 ```typescript
-// /lib/auth/context.tsx — AuthContext with user, session, signIn, signOut
+// /context/AuthContext.tsx — AuthContext with user, session, signIn, signOut
 // /components/auth/RequireAuth.tsx — wraps Pre-Mortem and Ask pages
 //   Unauthenticated: renders lock overlay with sign-in modal + feature preview behind blur
 //   Authenticated: renders children
@@ -658,10 +658,10 @@ interface AIProvider {
 # .github/workflows/daily-publish.yml
 # Schedule: 0 8 * * * (08:00 UTC daily)
 # Steps:
-# 1. Read next company from /data/queue.json
-# 2. Call Gemini 2.0 Flash — generate structured JSON case study
+# 1. Read next company from candidate list
+# 2. Call NVIDIA NIM — generate structured JSON case study
 # 3. Validate against Zod schema
-# 4. Generate Gemini embedding (768-dim) for the case study text
+# 4. Generate NVIDIA embedding (1024-dim) for the case study text
 # 5. INSERT into Supabase case_studies (with embedding)
 # 6. Write MDX file to /content/companies/[slug].mdx
 # 7. Commit + push to main
@@ -678,9 +678,9 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 
-# AI via OpenRouter
-OPENROUTER_API_KEY=
-AI_DEFAULT_MODEL=google/gemini-2.0-flash-001
+# AI via NVIDIA NIM
+NVIDIA_API_KEY=
+AI_DEFAULT_MODEL=meta/llama-3.1-8b-instruct
 
 # Automation
 GITHUB_TOKEN=

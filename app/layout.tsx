@@ -1,8 +1,8 @@
-export const revalidate = 3600; // Revalidate every hour by default
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Space_Grotesk, Inter, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { Navigation } from "@/components/layout/Navigation";
+import Script from "next/script";
 import dynamic from "next/dynamic";
 import { AuthProvider } from "@/context/AuthContext";
 import { ProgressBar } from "@/components/layout/ProgressBar";
@@ -10,9 +10,26 @@ import { PageWrapper } from "@/components/layout/PageWrapper";
 import { Providers } from "@/lib/providers";
 import { Suspense } from "react";
 
+export const revalidate = 3600; // Revalidate every hour by default
+
 const Footer = dynamic(() => import("@/components/layout/Footer").then(m => m.Footer), {
   loading: () => <footer className="h-24 bg-cream-deep border-t border-cream-dark" />,
 });
+
+const GlobalSearch = dynamic(() => import("@/components/search/GlobalSearchWrapper"), {
+  loading: () => null,
+});
+
+function safeOrigin(urlString: string | undefined, fallback: string): string {
+  try {
+    return new URL(urlString || fallback).origin;
+  } catch {
+    return new URL(fallback).origin;
+  }
+}
+
+const nvidiaOrigin = safeOrigin(process.env.NVIDIA_BASE_URL, 'https://integrate.api.nvidia.com');
+const supabaseOrigin = safeOrigin(process.env.NEXT_PUBLIC_SUPABASE_URL, 'https://db.supabase.co');
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
@@ -100,12 +117,19 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <link rel="preconnect" href="https://integrate.api.nvidia.com" />
-        <link rel="preconnect" href="https://db.gqohxgwctyfmfbggwvmp.supabase.co" />
-        <link rel="dns-prefetch" href="https://integrate.api.nvidia.com" />
-        <link rel="dns-prefetch" href="https://db.gqohxgwctyfmfbggwvmp.supabase.co" />
+        <link rel="preconnect" href={nvidiaOrigin} />
+        <link rel="preconnect" href={supabaseOrigin} />
+        <link rel="dns-prefetch" href={nvidiaOrigin} />
+        <link rel="dns-prefetch" href={supabaseOrigin} />
+        {process.env.NEXT_PUBLIC_SIMPLE_ANALYTICS_DOMAIN && (
+          <Script
+            src="https://scripts.simpleanalyticscdn.com/latest.js"
+            data-domain={process.env.NEXT_PUBLIC_SIMPLE_ANALYTICS_DOMAIN}
+            strategy="afterInteractive"
+          />
+        )}
       </head>
-      <body style={{ backgroundColor: "var(--cream-base)", color: "var(--ink-black)" }}>
+      <body className="bg-[var(--cream-base)] text-[var(--ink-black)]">
         <AuthProvider>
           <Providers>
             <div className="relative flex min-h-screen flex-col">
@@ -113,6 +137,7 @@ export default async function RootLayout({
                 <ProgressBar />
               </Suspense>
               <Navigation />
+              <GlobalSearch />
               <main className="relative flex-1">
                 <PageWrapper>{children}</PageWrapper>
               </main>

@@ -1,22 +1,14 @@
-
 import { createClient } from '@supabase/supabase-js';
-import * as fs from 'fs';
+import { config } from 'dotenv';
 import * as path from 'path';
 
-// Manual env parsing
-const envPath = path.resolve(process.cwd(), '.env.local');
-const envContent = fs.readFileSync(envPath, 'utf8');
-const env: Record<string, string> = {};
-envContent.split('\n').forEach(line => {
-  const [key, value] = line.split('=');
-  if (key && value) env[key.trim()] = value.trim();
-});
+config({ path: path.resolve(process.cwd(), '.env.local') });
 
-const SUPABASE_URL = env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = env.SUPABASE_SERVICE_ROLE_KEY;
-const NVIDIA_API_KEY = env.NVIDIA_API_KEY;
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+const supabase = createClient(SUPABASE_URL || '', SUPABASE_SERVICE_ROLE_KEY || '');
 
 async function testRAG(query: string) {
   console.log(`Testing RAG for query: "${query}"`);

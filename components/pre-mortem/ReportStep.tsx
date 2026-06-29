@@ -11,6 +11,7 @@ import {
 interface ReportStepProps {
   report: Record<string, any>;
   reportId: number;
+  shareToken: string | null;
   exporting: boolean;
   copiedSection: string | null;
   onExportPDF: () => void;
@@ -27,7 +28,7 @@ const NAV_SECTIONS = [
   { id: 'survival-probability', label: 'Risk Breakdown', icon: Cpu }
 ];
 
-export function ReportStep({ report, reportId, exporting, copiedSection, onExportPDF, onCopyToClipboard, onReset }: ReportStepProps) {
+export function ReportStep({ report, reportId, shareToken, exporting, copiedSection, onExportPDF, onCopyToClipboard, onReset }: ReportStepProps) {
   const [activeReportSection, setActiveReportSection] = useState('executive-summary');
   const reportRef = useRef<HTMLDivElement>(null);
 
@@ -151,7 +152,12 @@ export function ReportStep({ report, reportId, exporting, copiedSection, onExpor
           </button>
 
           <button
-            onClick={() => onCopyToClipboard(window.location.href, 'global-share')}
+            onClick={() => {
+              const shareUrl = shareToken
+                ? `${window.location.origin}/pre-mortem/share/${shareToken}`
+                : window.location.href;
+              onCopyToClipboard(shareUrl, 'global-share');
+            }}
             className="w-full h-9 border border-[#DDD3C5] bg-transparent hover:bg-[#F7F4EE] text-[#111111] rounded-lg font-monospace text-[9.5px] tracking-widest font-bold uppercase flex items-center justify-center gap-1.5 transition-all leading-none shrink-0"
           >
             {copiedSection === 'global-share' ? (

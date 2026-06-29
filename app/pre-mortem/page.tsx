@@ -9,8 +9,9 @@ import { PitchStep } from '@/components/pre-mortem/PitchStep';
 import { QuestionsStep } from '@/components/pre-mortem/QuestionsStep';
 import { AnalysisStep } from '@/components/pre-mortem/AnalysisStep';
 import { ReportStep } from '@/components/pre-mortem/ReportStep';
+import { RequireAuth } from '@/components/auth/RequireAuth';
 
-export default function PreMortemPage() {
+function PreMortemContent() {
   const [step, setStep] = useState<Step>('PITCH');
   const [pitch, setPitch] = useState('');
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -19,6 +20,7 @@ export default function PreMortemPage() {
   const [customAnswers, setCustomAnswers] = useState<Record<string, string>>({});
   const [report, setReport] = useState<Record<string, unknown> | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [shareToken, setShareToken] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [reportId] = useState(() => Math.floor(Math.random() * 9000) + 1000);
@@ -69,6 +71,9 @@ export default function PreMortemPage() {
       });
       const data = await res.json();
       setReport(data);
+      if (data.shareToken) {
+        setShareToken(data.shareToken);
+      }
       setStep('REPORT');
     } catch (error) {
       console.error(error);
@@ -282,6 +287,7 @@ export default function PreMortemPage() {
         <ReportStep
           report={report}
           reportId={reportId}
+          shareToken={shareToken}
           exporting={exporting}
           copiedSection={copiedSection}
           onExportPDF={handleExportPDF}
@@ -290,5 +296,13 @@ export default function PreMortemPage() {
         />
       )}
     </main>
+  );
+}
+
+export default function PreMortemPage() {
+  return (
+    <RequireAuth feature="pre-mortem">
+      <PreMortemContent />
+    </RequireAuth>
   );
 }

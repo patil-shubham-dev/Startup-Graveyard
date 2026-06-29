@@ -3,17 +3,21 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { LogOut, User } from 'lucide-react';
 
 const navLinks = [
   { name: 'ARCHIVES', href: '/explore' },
   { name: 'INSIGHTS', href: '/insights' },
   { name: 'PRE-MORTEM', href: '/pre-mortem' },
   { name: 'INTEL', href: '/ask' },
+  { name: 'ABOUT', href: '/about' },
 ];
 
 export function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
+  const { user, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const prefetch = (href: string) => {
@@ -24,6 +28,11 @@ export function Navigation() {
   const navHeight = isPreMortem ? '80px' : '56px';
   const headerBg = isPreMortem ? '#F7F4EE' : 'var(--cream-base)';
   const borderCol = isPreMortem ? '#DDD3C5' : 'var(--cream-dark)';
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.refresh();
+  };
 
   return (
     <>
@@ -51,7 +60,6 @@ export function Navigation() {
         >
           {/* Logo */}
           <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {/* Stamped SG Monogram */}
             <div
               style={{
                 width: '32px',
@@ -161,6 +169,79 @@ export function Navigation() {
 
           {/* Right Side */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {/* Auth Status */}
+            {user ? (
+              <div className="hidden sm:flex items-center gap-3">
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '4px 10px',
+                    backgroundColor: 'var(--cream-deep)',
+                    border: '1px solid var(--cream-dark)',
+                    borderRadius: '2px',
+                  }}
+                >
+                  <User className="w-3 h-3" style={{ color: 'var(--ink-muted)' }} />
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-mono), monospace',
+                      fontSize: '10px',
+                      color: 'var(--ink-muted)',
+                      maxWidth: '120px',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {user.email}
+                  </span>
+                  <button
+                    onClick={handleSignOut}
+                    style={{
+                      fontFamily: 'var(--font-mono), monospace',
+                      fontSize: '9px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.1em',
+                      color: 'var(--rust-accent)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '3px',
+                      padding: '2px 4px',
+                      transition: 'opacity 0.15s ease',
+                    }}
+                    title="Sign out"
+                  >
+                    <LogOut className="w-2.5 h-2.5" />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <Link
+                href="/auth"
+                style={{
+                  fontFamily: 'var(--font-mono), monospace',
+                  fontSize: '10px',
+                  fontWeight: '500',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.12em',
+                  color: 'var(--rust-accent)',
+                  textDecoration: 'none',
+                  padding: '6px 12px',
+                  border: '1px solid var(--rust-accent)',
+                  borderRadius: '2px',
+                  transition: 'all 0.2s ease',
+                }}
+                className="hidden sm:inline-flex"
+              >
+                SIGN IN
+              </Link>
+            )}
+
             <Link
               href="/pre-mortem"
               className={isPreMortem ? "hidden sm:inline-flex" : "btn-stamp hidden sm:inline-flex"}
@@ -191,7 +272,7 @@ export function Navigation() {
               RUN PRE-MORTEM →
             </Link>
 
-            {/* Menu trigger button next to CTA */}
+            {/* Menu trigger button */}
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
               className={isPreMortem ? "flex" : "lg:hidden flex"}
@@ -277,8 +358,51 @@ export function Navigation() {
                 </Link>
               );
             })}
+            {/* Mobile auth */}
+            <div style={{ padding: '12px 24px', borderTop: '1px solid var(--cream-dark)', marginTop: '8px', paddingTop: '16px' }}>
+              {user ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-mono), monospace',
+                      fontSize: '10px',
+                      color: 'var(--ink-muted)',
+                    }}
+                  >
+                    {user.email}
+                  </span>
+                  <button
+                    onClick={() => { handleSignOut(); setMobileOpen(false); }}
+                    style={{
+                      fontFamily: 'var(--font-mono), monospace',
+                      fontSize: '10px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.12em',
+                      color: 'var(--rust-accent)',
+                      background: 'none',
+                      border: '1px solid var(--rust-accent)',
+                      padding: '8px 16px',
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                      borderRadius: '2px',
+                    }}
+                  >
+                    SIGN OUT
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  href="/auth"
+                  onClick={() => setMobileOpen(false)}
+                  className="btn-stamp"
+                  style={{ width: '100%', justifyContent: 'center' }}
+                >
+                  SIGN IN
+                </Link>
+              )}
+            </div>
             <div style={{ padding: '12px 24px' }}>
-              <Link href="/pre-mortem" className="btn-stamp" onClick={() => setMobileOpen(false)}>
+              <Link href="/pre-mortem" className="btn-stamp" onClick={() => setMobileOpen(false)} style={{ width: '100%', justifyContent: 'center' }}>
                 RUN PRE-MORTEM →
               </Link>
             </div>

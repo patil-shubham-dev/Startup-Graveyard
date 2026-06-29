@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { useQuery } from '@tanstack/react-query';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { listCaseStudies, CaseStudy } from '@/lib/db/case-studies';
 import { useDebounce } from '@/lib/hooks/useDebounce';
 
@@ -10,8 +11,21 @@ const DossierCard = dynamic(() => import('@/components/ui/DossierCard').then(m =
   loading: () => <div className="skeleton-cream" style={{ height: '200px', borderRadius: '2px' }} />,
 });
 
-const INDUSTRIES = ['Fintech', 'SaaS', 'Hardware', 'Healthtech', 'E-commerce', 'Social', 'Logistics'];
-const FAIL_TYPES = ['No Market Need', 'Cash Exhaustion', 'Team Fracture', 'Competition', 'Pricing Failure', 'Regulatory'];
+const DEFAULT_INDUSTRIES = ['Fintech', 'SaaS', 'Hardware', 'Healthtech', 'E-commerce', 'Social', 'Logistics'];
+const DEFAULT_FAIL_TYPES = ['No Market Need', 'Cash Exhaustion', 'Team Fracture', 'Competition', 'Pricing Failure', 'Regulatory'];
+const DEFAULT_COUNTRIES = ['US', 'UK', 'Canada', 'Germany', 'France', 'India', 'China', 'Australia'];
+const FUNDING_RANGES = [
+  { label: '< $1M', min: 0, max: 100_000_000 },
+  { label: '$1M - $10M', min: 100_000_000, max: 1_000_000_000 },
+  { label: '$10M - $100M', min: 1_000_000_000, max: 10_000_000_000 },
+  { label: '$100M+', min: 10_000_000_000, max: undefined },
+];
+const YEAR_RANGES = [
+  { label: 'Before 2000', min: undefined, max: 1999 },
+  { label: '2000 - 2010', min: 2000, max: 2010 },
+  { label: '2010 - 2020', min: 2010, max: 2020 },
+  { label: 'After 2020', min: 2020, max: undefined },
+];
 
 function TombstoneSVG() {
   return (
@@ -27,38 +41,126 @@ function TombstoneSVG() {
 
 interface ExploreClientProps {
   initialCases: CaseStudy[];
+  industries?: string[];
+  failTypes?: string[];
+  countries?: string[];
 }
 
-export function ExploreClient({ initialCases = [] }: ExploreClientProps) {
-  const [search, setSearch] = useState('');
-  const [industry, setIndustry] = useState('');
-  const [failType, setFailType] = useState('');
+export function ExploreClient({ initialCases = [], industries, failTypes, countries }: ExploreClientProps) {
+  const filterIndustries = industries && industries.length > 0 ? industries : DEFAULT_INDUSTRIES;
+  const filterFailTypes = failTypes && failTypes.length > 0 ? failTypes : DEFAULT_FAIL_TYPES;
+  const filterCountries = countries && countries.length > 0 ? countries : DEFAULT_COUNTRIES;
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const [search, setSearch] = useState(searchParams.get('q') || '');
+  const [industry, setIndustry] = useState(searchParams.get('industry') || '');
+  const [failType, setFailType] = useState(searchParams.get('failType') || '');
+  const [country, setCountry] = useState(searchParams.get('country') || '');
+  const [fundingRange, setFundingRange] = useState(searchParams.get('funding') || '');
+  const [yearRange, setYearRange] = useState(searchParams.get('year') || '');
 
   const debouncedSearch = useDebounce(search, 300);
   const debouncedIndustry = useDebounce(industry, 300);
+  const debouncedFailType = useDebounce(failType, 300);
+  const debouncedCountry = useDebounce(country, 300);
+  const debouncedFundingRange = useDebounce(fundingRange, 300);
+  const debouncedYearRange = useDebounce(yearRange, 300);
+
+  const updateUrl = useCallback((q: string, ind: string, ft: string, co: string, fund: string, yr: string) => {
+    const params = new URLSearchParams();
+    if (q) params.set('q', q);
+    if (ind) params.set('industry', ind);
+    if (ft) params.set('failType', ft);
+    if (co) params.set('country', co);
+    if (fund) params.set('funding', fund);
+    if (yr) params.set('year', yr);
+    const newUrl = `/explore${params.toString() ? '?' + params.toString() : ''}`;
+    router.replace(newUrl, { scroll: false });
+  }, [router]);
+
+  // Compute filter params for API query
+  const { fundingMin, fundingMax } = useMemo(() => {
+    const range = FUNDING_RANGES.find(r => r.label === debouncedFundingRange);
+    return {
+      fundingMin: range?.min,
+      fundingMax: range?.max,
+    };
+  }, [debouncedFundingRange]);
+
+  const { yearMin, yearMax } = useMemo(() => {
+    const range = YEAR_RANGES.find(r => r.label === debouncedYearRange);
+    return {
+      yearMin: range?.min,
+      yearMax: range?.max,
+    };
+  }, [debouncedYearRange]);
 
   const { data: cases, isLoading } = useQuery({
-    queryKey: ['case-studies', debouncedIndustry],
-    queryFn: () => listCaseStudies({ industry: debouncedIndustry || undefined }),
+    queryKey: ['case-studies', debouncedIndustry, debouncedSearch, debouncedFailType, debouncedCountry, fundingMin, fundingMax, yearMin, yearMax],
+    queryFn: () => listCaseStudies({
+      industry: debouncedIndustry || undefined,
+      search: debouncedSearch || undefined,
+      failType: debouncedFailType || undefined,
+      country: debouncedCountry || undefined,
+      fundingMin,
+      fundingMax,
+      yearMin,
+      yearMax,
+    }),
     initialData: initialCases,
     staleTime: 5 * 60 * 1000,
   });
 
   const filteredCases = useMemo(() => {
     return cases.filter((c) => {
-      const matchesSearch =
-        !debouncedSearch ||
-        c.company_name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-        c.summary.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-        c.industry?.toLowerCase().includes(debouncedSearch.toLowerCase());
-
       const matchesFailType =
-        !failType ||
-        c.failure_reasons?.some((r) => r.toLowerCase().includes(failType.toLowerCase()));
+        !debouncedFailType ||
+        c.failure_reasons?.some((r) => r.toLowerCase().includes(debouncedFailType.toLowerCase()));
 
-      return matchesSearch && matchesFailType;
+      return matchesFailType;
     });
-  }, [cases, debouncedSearch, failType]);
+  }, [cases, debouncedFailType]);
+
+  const handleSearch = (val: string) => {
+    setSearch(val);
+    updateUrl(val, industry, failType, country, fundingRange, yearRange);
+  };
+
+  const handleIndustry = (val: string) => {
+    setIndustry(val);
+    updateUrl(search, val, failType, country, fundingRange, yearRange);
+  };
+
+  const handleFailType = (val: string) => {
+    setFailType(val);
+    updateUrl(search, industry, val, country, fundingRange, yearRange);
+  };
+
+  const handleCountry = (val: string) => {
+    setCountry(val);
+    updateUrl(search, industry, failType, val, fundingRange, yearRange);
+  };
+
+  const handleFundingRange = (val: string) => {
+    setFundingRange(val);
+    updateUrl(search, industry, failType, country, val, yearRange);
+  };
+
+  const handleYearRange = (val: string) => {
+    setYearRange(val);
+    updateUrl(search, industry, failType, country, fundingRange, val);
+  };
+
+  const clearAll = () => {
+    setSearch('');
+    setIndustry('');
+    setFailType('');
+    setCountry('');
+    setFundingRange('');
+    setYearRange('');
+    router.replace('/explore', { scroll: false });
+  };
 
   return (
     <main
@@ -165,7 +267,7 @@ export function ExploreClient({ initialCases = [] }: ExploreClientProps) {
                 type="text"
                 placeholder="SEARCH_AUTOPSIES..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => handleSearch(e.target.value)}
                 style={{
                   width: '100%',
                   backgroundColor: 'var(--paper-white)',
@@ -184,11 +286,11 @@ export function ExploreClient({ initialCases = [] }: ExploreClientProps) {
 
             <select
               value={industry}
-              onChange={(e) => setIndustry(e.target.value)}
+              onChange={(e) => handleIndustry(e.target.value)}
               className="sg-select"
             >
               <option value="">INDUSTRY ▾</option>
-              {INDUSTRIES.map((opt) => (
+              {filterIndustries.map((opt) => (
                 <option key={opt} value={opt}>
                   {opt.toUpperCase()}
                 </option>
@@ -197,20 +299,59 @@ export function ExploreClient({ initialCases = [] }: ExploreClientProps) {
 
             <select
               value={failType}
-              onChange={(e) => setFailType(e.target.value)}
+              onChange={(e) => handleFailType(e.target.value)}
               className="sg-select"
             >
               <option value="">FAIL_TYPE ▾</option>
-              {FAIL_TYPES.map((opt) => (
+              {filterFailTypes.map((opt) => (
                 <option key={opt} value={opt}>
                   {opt.toUpperCase()}
                 </option>
               ))}
             </select>
 
-            {(search || industry || failType) && (
+            <select
+              value={country}
+              onChange={(e) => handleCountry(e.target.value)}
+              className="sg-select"
+            >
+              <option value="">COUNTRY ▾</option>
+              {filterCountries.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt.toUpperCase()}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={fundingRange}
+              onChange={(e) => handleFundingRange(e.target.value)}
+              className="sg-select"
+            >
+              <option value="">FUNDING ▾</option>
+              {FUNDING_RANGES.map((opt) => (
+                <option key={opt.label} value={opt.label}>
+                  {opt.label.toUpperCase()}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={yearRange}
+              onChange={(e) => handleYearRange(e.target.value)}
+              className="sg-select"
+            >
+              <option value="">SHUTDOWN_YEAR ▾</option>
+              {YEAR_RANGES.map((opt) => (
+                <option key={opt.label} value={opt.label}>
+                  {opt.label.toUpperCase()}
+                </option>
+              ))}
+            </select>
+
+            {(search || industry || failType || country || fundingRange || yearRange) && (
               <button
-                onClick={() => { setSearch(''); setIndustry(''); setFailType(''); }}
+                onClick={clearAll}
                 style={{
                   fontFamily: 'var(--font-dm-mono), monospace',
                   fontSize: '9px',

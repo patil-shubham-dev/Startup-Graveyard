@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import remarkGfm from 'remark-gfm';
@@ -6,7 +5,10 @@ import ReactMarkdown from 'react-markdown';
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { Plus, Trash2, MessageSquare, Square, RefreshCw } from 'lucide-react';
 import { useChat } from '@ai-sdk/react';
+import type { UIMessage } from '@ai-sdk/react';
 import { usePersistedChat } from '@/lib/hooks/usePersistedChat';
+import { RequireAuth } from '@/components/auth/RequireAuth';
+import { useAuth } from '@/context/AuthContext';
 
 function ThinkingIndicator() {
   return (
@@ -18,7 +20,29 @@ function ThinkingIndicator() {
   );
 }
 
-export default function AskTheGraveyard() {
+function sanitizeUrl(text: string): string {
+  return text.replace(/javascript:/gi, '').replace(/data:/gi, '').replace(/vbscript:/gi, '');
+}
+
+/** Extract plain text from UIMessage parts (AI SDK v6 uses parts instead of content) */
+function getMessageText(m: UIMessage): string {
+  if (!m.parts || m.parts.length === 0) return '';
+  return m.parts
+    .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+    .map((p) => p.text)
+    .join('\n');
+}
+
+function getReasoningText(m: UIMessage): string {
+  if (!m.parts || m.parts.length === 0) return '';
+  return m.parts
+    .filter((p): p is { type: 'reasoning'; text: string } => p.type === 'reasoning')
+    .map((p) => p.text)
+    .join('\n');
+}
+
+function AskTheGraveyardContent() {
+  const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [localInput, setLocalInput] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -33,9 +57,11 @@ export default function AskTheGraveyard() {
     deleteChatById,
     setActive,
     clearAll,
-  } = usePersistedChat();
+  } = usePersistedChat(user?.id);
 
   const pendingSendRef = useRef<string | null>(null);
+  const chatsRef = useRef(chats);
+  chatsRef.current = chats;
 
   const chat = useChat({
     id: activeChatId || undefined,
@@ -57,7 +83,11 @@ export default function AskTheGraveyard() {
     if (activeChatId) {
       const session = chats.find(c => c.id === activeChatId);
       if (session) {
-        setMessages(session.messages as any);
+        setMessages(session.messages.map((m, i) => ({
+          id: m.id || `restored-${i}`,
+          role: (m.role === 'system' || m.role === 'user' || m.role === 'assistant') ? m.role : 'user',
+          parts: m.parts || (m.content ? [{ type: 'text' as const, text: m.content }] : []),
+        })) as never);
       }
     }
 
@@ -73,22 +103,30 @@ export default function AskTheGraveyard() {
     let cancelled = false;
     const t = setTimeout(() => {
       if (cancelled) return;
-      upsertChat({
-        id: activeChatId,
-        title: chats.find(c => c.id === activeChatId)?.title || 'Chat',
-        messages: nonSystem as any,
-        createdAt: chats.find(c => c.id === activeChatId)?.createdAt || Date.now(),
-      });
-    }, 500);
+      const latestChats = chatsRef.current;
+      const existing = latestChats.find(c => c.id === activeChatId);
+      if (existing) {
+        upsertChat({ ...existing, messages: messages as never });
+      } else {
+        // Chat not found yet (state may be stale) — create a minimal entry
+        upsertChat({
+          id: activeChatId,
+          title: 'Conversation',
+          messages: messages as never,
+          createdAt: Date.now(),
+        });
+      }
+    }, 2000);
     return () => { cancelled = true; clearTimeout(t); };
-  }, [messages, activeChatId, loaded, chats, upsertChat]);
+  }, [messages, activeChatId, loaded, upsertChat]);
 
   useEffect(() => {
-    const textarea = inputRef.current;
-    if (!textarea) return;
-    textarea.style.height = 'auto';
-    const newHeight = Math.min(textarea.scrollHeight, 200);
-    textarea.style.height = `${newHeight}px`;
+    if (inputRef.current) {
+      const textarea = inputRef.current;
+      textarea.style.height = 'auto';
+      const newHeight = Math.min(textarea.scrollHeight, 200);
+      textarea.style.height = `${newHeight}px`;
+    }
   }, [localInput]);
 
   useEffect(() => {
@@ -105,7 +143,7 @@ export default function AskTheGraveyard() {
     }
   }, [activeChatId, chat]);
 
-  const onSendMessage = useCallback((e?: React.FormEvent) => {
+  const onSendMessage = useCallback(async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const msg = localInput;
     if (!msg.trim() || isPending) return;
@@ -114,100 +152,152 @@ export default function AskTheGraveyard() {
 
     if (!activeChatId) {
       const newTitle = msg.length > 28 ? msg.substring(0, 25) + '...' : msg;
-      const newId = `chat-${Date.now()}`;
+      let newId: string;
+      if (user) {
+        try {
+          const { createChatSession } = await import('@/lib/db/chat');
+          const session = await createChatSession(user.id);
+          newId = session.id;
+          upsertChat({ id: newId, title: newTitle, messages: [], createdAt: Date.now() });
+        } catch {
+          newId = `chat-${Date.now()}`;
+        }
+      } else {
+        newId = `chat-${Date.now()}`;
+      }
       pendingSendRef.current = msg;
       setActive(newId);
-      upsertChat({
-        id: newId,
-        title: newTitle,
-        messages: [],
-        createdAt: Date.now(),
-      });
+      if (!user) {
+        upsertChat({ id: newId, title: newTitle, messages: [], createdAt: Date.now() });
+      }
       return;
     }
 
     chat.sendMessage({ text: msg });
-  }, [activeChatId, localInput, isPending, chat, setActive, upsertChat]);
+  }, [activeChatId, localInput, isPending, chat, setActive, upsertChat, user]);
 
   const handleInputChangeWrapper = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setLocalInput(e.target.value);
   };
 
-  const preprocessText = (rawText: string) => {
+  const preprocessText = useCallback((rawText: string) => {
     if (!rawText) return '';
-    return rawText.replace(/\[\[(.*?)\]\]/g, (match, p1) => {
-      const slug = p1.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-      return `[${p1}](/case/${slug})`;
+    return rawText.replace(/\[\[(.*?)\]\]/g, (_match, p1: string) => {
+      const cleanText = p1.replace(/[<>"'()]/g, '').trim();
+      const slug = cleanText.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      return `[${sanitizeUrl(cleanText)}](/case/${slug})`;
     });
-  };
+  }, []);
 
   const renderMarkdown = useCallback((text: string) => {
-    const processedText = preprocessText(text);
+    const processed = preprocessText(text);
     return (
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
-          p: ({ ...props }) => <p className="text-[15px] leading-relaxed mb-3 last:mb-0 text-gray-900" {...props} />,
-          h1: ({ ...props }) => <h1 className="text-[22px] font-bold mt-6 mb-3 text-gray-900 leading-tight" {...props} />,
-          h2: ({ ...props }) => <h2 className="text-[18px] font-semibold mt-5 mb-2 text-gray-900 leading-tight" {...props} />,
-          h3: ({ ...props }) => <h3 className="text-[16px] font-semibold mt-4 mb-2 text-gray-900 leading-tight" {...props} />,
-          ul: ({ ...props }) => <ul className="list-disc pl-6 mb-3 space-y-1" {...props} />,
-          ol: ({ ...props }) => <ol className="list-decimal pl-6 mb-3 space-y-1" {...props} />,
-          li: ({ ...props }) => <li className="text-[15px] leading-relaxed text-gray-900" {...props} />,
           strong: ({ ...props }) => <strong className="font-semibold text-gray-900" {...props} />,
           em: ({ ...props }) => <em className="italic" {...props} />,
           a: ({ children, href, ...props }) => (
-            <a href={href} className="text-blue-600 hover:text-blue-800 underline underline-offset-2" {...props}>{children}</a>
+            <a
+              href={href ? sanitizeUrl(href) : '#'}
+              className="text-blue-600 hover:text-blue-800 underline underline-offset-2"
+              target={href?.startsWith('http') ? '_blank' : undefined}
+              rel={href?.startsWith('http') ? 'noopener noreferrer' : undefined}
+              {...props}
+            >
+              {children}
+            </a>
           ),
           code: ({ className, children, ...props }) => {
             const match = /language-(\w+)/.exec(className || '');
-            const isInline = !match;
-            return isInline ? (
-              <code className="bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-[13px] font-mono" {...props}>{children}</code>
-            ) : (
-              <pre className="bg-gray-50 border border-gray-200 rounded-lg p-4 overflow-x-auto my-3 text-sm font-mono"><code {...props}>{children}</code></pre>
+            if (match) {
+              return (
+                <pre className="bg-gray-100 rounded-lg p-4 overflow-x-auto my-3 text-sm font-mono">
+                  <code className={`language-${match[1]}`} {...props}>
+                    {String(children).replace(/\n$/, '')}
+                  </code>
+                </pre>
+              );
+            }
+            return (
+              <code className="bg-gray-100 px-1.5 py-0.5 rounded text-sm font-mono" {...props}>
+                {children}
+              </code>
             );
           },
-          hr: ({ ...props }) => <hr className="my-6 border-gray-200" {...props} />,
-          blockquote: ({ ...props }) => <blockquote className="border-l-3 border-gray-300 pl-4 italic text-gray-600 my-4" {...props} />,
-          table: ({ ...props }) => <div className="overflow-x-auto my-4"><table className="min-w-full text-sm border-collapse" {...props} /></div>,
-          thead: ({ ...props }) => <thead className="bg-gray-50" {...props} />,
-          tbody: ({ ...props }) => <tbody {...props} />,
-          tr: ({ ...props }) => <tr className="border-b border-gray-200" {...props} />,
-          th: ({ ...props }) => <th className="px-4 py-2 text-left font-semibold text-gray-700 text-xs uppercase tracking-wider" {...props} />,
-          td: ({ ...props }) => <td className="px-4 py-2 text-gray-700" {...props} />,
+          ul: ({ ...props }) => <ul className="list-disc pl-6 my-2 space-y-1" {...props} />,
+          ol: ({ ...props }) => <ol className="list-decimal pl-6 my-2 space-y-1" {...props} />,
+          blockquote: ({ ...props }) => (
+            <blockquote className="border-l-2 border-gray-300 pl-4 my-3 italic text-gray-600" {...props} />
+          ),
         }}
       >
-        {processedText}
+        {processed}
       </ReactMarkdown>
     );
-  }, []);
+  }, [preprocessText]);
 
-  const handleNewChat = () => {
-    setActive(null);
+  const handleNewChat = useCallback(async () => {
+    if (user) {
+      try {
+        const { createChatSession } = await import('@/lib/db/chat');
+        const session = await createChatSession(user.id);
+        setActive(session.id);
+        setMessages([]);
+        upsertChat({ id: session.id, title: 'New conversation', messages: [], createdAt: Date.now() });
+        return;
+      } catch {}
+    }
+    const newId = `chat-${Date.now()}`;
+    setActive(newId);
     setMessages([]);
-    setSidebarOpen(false);
-  };
+    upsertChat({ id: newId, title: 'New conversation', messages: [], createdAt: Date.now() });
+  }, [user, upsertChat, setActive, setMessages]);
 
-  const handleSelectChat = (chatId: string) => {
-    const selected = chats.find(c => c.id === chatId);
-    if (selected) {
-      setActive(chatId);
-      setMessages(selected.messages as any);
-      setSidebarOpen(false);
+  const handleSelectChat = useCallback((id: string) => {
+    setActive(id);
+    const session = chats.find(c => c.id === id);
+    if (session) {
+      setMessages(session.messages.map((m, i) => ({
+        id: m.id || `restored-${i}`,
+        role: m.role === 'assistant' ? 'assistant' : m.role === 'system' ? 'system' : 'user',
+        parts: m.parts || (m.content ? [{ type: 'text' as const, text: m.content }] : []),
+      })) as never);
     }
-  };
+  }, [setActive, chats, setMessages]);
 
-  const handleDeleteChat = (chatId: string, e: React.MouseEvent) => {
+  const handleDeleteChat = useCallback((id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    e.preventDefault();
-    deleteChatById(chatId);
-    if (activeChatId === chatId) {
-      setMessages([]);
+    deleteChatById(id);
+    if (activeChatId === id) {
+      const remaining = chats.filter(c => c.id !== id);
+      if (remaining.length > 0) {
+        handleSelectChat(remaining[0].id);
+      } else {
+        setMessages([]);
+        setActive(null);
+      }
     }
-  };
+  }, [deleteChatById, activeChatId, chats, handleSelectChat, setMessages, setActive]);
 
   if (!loaded) return null;
+
+  if (error && !messages.length) {
+    return (
+      <div className="h-[calc(100vh-56px)] flex items-center justify-center bg-white">
+        <div className="text-center max-w-md px-6">
+          <div className="stamp-closed mb-4">CONNECTION ERROR</div>
+          <p className="text-sm text-gray-600 mb-6">{error.message || 'Unable to connect to the forensic intelligence service.'}</p>
+          <button
+            onClick={() => chat.regenerate()}
+            className="px-6 py-2 bg-gray-900 text-white text-xs uppercase tracking-wider rounded-lg hover:bg-gray-800 transition-colors"
+          >
+            Retry Connection
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-[calc(100vh-56px)] flex bg-white">
@@ -270,10 +360,7 @@ export default function AskTheGraveyard() {
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
-        <div
-          ref={scrollRef}
-          className="flex-1 overflow-y-auto"
-        >
+        <div ref={scrollRef} className="flex-1 overflow-y-auto">
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center px-6 py-20">
               <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mb-4">
@@ -304,44 +391,32 @@ export default function AskTheGraveyard() {
             </div>
           ) : (
             <div className="max-w-[720px] mx-auto px-4 py-6">
-              {messages.filter((m: any) => m.role !== 'system').map((m: any, idx: number) => (
-                <div key={m.id || `msg-${idx}`} className="mb-6 last:mb-0">
+              {messages.filter((m) => m.role !== 'system').map((m, idx: number) => {
+                const messageText = getMessageText(m);
+                const reasoningText = getReasoningText(m);
+                return (
+                <div key={m.id ?? `msg-${idx}`} className="mb-6 last:mb-0">
                   {m.role === 'user' ? (
                     <div className="flex justify-end">
                       <div className="bg-gray-900 text-white rounded-2xl rounded-br-sm px-4 py-2.5 max-w-[85%]">
-                        {m.content ? (
-                          <p className="text-[15px] leading-relaxed text-white whitespace-pre-wrap">{m.content}</p>
-                        ) : (
-                          m.parts && m.parts.map((part: any, pIdx: number) => {
-                            if (part.type === 'text') {
-                              return <p key={pIdx} className="text-[15px] leading-relaxed text-white whitespace-pre-wrap">{part.text}</p>;
-                            }
-                            return null;
-                          })
-                        )}
+                        {messageText ? (
+                          <p className="text-[15px] leading-relaxed text-white whitespace-pre-wrap">{messageText}</p>
+                        ) : null}
                       </div>
                     </div>
                   ) : (
                     <div className="ml-2">
                       <div className="text-[15px] leading-relaxed text-gray-900">
-                        {m.content && renderMarkdown(m.content)}
-                        {m.parts && m.parts.map((part: any, pIdx: number) => {
-                          if (part.type === 'text') {
-                            return <div key={pIdx}>{renderMarkdown(part.text)}</div>;
-                          }
-                          if (part.type === 'reasoning') {
-                            return (
-                              <div key={pIdx} className="text-sm text-gray-500 italic border-l-2 border-gray-200 pl-4 my-2 font-mono">
-                                {part.text}
-                              </div>
-                            );
-                          }
-                          return null;
-                        })}
-                        {isPending && idx === messages.length - 1 && m.role === 'assistant' && (
+                        {reasoningText && (
+                          <div className="text-sm text-gray-500 italic border-l-2 border-gray-200 pl-4 my-2 font-mono">
+                            {reasoningText}
+                          </div>
+                        )}
+                        {messageText && renderMarkdown(messageText)}
+                        {isPending && idx === messages.length - 1 && m.role === 'assistant' && !messageText && (
                           <ThinkingIndicator />
                         )}
-                        {!isPending && m.role === 'assistant' && m.content && (
+                        {!isPending && m.role === 'assistant' && messageText && (
                           <button
                             onClick={() => chat.regenerate()}
                             className="text-xs text-gray-400 hover:text-gray-600 transition-colors mt-2 flex items-center gap-1"
@@ -353,8 +428,9 @@ export default function AskTheGraveyard() {
                     </div>
                   )}
                 </div>
-              ))}
-              {isPending && messages.filter((m: any) => m.role === 'assistant').length === 0 && (
+                );
+              })}
+              {isPending && messages.filter((m) => m.role === 'assistant').length === 0 && (
                 <div className="mb-6">
                   <ThinkingIndicator />
                 </div>
@@ -417,5 +493,13 @@ export default function AskTheGraveyard() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AskTheGraveyard() {
+  return (
+    <RequireAuth feature="chat">
+      <AskTheGraveyardContent />
+    </RequireAuth>
   );
 }

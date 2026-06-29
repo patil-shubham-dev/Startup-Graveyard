@@ -26,16 +26,7 @@ export default async function Home() {
   return (
     <main>
       {/* 1. Hero — Split screen */}
-      <HeroSection
-        stats={{
-          totalCases: stats.totalCases,
-          totalBurned: stats.totalBurned,
-          avgLifespan: String(insights.avgLifespan),
-          patternCount: insights.patternCount,
-          totalLessons: insights.totalLessons,
-        }}
-        liveCases={liveCases}
-      />
+      <HeroSection liveCases={liveCases} />
 
       {/* 2. Stats bar — count-up animation */}
       <StatsBar

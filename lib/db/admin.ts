@@ -1,23 +1,27 @@
 import { createClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+let adminClient: SupabaseClient | null = null;
 
-if (!supabaseServiceKey) {
-  throw new Error('MISSING SUPABASE_SERVICE_ROLE_KEY. This client must only be used in server-side environments.');
-}
+export function getSupabaseAdmin(): SupabaseClient {
+  if (adminClient) return adminClient;
 
-/**
- * Admin client for bypass RLS and internal automation (e.g., daily publish).
- * Only use in Server Components or API Routes.
- */
-export const supabaseAdmin = createClient(
-  supabaseUrl,
-  supabaseServiceKey,
-  {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error(
+      'Supabase admin client requires NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables. ' +
+      'This client must only be used in server-side environments (API routes or scripts).'
+    );
+  }
+
+  adminClient = createClient(supabaseUrl, supabaseServiceKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
     },
-  }
-);
+  });
+
+  return adminClient;
+}

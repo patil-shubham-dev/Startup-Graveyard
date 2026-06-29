@@ -1,19 +1,30 @@
 'use client';
 
+import Link from 'next/link';
 import { formatCurrencyCompact } from '@/lib/utils/format';
 import { usePathname } from 'next/navigation';
-
-interface FooterProps {
-  stats?: {
-    totalCases: number;
-    totalBurned: number;
-  };
-}
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/db/config';
 
 
-export function Footer({ stats }: FooterProps) {
+export function Footer() {
+  const [stats, setStats] = useState<{ totalCases: number; totalBurned: number } | null>(null);
   const currentYear = new Date().getFullYear();
   const pathname = usePathname();
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const { data, error } = await supabase.rpc('get_archive_stats');
+        if (!error && data) {
+          setStats({ totalCases: data.totalCases, totalBurned: data.totalBurned });
+        }
+      } catch {
+        // Silently fail — stats stay null
+      }
+    }
+    fetchStats();
+  }, []);
 
   if (pathname === '/ask' || pathname === '/pre-mortem') return null;
 
@@ -152,8 +163,34 @@ export function Footer({ stats }: FooterProps) {
         {/* Bottom: copyright */}
         <div
           style={{
+            display: 'flex',
+            gap: '24px',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+          }}
+        >
+          <Link href="/explore" style={{ textDecoration: 'none', fontFamily: 'var(--font-dm-mono), monospace', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--ink-muted)', transition: 'color 0.15s' }} className="hover:text-rust-accent">
+            ARCHIVES
+          </Link>
+          <Link href="/insights" style={{ textDecoration: 'none', fontFamily: 'var(--font-dm-mono), monospace', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--ink-muted)', transition: 'color 0.15s' }} className="hover:text-rust-accent">
+            INSIGHTS
+          </Link>
+          <Link href="/pre-mortem" style={{ textDecoration: 'none', fontFamily: 'var(--font-dm-mono), monospace', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--ink-muted)', transition: 'color 0.15s' }} className="hover:text-rust-accent">
+            PRE-MORTEM
+          </Link>
+          <Link href="/about" style={{ textDecoration: 'none', fontFamily: 'var(--font-dm-mono), monospace', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--ink-muted)', transition: 'color 0.15s' }} className="hover:text-rust-accent">
+            ABOUT
+          </Link>
+          <Link href="/submit" style={{ textDecoration: 'none', fontFamily: 'var(--font-dm-mono), monospace', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--ink-muted)', transition: 'color 0.15s' }} className="hover:text-rust-accent">
+            SUBMIT
+          </Link>
+        </div>
+
+        <div
+          style={{
             borderTop: '1.5px dashed var(--cream-dark)',
             paddingTop: '20px',
+            marginTop: '20px',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',

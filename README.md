@@ -64,16 +64,22 @@ The platform is built on top of the **Vercel AI SDK**, making it completely prov
 - AI Provider API Key (NVIDIA, OpenAI, etc.)
 
 ### 1. Environment Configuration
-Create a `.env.local` file in the root directory:
+Copy `.env.example` to `.env.local` and fill in your values:
 ```env
-# AI Configuration (Example for NVIDIA NIM)
-NVIDIA_API_KEY=your_api_key
-AI_DEFAULT_MODEL=nvidia/deepseek-v3
+# Supabase (from your project dashboard: Settings > API)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
 
-# Database Configuration
-NEXT_PUBLIC_SUPABASE_URL=your_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+# AI Provider (from https://build.nvidia.com/)
+NVIDIA_API_KEY=your-nvidia-api-key-here
+
+# AI Model (optional, default: meta/llama-3.1-8b-instruct)
+AI_DEFAULT_MODEL=meta/llama-3.1-8b-instruct
+
+# Site URLs
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
 ### 2. Database Initialization

@@ -5,40 +5,15 @@ import { AnimatePresence, motion } from 'framer-motion';
 import Link from 'next/link';
 import { formatCurrencyCompact } from '@/lib/utils/format';
 
-const HARDCODED_FAILURES = [
-  {
-    name: 'Quibi',
-    burn: 1750000000,
-    date: '2020',
-    industry: 'STREAMING',
-    note: 'Consumer appetite never matched the spend curve. Mobile-first pivoted into irrelevance.',
-    caseNum: 'CASE #0001',
-  },
-  {
-    name: 'Jawbone',
-    burn: 930000000,
-    date: '2017',
-    industry: 'HARDWARE',
-    note: 'Hardware ambition outran operating discipline. Wearables market shifted before they could.',
-    caseNum: 'CASE #0002',
-  },
-  {
-    name: 'Fast',
-    burn: 120000000,
-    date: '2022',
-    industry: 'FINTECH',
-    note: 'Narrative growth masked a dangerously thin product core. CAC never reconciled with LTV.',
-    caseNum: 'CASE #0003',
-  },
-  {
-    name: 'Theranos',
-    burn: 945000000,
-    date: '2018',
-    industry: 'HEALTHTECH',
-    note: 'Trust collapsed before the business could recover. Deception compounded by regulatory blindness.',
-    caseNum: 'CASE #0004',
-  },
-];
+// Static fallback featured case used when the database has no cases yet
+const FALLBACK_FEATURED = {
+  name: 'Quibi',
+  burn: 1750000000,
+  date: '2020',
+  industry: 'STREAMING',
+  note: 'Consumer appetite never matched the spend curve. Mobile-first pivoted into irrelevance.',
+  caseNum: 'DEMO CASE',
+};
 
 interface LiveCase {
   company_name: string;
@@ -47,16 +22,7 @@ interface LiveCase {
   slug: string;
 }
 
-interface HeroStats {
-  totalCases: number;
-  totalBurned: number;
-  avgLifespan: string;
-  patternCount: number;
-  totalLessons: number;
-}
-
 interface HeroSectionProps {
-  stats?: HeroStats;
   liveCases?: LiveCase[];
 }
 
@@ -76,16 +42,16 @@ function FoldedCorner() {
 }
 
 export function HeroSection({ liveCases = [] }: HeroSectionProps) {
-  const dynamicCards = liveCases.slice(0, 2).map((c, i) => ({
+  const dynamicCards = liveCases.slice(0, 3).map((c, i) => ({
     name: c.company_name,
     burn: formatCurrencyCompact(c.funding_raised),
     date: String(c.shutdown_year || '—'),
     industry: 'ARCHIVE',
     note: 'Documented in the archive. High-capital collapse with compounding failure vectors.',
-    caseNum: `CASE #${String(i + 5).padStart(4, '0')}`,
+    caseNum: `CASE #${String(i + 1).padStart(4, '0')}`,
   }));
 
-  const ALL_FAILURES = [...HARDCODED_FAILURES, ...dynamicCards];
+  const ALL_FAILURES = dynamicCards.length > 0 ? dynamicCards : [FALLBACK_FEATURED];
   const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {

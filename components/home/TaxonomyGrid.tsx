@@ -1,80 +1,79 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useScrollReveal } from '@/lib/hooks/useScrollReveal';
 
-const PATTERNS = [
+interface FailureDatum {
+  name: string;
+  value: number;
+}
+
+const STATIC_PATTERNS = [
   {
     name: 'No Market Need',
     desc: "Building solutions for problems that don't exist at scale. The cardinal failure.",
-    stat: '42% OF FAILURES',
     id: 'PAT-001',
   },
   {
     name: 'Cash Exhaustion',
     desc: 'Runway miscalculated. Burn rate outpaced growth. The most preventable collapse.',
-    stat: '29% OF FAILURES',
     id: 'PAT-002',
   },
   {
     name: 'Team Fracture',
     desc: 'Co-founder conflict, talent exodus, and cultural breakdown compound over time.',
-    stat: '23% OF FAILURES',
     id: 'PAT-003',
   },
   {
     name: 'Competition Crush',
     desc: 'Underestimating incumbent response and failing to establish defensible moats.',
-    stat: '19% OF FAILURES',
     id: 'PAT-004',
   },
   {
     name: 'Pricing Failure',
     desc: 'Monetization models that repel customers or capture insufficient value.',
-    stat: '18% OF FAILURES',
     id: 'PAT-005',
   },
   {
     name: 'Regulatory Blindness',
     desc: 'Ignoring compliance requirements until enforcement action forces shutdown.',
-    stat: '16% OF FAILURES',
     id: 'PAT-006',
   },
   {
     name: 'Premature Scaling',
     desc: 'Blitzscaling before product-market fit is confirmed. Capital burn without foundation.',
-    stat: '14% OF FAILURES',
     id: 'PAT-007',
   },
   {
     name: 'Pivot Paralysis',
     desc: 'More than 3 pivots without $1M ARR predicts failure by year four.',
-    stat: '12% OF FAILURES',
     id: 'PAT-008',
   },
 ];
 
-function useScrollReveal(threshold = 0.1) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect(); } },
-      { threshold }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [threshold]);
-  return { ref, visible };
+function matchFailureCount(
+  patternName: string,
+  failureData?: FailureDatum[]
+): { count: number; total: number } | null {
+  if (!failureData || failureData.length === 0) return null;
+  const keyword = patternName.toLowerCase().split(' ')[0].toLowerCase();
+  const match = failureData.find((f) =>
+    f.name.toLowerCase().includes(keyword)
+  );
+  if (!match) return null;
+  const total = failureData.reduce((sum, f) => sum + f.value, 0);
+  return { count: match.value, total };
 }
 
-export function TaxonomyGrid({ failureData }: { failureData?: Array<{ name: string; value: number }> }) {
-  const enrichedPatterns = PATTERNS.map((p) => {
-    const match = failureData?.find((f) =>
-      f.name.toLowerCase().includes(p.name.toLowerCase().split(' ')[0].toLowerCase())
-    );
-    return { ...p, realStat: match ? `${match.value} CASES` : null };
+export function TaxonomyGrid({ failureData }: { failureData?: FailureDatum[] }) {
+  const totalCases = failureData?.reduce((sum, f) => sum + f.value, 0) || 0;
+
+  const enrichedPatterns = STATIC_PATTERNS.map((p) => {
+    const match = matchFailureCount(p.name, failureData);
+    if (match && totalCases > 0) {
+      const pct = Math.round((match.count / totalCases) * 100);
+      return { ...p, stat: `${pct}% OF CASES`, realStat: `${match.count} OF ${totalCases}` };
+    }
+    return { ...p, stat: 'PATTERN IDENTIFIED', realStat: null };
   });
 
   const { ref, visible } = useScrollReveal();

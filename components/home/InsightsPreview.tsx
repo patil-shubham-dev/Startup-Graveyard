@@ -236,7 +236,7 @@ export function InsightsPreview({ failureData = [], topLiquidations = [] }: Insi
                   ]
               ).map((item, i) => (
                 <div
-                  key={item.name}
+                  key={`${item.name}-${i}`}
                   style={{
                     display: 'flex',
                     justifyContent: 'space-between',

@@ -1,9 +1,16 @@
-import { NextResponse } from 'next/server';
-import { ai, hasValidKey } from '@/lib/ai';
+import { NextRequest, NextResponse } from 'next/server';
+import { checkRateLimit, getRateLimitKey } from '@/lib/rate-limiter';
 
-export async function GET() {
-  const embedCacheSize = ai.getEmbeddingCache().size;
-  const responseCacheSize = ai.getResponseCache().size;
+export async function GET(req: NextRequest) {
+  const rateLimit = await checkRateLimit(getRateLimitKey(req));
+  if (!rateLimit.allowed) {
+    return NextResponse.json({ error: 'Rate limit exceeded' }, {
+      status: 429,
+      headers: {
+        'Retry-After': String(Math.ceil((rateLimit.resetAt - Date.now()) / 1000)),
+      },
+    });
+  }
 
   return NextResponse.json({
     status: 'ok',
@@ -11,13 +18,10 @@ export async function GET() {
     version: '1.0.0',
     services: {
       ai: {
-        configured: hasValidKey,
-        model: process.env.AI_DEFAULT_MODEL || 'meta/llama-3.1-70b-instruct',
-        embeddingCacheSize: embedCacheSize,
-        responseCacheSize: responseCacheSize,
+        status: 'operational',
       },
       supabase: {
-        configured: !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        status: 'operational',
       },
     },
   });

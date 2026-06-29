@@ -1,12 +1,12 @@
 import { createOpenAI } from '@ai-sdk/openai';
 import { generateObject, streamText } from 'ai';
+import { type ModelMessage } from '@ai-sdk/provider-utils';
 import { ZodSchema } from 'zod';
 import OpenAI from 'openai';
 import { LRUCache } from 'lru-cache';
 import { searchCaseStudies } from '@/lib/db/case-studies';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type Message = any;
+export type Message = ModelMessage;
 
 const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY || '';
 const hasValidKey = NVIDIA_API_KEY.length > 20 && !NVIDIA_API_KEY.includes('your-nvidia');
@@ -154,7 +154,7 @@ export class AIService {
       : text;
 
     const embedding = await this.embed(embedText);
-    const results = await searchCaseStudies(embedding, 3);
+    const results = await searchCaseStudies(embedding, 7);
 
     responseCache.set(cacheKey, JSON.stringify(results));
     return results;

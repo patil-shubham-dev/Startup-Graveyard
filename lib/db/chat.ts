@@ -53,3 +53,12 @@ export async function listUserChats(userId: string): Promise<ChatSession[]> {
   if (error) throw error;
   return data as ChatSession[];
 }
+
+export async function deleteChatSession(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('chat_sessions')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+}
