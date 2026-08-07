@@ -5,7 +5,7 @@
   "founded_year": 2017,
   "shutdown_year": 2020,
   "industry": "Transportation",
-  "funding_raised": 150000000000,
+  "funding_raised": 100000000000,
   "employees_peak": 1000,
   "valuation_peak": 3000000000000,
   "investors": [
@@ -42,7 +42,7 @@
     "burn": 30
   },
   "metrics": {
-    "capital_raised": "$1.5B",
+    "capital_raised": "$1.0B",
     "peak_valuation": "$3B",
     "years_active": 3,
     "peak_employees": "1,000",

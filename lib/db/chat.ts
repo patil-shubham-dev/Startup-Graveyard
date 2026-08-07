@@ -1,5 +1,12 @@
-import { supabase } from './config';
+import { createServerDataClient } from './config';
 import { Message } from '../ai';
+
+let db: ReturnType<typeof createServerDataClient> | null = null;
+
+function getDb() {
+  if (!db) db = createServerDataClient();
+  return db;
+}
 
 export interface ChatSession {
   id: string;
@@ -10,7 +17,7 @@ export interface ChatSession {
 }
 
 export async function createChatSession(userId: string): Promise<ChatSession> {
-  const { data, error } = await supabase
+  const { data, error } = await getDb()
     .from('chat_sessions')
     .insert({ user_id: userId, messages: [] })
     .select()
@@ -21,7 +28,7 @@ export async function createChatSession(userId: string): Promise<ChatSession> {
 }
 
 export async function getChatSession(id: string): Promise<ChatSession | null> {
-  const { data, error } = await supabase
+  const { data, error } = await getDb()
     .from('chat_sessions')
     .select('*')
     .eq('id', id)
@@ -32,7 +39,7 @@ export async function getChatSession(id: string): Promise<ChatSession | null> {
 }
 
 export async function appendChatMessage(id: string, messages: Message[]): Promise<void> {
-  const { error } = await supabase
+  const { error } = await getDb()
     .from('chat_sessions')
     .update({ 
       messages,
@@ -44,7 +51,7 @@ export async function appendChatMessage(id: string, messages: Message[]): Promis
 }
 
 export async function listUserChats(userId: string): Promise<ChatSession[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getDb()
     .from('chat_sessions')
     .select('*')
     .eq('user_id', userId)
@@ -55,7 +62,7 @@ export async function listUserChats(userId: string): Promise<ChatSession[]> {
 }
 
 export async function deleteChatSession(id: string): Promise<void> {
-  const { error } = await supabase
+  const { error } = await getDb()
     .from('chat_sessions')
     .delete()
     .eq('id', id);

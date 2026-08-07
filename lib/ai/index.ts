@@ -1,6 +1,6 @@
 import { createOpenAI } from '@ai-sdk/openai';
 import { generateObject, streamText } from 'ai';
-import { type ModelMessage } from '@ai-sdk/provider-utils';
+import type { ModelMessage } from 'ai';
 import { ZodSchema } from 'zod';
 import OpenAI from 'openai';
 import { LRUCache } from 'lru-cache';
@@ -31,6 +31,11 @@ if (hasValidKey) {
 }
 
 export { hasValidKey };
+
+export function getNvidiaModel(modelId?: string) {
+  if (!nvidiaInstance || !hasValidKey) return null;
+  return nvidiaInstance.chat(modelId || DEFAULT_MODEL);
+}
 
 const embeddingCache = new LRUCache<string, number[]>({
   max: 500,
@@ -131,14 +136,21 @@ export class AIService {
       return JSON.parse(cached) as T;
     }
 
-    const { object } = await generateObject({
-      model: nvidiaInstance.chat(DEFAULT_MODEL),
-      schema: schema,
-      prompt: prompt,
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(new Error('AI generation timed out after 20s')), 20000);
 
-    responseCache.set(cacheKey, JSON.stringify(object));
-    return object as T;
+    try {
+      const { object } = await generateObject({
+        model: nvidiaInstance.chat(DEFAULT_MODEL),
+        schema: schema,
+        prompt: prompt,
+      });
+
+      responseCache.set(cacheKey, JSON.stringify(object));
+      return object as T;
+    } finally {
+      clearTimeout(timeout);
+    }
   }
 
   async search(text: string): Promise<Array<{ company_name: string; summary: string; slug: string; similarity: number }>> {

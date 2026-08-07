@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import OpenAI from 'openai';
 import { acquireLogoUrl } from '../lib/logo-service';
+import { verifyFacts, VerifiedSource } from '../lib/web-search';
 
 // ── Config ──────────────────────────────────────────────
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -86,12 +87,12 @@ const EnrichedDataSchema = z.object({
     text: z.string(),
     author: z.string(),
     role: z.string(),
-  })).min(2).max(3),
+  })).min(0).max(3),
   sources: z.array(z.object({
     title: z.string(),
     url: z.string(),
     type: z.string(),
-  })).min(3).max(5),
+  })).min(0).max(5),
   timeline_events: z.array(z.object({
     date: z.string(),
     title: z.string(),
@@ -134,25 +135,135 @@ const EnrichedDataSchema = z.object({
 type CoreMetadata = z.infer<typeof CoreMetadataSchema>;
 type EnrichedData = z.infer<typeof EnrichedDataSchema>;
 
+const AiReviewSchema = z.object({
+  approved: z.boolean(),
+  score: z.number().min(0).max(100),
+  fixable: z.boolean(),
+  hold_for_review: z.boolean().optional(),
+  fix_instructions: z.string().max(2000),
+  fix_stages: z.object({
+    metadata: z.boolean(),
+    enriched: z.boolean(),
+    content: z.boolean(),
+  }),
+  summary: z.string().max(500),
+});
+
+type AiReviewResult = z.infer<typeof AiReviewSchema>;
+
+// ── Model Fallback Chain ───────────────────────────────
+const MODEL_CHAIN = [
+  process.env.AI_DEFAULT_MODEL || 'meta/llama-3.1-70b-instruct',
+  'meta/llama-3.1-8b-instruct',
+];
+
+let currentModelIndex = 0;
+
+async function callModelWithFallback(
+  messages: { role: string; content: string }[],
+  maxTokens: number,
+  temperature: number,
+): Promise<string> {
+  const startIndex = currentModelIndex;
+  let lastError: Error | null = null;
+
+  for (let i = 0; i < MODEL_CHAIN.length; i++) {
+    const modelIndex = (startIndex + i) % MODEL_CHAIN.length;
+    const model = MODEL_CHAIN[modelIndex];
+
+    try {
+      const response = await openai.chat.completions.create({
+        model,
+        messages: messages as OpenAI.Chat.Completions.ChatCompletionMessageParam[],
+        temperature,
+        max_tokens: maxTokens,
+      });
+      const content = response.choices[0]?.message?.content?.trim();
+      if (content) {
+        // If we succeeded on a fallback, promote it for next time
+        if (modelIndex !== 0) currentModelIndex = modelIndex;
+        return content;
+      }
+      throw new Error('Empty response');
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      console.log(`   ⚠ Model "${model}" failed: ${lastError.message.slice(0, 80)}`);
+    }
+  }
+
+  throw lastError || new Error('All models in chain exhausted');
+}
+
 // ── Helpers ─────────────────────────────────────────────
 
+function extractLargestJSON(text: string): string | null {
+  // Strategy 1: Try to find matching braces for the outermost object
+  let startIdx = -1;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === '{') { startIdx = i; break; }
+  }
+  if (startIdx === -1) return null;
+
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  for (let i = startIdx; i < text.length; i++) {
+    const ch = text[i];
+    if (escape) { escape = false; continue; }
+    if (ch === '\\' && inString) { escape = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (!inString) {
+      if (ch === '{') depth++;
+      if (ch === '}') depth--;
+      if (depth === 0) return text.slice(startIdx, i + 1);
+    }
+  }
+  return null;
+}
+
 function sanitizeJSON(text: string): string {
+  // Step 1: Strip markdown code fences
   let cleaned = text.replace(/^```(?:json)?\s*|\s*```$/gi, '').trim();
-  const jsonMatch = cleaned.match(/\{[\s\S]*\}/) || cleaned.match(/\[[\s\S]*\]/);
-  if (jsonMatch) cleaned = jsonMatch[0];
-  cleaned = cleaned.replace(/(\{|,)\s*([a-zA-Z_$][a-zA-Z0-9_$]*)\s*:/g, '$1"$2":');
-  cleaned = cleaned.replace(/,\s*([}\]])/g, '$1');
-  // Fix unclosed quotes
-  const quoteCount = (cleaned.match(/"/g) || []).length;
-  if (quoteCount % 2 !== 0) cleaned += '"';
-  // Fix unclosed braces/brackets
-  const openBraces = (cleaned.match(/\{/g) || []).length;
-  const closeBraces = (cleaned.match(/\}/g) || []).length;
-  if (openBraces > closeBraces) cleaned += '}'.repeat(openBraces - closeBraces);
-  const openBrackets = (cleaned.match(/\[/g) || []).length;
-  const closeBrackets = (cleaned.match(/\]/g) || []).length;
-  if (openBrackets > closeBrackets) cleaned += ']'.repeat(openBrackets - closeBrackets);
-  return cleaned;
+
+  // Step 2: Strip markdown formatting and explanation prefixes
+  cleaned = cleaned.replace(/^(Here[^:]*:\s*)/i, '').trim();
+
+  // Step 3: Try to extract the largest valid JSON object
+  const extracted = extractLargestJSON(cleaned);
+
+  // Step 4: Fallback regex repairs (fragile but handles common LLM errors)
+  const fallback = extracted || cleaned;
+  let repaired = fallback.replace(/(\{|,)\s*([a-zA-Z_$][a-zA-Z0-9_$]*)\s*:/g, '$1"$2":');
+  repaired = repaired.replace(/,\s*([}\]])/g, '$1');
+  const quoteCount = (repaired.match(/"/g) || []).length;
+  if (quoteCount % 2 !== 0) repaired += '"';
+  const openBraces = (repaired.match(/\{/g) || []).length;
+  const closeBraces = (repaired.match(/\}/g) || []).length;
+  if (openBraces > closeBraces) repaired += '}'.repeat(openBraces - closeBraces);
+  const openBrackets = (repaired.match(/\[/g) || []).length;
+  const closeBrackets = (repaired.match(/\]/g) || []).length;
+  if (openBrackets > closeBrackets) repaired += ']'.repeat(openBrackets - closeBrackets);
+  return repaired;
+}
+
+async function tryParseJSON<T>(text: string, schema: z.ZodSchema<T>): Promise<{ result: T | null; raw: string; error: string | null }> {
+  // Strategy A: Direct parse
+  try {
+    const direct = JSON.parse(text);
+    const valid = schema.parse(direct);
+    return { result: valid, raw: text, error: null };
+  } catch {
+    // Strategy B: Sanitized parse
+    const sanitized = sanitizeJSON(text);
+    try {
+      const parsed = JSON.parse(sanitized);
+      const valid = schema.parse(parsed);
+      return { result: valid, raw: sanitized, error: null };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message.slice(0, 200) : 'Unknown error';
+      return { result: null, raw: sanitized.slice(0, 500), error: msg };
+    }
+  }
 }
 
 async function generateJSON<T>(prompt: string, schema: z.ZodSchema<T>, attempt = 1, maxTokens = 4096): Promise<T> {
@@ -162,39 +273,26 @@ async function generateJSON<T>(prompt: string, schema: z.ZodSchema<T>, attempt =
     ? `${prompt}\n\nIMPORTANT: Previous response was not valid JSON. Return ONLY raw JSON — no trailing commas, no markdown. Keep values SHORT.`
     : prompt;
 
-  const response = await openai.chat.completions.create({
-    model: MODEL,
-    messages: [
+  const text = await callModelWithFallback(
+    [
       { role: 'system', content: systemMsg },
       { role: 'user', content: userMsg },
     ],
-    temperature: attempt > 1 ? 0.1 : 0.3,
-    max_tokens: maxTokens,
-  });
+    maxTokens,
+    attempt > 1 ? 0.1 : 0.3,
+  );
 
-  const text = response.choices[0]?.message?.content?.trim() || '{}';
-  const cleaned = sanitizeJSON(text);
+  const { result, raw, error } = await tryParseJSON(text, schema);
 
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(cleaned);
-  } catch {
-    if (attempt < 3) {
-      console.log(`   ⚠ JSON parse failed, retrying (attempt ${attempt + 1})...`);
-      return generateJSON(prompt, schema, attempt + 1, maxTokens);
-    }
-    throw new Error(`Failed to parse JSON after ${attempt} attempts.\n${cleaned.slice(0, 500)}`);
+  if (result !== null) return result;
+
+  if (attempt < 3) {
+    console.log(`   ⚠ JSON parse failed (attempt ${attempt}/3): ${error?.slice(0, 120)}`);
+    return generateJSON(prompt, schema, attempt + 1, maxTokens);
   }
 
-  try {
-    return schema.parse(parsed);
-  } catch (error) {
-    if (attempt < 3) {
-      console.log(`   ⚠ Schema validation failed, retrying (attempt ${attempt + 1})...`);
-      return generateJSON(prompt, schema, attempt + 1, maxTokens);
-    }
-    throw error;
-  }
+  console.error(`   ❌ JSON parse failed after ${attempt} attempts. Last raw:\n${raw}`);
+  throw new Error(`Failed to parse JSON after ${attempt} attempts.\n${error}\nFirst 300 chars: ${raw.slice(0, 300)}`);
 }
 
 async function generateContent(company: string, summary: string, failureReasons: string[], attempt = 1): Promise<string> {
@@ -247,20 +345,17 @@ WRITING REQUIREMENTS:
 Output ONLY the raw MDX content. No wrapper text, no explanation, no code fences.`;
 
   try {
-    const response = await openai.chat.completions.create({
-      model: MODEL,
-      messages: [
+    const content = await callModelWithFallback(
+      [
         { role: 'system', content: 'You are a forensic startup autopsy writer. Clinical, professional tone. Output only the MDX content.' },
         { role: 'user', content: prompt },
       ],
-      temperature: attempt > 1 ? 0.3 : 0.5,
-      max_tokens: 4096,
-    });
-
-    const content = response.choices[0]?.message?.content?.trim();
+      4096,
+      attempt > 1 ? 0.3 : 0.5,
+    );
     if (content && content.length > 200) return content;
     throw new Error('Content too short or empty');
-  } catch (err) {
+  } catch {
     if (attempt < 3) {
       console.log(`   ⚠ Content generation failed, retrying (attempt ${attempt + 1})...`);
       return generateContent(company, summary, failureReasons, attempt + 1);
@@ -279,6 +374,92 @@ async function generateEmbedding(text: string): Promise<number[]> {
   return response.data[0].embedding;
 }
 
+const REVIEW_THRESHOLD = 60;
+
+async function aiReview(
+  target: string,
+  metadata: CoreMetadata,
+  enriched: EnrichedData,
+  content: string,
+  sources: VerifiedSource[],
+): Promise<AiReviewResult> {
+  const evidenceBlock =
+    sources && sources.length > 0
+      ? sources
+          .slice(0, 6)
+          .map((s) => `- [${s.source_title || 'untitled'}] ${(s.snippet || '').slice(0, 300)}`)
+          .join('\n')
+      : 'No web sources found for this run.';
+
+  const prompt = `You are a quality control reviewer for Startup Graveyard, a forensic case study publication. Review this case study and decide if it meets publication standards.
+
+Company: ${target}
+Industry: ${metadata.industry}
+Founded: ${metadata.founded_year} → Shutdown: ${metadata.shutdown_year}
+Summary: ${metadata.summary}
+Failure Reasons: ${metadata.failure_reasons.join(', ')}
+Content Length: ${content.length} characters
+
+Content (first 3000 chars):
+${content.slice(0, 3000)}
+
+WEB SOURCE EVIDENCE (from the fact-check stage):
+${evidenceBlock}
+
+FUNDING SANITY CHECK:
+metadata.funding_raised = ${(metadata.funding_raised / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })} (normalized from cents).
+If the sourced evidence (or your own knowledge) contradicts this figure by a wide margin (roughly 2x or more in either direction), or any headline figure appears hallucinated, REJECT with fixable=true and set fix_stages.metadata=true so funding_raised is regenerated from a grounded total.
+
+EVALUATION CRITERIA:
+1. ACCURACY (0-25): Are dates, names, metrics internally consistent and plausible?
+2. COMPLETENESS (0-25): Does content cover all required sections (Background, Founding Story, Product Development, Launch & Go-to-Market, Growth & Traction, Challenges, Decline, Shutdown, Legacy)?
+3. QUALITY (0-25): Is writing clinical, professional, evidence-driven? No emotional language?
+4. SPECIFICITY (0-25): Are there specific dates, numbers, named events, concrete details?
+
+SCORING GUIDE:
+- Total ≥ ${REVIEW_THRESHOLD}: APPROVE — meets publication standards
+- Total < ${REVIEW_THRESHOLD} BUT fixable: REJECT with fixable=true — provide specific fix instructions
+- Total < ${REVIEW_THRESHOLD} AND NOT fixable: REJECT with fixable=false (e.g., hallucinated company, wrong industry, completely wrong facts)
+
+Return a JSON object:
+{
+  "approved": boolean,
+  "score": number (0-100),
+  "fixable": boolean,
+  "fix_instructions": "If fixable, specific instructions on what to fix. Include which stages need regeneration.",
+  "fix_stages": { "metadata": boolean, "enriched": boolean, "content": boolean },
+  "summary": "One-line summary of the review decision"
+}`;
+
+  const systemMsg = 'You are a quality control reviewer. Respond with ONLY valid JSON.';
+
+  const { result, error } = await tryParseJSON(
+    await callModelWithFallback(
+      [
+        { role: 'system', content: systemMsg },
+        { role: 'user', content: prompt },
+      ],
+      1024,
+      0.1,
+    ),
+    AiReviewSchema,
+  );
+
+  if (result) return result;
+
+  // Fallback: hold for human review instead of auto-publishing unverified content
+  console.warn(`   ⚠ AI review parse failed — holding "${target}" for human review: ${error?.slice(0, 120)}`);
+  return {
+    approved: false,
+    score: 0,
+    fixable: false,
+    hold_for_review: true,
+    fix_instructions: 'Review engine failed to return valid JSON; case held for manual editorial review.',
+    fix_stages: { metadata: false, enriched: false, content: false },
+    summary: 'Held for human review (review engine parse failure)',
+  };
+}
+
 function deriveWebsite(companyName: string): string {
   const base = companyName.toLowerCase().replace(/[^a-z0-9.-]/g, '').replace(/\.com$/i, '');
   // If it already looks like a domain, use it
@@ -287,6 +468,57 @@ function deriveWebsite(companyName: string): string {
     return `https://${cleaned}`;
   }
   return `https://${base}.com`;
+}
+
+function slugify(name: string): string {
+  return name.toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+    .replace(/-+/g, '-');
+}
+
+// ── Company Aliases ────────────────────────────────────
+// Maps known company name variations to their canonical form
+// and detects parenthetical descriptors that should be stripped
+// for slug generation while preserving the display name.
+const COMPANY_ALIASES: Record<string, string[]> = {
+  'Quibi': ['Quibi Holdings'],
+  'Theranos': ['Theranos Inc.'],
+  'Fab.com': ['Fab'],
+  'Better.com': ['Better'],
+  'Diapers.com (Quidsi)': ['Diapers.com', 'Quidsi'],
+  'Uber (China — didi merger)': ['Uber China'],
+  'Lime (decline/restructuring)': ['Lime'],
+  'Ola (decline in some markets)': ['Ola'],
+  'Nokia Mobile Phones (decline)': ['Nokia Phones'],
+  'BlackBerry (decline)': ['BlackBerry Mobile'],
+  'Motorola Mobility (decline)': ['Motorola Mobility'],
+  'Krispy Kreme (decline)': ['Krispy Kreme'],
+  'Zynga (decline)': ['Zynga'],
+  'GameStop (decline)': ['GameStop'],
+  'Redbox (decline)': ['Redbox'],
+  'Ancestry.com (decline)': ['Ancestry.com'],
+  'NantHealth (decline)': ['NantHealth'],
+  '23andMe (decline)': ['23andMe'],
+  'Paytm (decline)': ['Paytm'],
+  'Byju\'s (decline)': ['Byju\'s'],
+  'Bird': ['Bird Rides'],
+  'General Motors (2009 bankruptcy)': ['General Motors', 'GM'],
+  'Chrysler (2009 bankruptcy)': ['Chrysler'],
+  'Silicon Valley Bank (2023)': ['Silicon Valley Bank', 'SVB'],
+  'Credit Suisse (2023 collapse)': ['Credit Suisse'],
+  'Better Place': ['Better Place EV'],
+  'WeWork (decline)': ['WeWork'],
+};
+
+function getPrimaryName(candidate: string): string {
+  // Strip parenthetical descriptors for primary name detection
+  const base = candidate.replace(/\s*\(.*?\)\s*/g, '').trim();
+  return base || candidate;
+}
+
+function getAllAliases(candidate: string): string[] {
+  return COMPANY_ALIASES[candidate] || [getPrimaryName(candidate)];
 }
 
 // ── Candidate Queue ─────────────────────────────────────
@@ -406,17 +638,17 @@ const CANDIDATES = [
   'Vine', 'Google+', 'Orkut',
   'Ello', 'App.net', 'Pheed',
   'Redbox (decline)', 'MoviePass',
-  'Quibi', 'CNN+', 'CBS All Access (rebrand)',
+  'CNN+', 'CBS All Access (rebrand)',
   'Ancestry.com (decline)', 'Zynga (decline)',
   'Ouya', 'OnLive', 'Stadia',
-  'GameStop (decline)', 'Blockbuster (video games)',
+  'GameStop (decline)',
 
   // ── Transportation & Automotive ──
   'Mobility as a Service (MaaS) Global',
   'Uber (China — didi merger)',
   'Ola (decline in some markets)',
   'VanMoof', 'Boosted Boards',
-  'Bird Rides (decline)', 'Lime (decline/restructuring)',
+  'Lime (decline/restructuring)',
   'GetAround', 'Turo (challenges)',
   'Canoo', 'Lordstown Motors',
   'Proterra', 'Electric Last Mile Solutions',
@@ -427,43 +659,73 @@ const CANDIDATES = [
   'Practice Fusion', 'NantHealth (decline)',
   'Proteus Digital Health', 'Google Health (original)',
   '23andMe (decline)', 'Color Genomics (pivot)',
-  'Theranos', 'Harbinger Health',
+  'Harbinger Health',
 ];
 
 // ── Main ────────────────────────────────────────────────
+const MAX_FIX_RETRIES = 2;
+
 async function runDailyAutopsy() {
   console.log('💀 Starting Forensic Crawler v2...');
   console.log(`   Model: ${MODEL}`);
 
-  // 1. Pick next candidate
-  const { data: existing } = await supabase.from('case_studies').select('company_name, slug');
-  const existingNames = new Set((existing || []).map((e: { company_name: string; slug: string }) => e.company_name.toLowerCase()));
-  const existingSlugs = new Set((existing || []).map((e: { company_name: string; slug: string }) => e.slug));
+  while (true) {
+    // ── Pick next candidate (re-queries DB each attempt) ──
+    const { data: existing } = await supabase.from('case_studies').select('company_name, slug');
+    const existingNames = new Set((existing || []).map((e: { company_name: string; slug: string }) => e.company_name.toLowerCase()));
+    const existingSlugs = new Set((existing || []).map((e: { company_name: string; slug: string }) => e.slug));
 
-  let target: string | undefined;
-  for (const candidate of CANDIDATES) {
-    if (existingNames.has(candidate.toLowerCase())) continue;
-    const candidateSlug = candidate.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    if (existingSlugs.has(candidateSlug)) {
-      console.log(`   ⏭ ${candidate} — slug collision: ${candidateSlug}`);
-      continue;
+    const allKnownNames = new Set(existingNames);
+    for (const name of existingNames) {
+      allKnownNames.add(name);
+      const aliases = COMPANY_ALIASES[name] || [];
+      for (const a of aliases) allKnownNames.add(a.toLowerCase());
     }
-    target = candidate;
-    break;
-  }
 
-  if (!target) {
-    console.log('🏁 All candidates covered.');
-    return;
-  }
+    let target: string | undefined;
+    for (const candidate of CANDIDATES) {
+      const allAliases = getAllAliases(candidate);
+      const aliasMatch = allAliases.some((a) => allKnownNames.has(a.toLowerCase()));
+      if (aliasMatch) {
+        console.log(`   ⏭ ${candidate} — alias matched existing entry`);
+        continue;
+      }
+      const candidateSlug = slugify(candidate);
+      if (existingSlugs.has(candidateSlug)) {
+        console.log(`   ⏭ ${candidate} — slug collision: ${candidateSlug}`);
+        continue;
+      }
+      target = candidate;
+      break;
+    }
 
-  console.log(`🔍 Target: ${target}`);
+    if (!target) {
+      console.log('🏁 All candidates covered.');
+      return;
+    }
 
-  const caseNumber = `CASE-${Date.now().toString(36).toUpperCase()}`;
+    console.log(`🔍 Target: ${target}`);
 
-  // ── Stage 1: Core Metadata ───────────────────────────
-  console.log('\n📋 Stage 1/5: Generating core metadata...');
-  const metadataPrompt = `Generate a comprehensive forensic autopsy report for the failed startup "${target}".
+    const caseNumber = `CASE-${Date.now().toString(36).toUpperCase()}`;
+    const expectedSlug = slugify(target);
+    const contentDir = path.join(process.cwd(), 'content', 'case-studies');
+    const dataDir = path.join(process.cwd(), 'data', 'case-studies');
+
+    let metadata: CoreMetadata;
+    let enriched: EnrichedData;
+    let content: string;
+    let dbId: string | null = null;
+
+    // ── Inner retry loop (fix + re-review) ──
+    for (let fixAttempt = 0; fixAttempt <= MAX_FIX_RETRIES; fixAttempt++) {
+      const isRetry = fixAttempt > 0;
+      const feedbackPrefix = isRetry ? `\n\nPREVIOUS REVIEW FEEDBACK TO ADDRESS:\n` : '';
+
+      // ── Stage 1: Core Metadata ───────────────────────
+      console.log(`\n📋 Stage 1/7: Generating core metadata${isRetry ? ' (retry)' : ''}...`);
+      const metadataPrompt = `Generate a comprehensive forensic autopsy report for the failed startup "${target}".
+      
+IMPORTANT: The slug field MUST be exactly "${expectedSlug}" — no variations.
 
 This report will be published as a structured, editorial-quality case study on a research publication platform. Every field feeds into a specific visual section of the case study page. Be factual, specific, and research-oriented.
 
@@ -522,38 +784,44 @@ CRITICAL REQUIREMENTS:
 4. Lessons must be actionable ("Validate demand before building features" not "Do market research")
 5. Keep values concise — this is structured data, not prose`;
 
-  const metadata = await generateJSON(metadataPrompt, CoreMetadataSchema);
-  (metadata as unknown as Record<string, unknown>).case_number = caseNumber;
-  // Ensure website is set
-  if (!metadata.website) {
-    metadata.website = deriveWebsite(metadata.company_name);
-  }
+      metadata = await generateJSON(metadataPrompt + (isRetry ? `${feedbackPrefix}${fixInstructions}` : ''), CoreMetadataSchema);
+      (metadata as unknown as Record<string, unknown>).case_number = caseNumber;
 
-  // Slug collision check
-  const { data: slugCheck } = await supabase
-    .from('case_studies')
-    .select('slug')
-    .eq('slug', metadata.slug)
-    .single();
-  if (slugCheck) {
-    console.log(`   ⏭ Slug "${metadata.slug}" already exists (AI named it "${metadata.company_name}")`);
-    console.log(`   Add "${metadata.company_name}" as an alias for "${target}" and re-run.`);
-    return;
-  }
+      if (metadata.slug !== expectedSlug) {
+        console.log(`   ⚠ Overriding AI slug "${metadata.slug}" → "${expectedSlug}"`);
+        metadata.slug = expectedSlug;
+      }
 
-  console.log(`   ✅ ${metadata.company_name} — ${metadata.industry} (${metadata.founded_year}–${metadata.shutdown_year})`);
+      if (!metadata.website) {
+        metadata.website = deriveWebsite(metadata.company_name);
+      }
 
-  // ── Stage 2: Enriched Data + Forensic Analysis ──────
-  console.log('\n🎯 Stage 2/5: Generating enriched data (competitors, quotes, timeline, verdict, forensic autopsy)...');
-  const enrichedPrompt = `For the failed startup "${target}" (${metadata.industry}, ${metadata.founded_year}–${metadata.shutdown_year}), generate structured data for a professional forensic research case study.
+      // Slug collision check (only on first attempt)
+      if (fixAttempt === 0) {
+        const { data: slugCheck } = await supabase
+          .from('case_studies')
+          .select('slug')
+          .eq('slug', metadata.slug)
+          .single();
+        if (slugCheck) {
+          console.log(`   ⏭ Slug "${metadata.slug}" already exists — skipping`);
+          return;
+        }
+      }
+
+      console.log(`   ✅ ${metadata.company_name} — ${metadata.industry} (${metadata.founded_year}–${metadata.shutdown_year})`);
+
+      // ── Stage 2: Enriched Data ───────────────────────
+      console.log(`\n🎯 Stage 2/7: Generating enriched data${isRetry ? ' (retry)' : ''}...`);
+      const enrichedPrompt = `For the failed startup "${target}" (${metadata.industry}, ${metadata.founded_year}–${metadata.shutdown_year}), generate structured data for a professional forensic research case study.
 
 Return ONLY valid JSON with these arrays:
 
 1. competitors: array of 3-5 competitors — real companies that competed with ${target}. Each has: {name, status: "active"|"closed"|"acquired", moat: string explaining their defensibility, advantage_over_failed: string explaining why they survived and ${target} did not}
 
-2. quotes: array of 2-3 real or well-sourced attributed quotes about ${target}. Each: {text, author, role}. Use actual founder/investor/analyst names where known.
+2. quotes: array of 0-3 quotes. ONLY include a quote if you are confident it is publicly documented (interview, press, memoir, regulatory filing). If none are verifiable, return an empty array. NEVER invent a quote or attribution.
 
-3. sources: array of 3-5 references to real or plausible articles. Each: {title, url, type: "Article"|"Report"|"Interview"|"Podcast"|"SEC Filing"}. Use realistic URLs based on major publications (TechCrunch, Bloomberg, NYT, Forbes, Crunchbase, SEC.gov).
+3. sources: array of 0-5 references to REAL articles that you are confident exist. Each: {title, url, type: "Article"|"Report"|"Interview"|"Podcast"|"SEC Filing"}. Prefer URLs surfaced by the fact-check stage web search. NEVER invent a URL or article title — for a forensic publication, a missing citation is acceptable and a fabricated one is not. If fewer than 3 are verifiable, return fewer.
 
 4. timeline_events: array of 5-10 events charting ${target}'s full lifecycle — founding, major funding rounds, product launches, expansions, pivots, crises, and shutdown. Each: {date (e.g. "Jan 2020"), title, description (max 200 chars, specific), type: "milestone"|"warning"|"crisis"}
 
@@ -583,81 +851,161 @@ Return ONLY valid JSON with these arrays:
     }
   }
 
-9. evidence_images: optional array of up to 6 URLs for product screenshots, founder photos, or archived media. Use Clearbit logo URLs or placeholder images.
+9. evidence_images: optional array of up to 6 URLs for product screenshots, founder photos, or archived media. Use stable, hosted URLs only; if none are available, return an empty array. NEVER fabricate image URLs.
 
 Use factual data where possible. Never fabricate funding amounts — use the total as a guide and distribute across rounds. Keep descriptions specific, evidence-driven, and concise. The failure_analysis is the centerpiece — make it thorough and diagnostic.`;
-  const enriched = await generateJSON(enrichedPrompt, EnrichedDataSchema);
 
-  console.log(`   ✅ ${enriched.timeline_events.length} timeline events, ${enriched.competitors.length} competitors, ${enriched.quotes.length} quotes`);
+      enriched = await generateJSON(enrichedPrompt + (isRetry ? `${feedbackPrefix}${fixInstructions}` : ''), EnrichedDataSchema);
+      console.log(`   ✅ ${enriched.timeline_events.length} timeline events, ${enriched.competitors.length} competitors, ${enriched.quotes.length} quotes`);
 
-  // ── Stage 3: Narrative Content ───────────────────────
-  console.log('\n📝 Stage 3/5: Generating narrative content...');
-  const content = await generateContent(metadata.company_name, metadata.summary, metadata.failure_reasons);
-  console.log(`   ✅ Content: ${content.length} chars`);
+      // ── Stage 3: Narrative Content ───────────────────
+      console.log(`\n📝 Stage 3/7: Generating narrative content${isRetry ? ' (retry)' : ''}...`);
+      content = await generateContent(metadata.company_name, metadata.summary, metadata.failure_reasons);
+      console.log(`   ✅ Content: ${content.length} chars`);
 
-  // ── Stage 4: Logo Acquisition ────────────────────────
-  console.log('\n🖼  Stage 4/5: Acquiring logo...');
-  let logoUrl: string | null = null;
-  try {
-    logoUrl = await acquireLogoUrl(metadata.company_name);
-    console.log(`   ${logoUrl ? '✅ Logo found: ' + logoUrl : 'ℹ️  No logo found, will use placeholder'}`);
-  } catch (err) {
-    console.log(`   ⚠ Logo acquisition failed: ${err instanceof Error ? err.message : 'unknown error'}`);
-  }
+      // ── Stage 4: Web Search & Fact Verification ──────
+      console.log('\n🔍 Stage 4/7: Fact verification via web search...');
+      let factSources: VerifiedSource[] = [];
+      let factScore: number | null = null;
+      try {
+        const result = await verifyFacts(
+          metadata.company_name,
+          metadata.summary,
+          metadata.failure_reasons,
+        );
+        factSources = result.sources;
+        factScore = result.score;
+        if (factSources.length > 0) {
+          const highConf = factSources.filter((s) => s.confidence === 'high').length;
+          console.log(`   ✅ ${factSources.length} sources found (${highConf} high confidence)`);
+          console.log(`   📊 Fact check score: ${factScore}/100`);
+        } else {
+          console.log(`   ℹ️  No web sources found — fact score unavailable`);
+        }
+      } catch (err) {
+        console.log(`   ⚠ Fact verification skipped: ${err instanceof Error ? err.message : 'unknown error'}`);
+      }
 
-  // ── Stage 5: Embedding ───────────────────────────────
-  console.log('\n🧠 Stage 5/5: Generating embedding...');
-  const embeddingText = `${metadata.company_name} ${metadata.summary} ${metadata.failure_reasons.join(' ')} ${metadata.industry} ${(metadata.tags || []).join(' ')}`;
-  const embedding = await generateEmbedding(embeddingText);
-  console.log(`   ✅ Embedding dimension: ${embedding.length}`);
+      // ── Stage 5: Logo Acquisition ────────────────────
+      console.log('\n🖼  Stage 5/7: Acquiring logo...');
+      let logoUrl: string | null = null;
+      try {
+        logoUrl = await acquireLogoUrl(metadata.company_name);
+        console.log(`   ${logoUrl ? '✅ Logo found: ' + logoUrl : 'ℹ️  No logo found, will use placeholder'}`);
+      } catch {
+        console.log(`   ⚠ Logo acquisition failed`);
+      }
 
-  // ── Save to Database ─────────────────────────────────
-  console.log('\n💾 Saving to database...');
-  const { funding_rounds, legacy_impact, failure_analysis, evidence_images, ...restEnriched } = enriched;
-  const finalData = {
-    ...metadata,
-    logo_url: logoUrl,
-    content,
-    ...restEnriched,
-    financial_rounds: funding_rounds,
-    failure_analysis: failure_analysis as Record<string, unknown>,
-    evidence_images: (evidence_images || []) as string[],
-    published: true,
-    published_at: new Date().toISOString(),
-    embedding,
-  };
+      // ── Stage 6: Embedding ───────────────────────────
+      console.log('\n🧠 Stage 6/7: Generating embedding...');
+      const embeddingText = `${metadata.company_name} ${metadata.summary} ${metadata.failure_reasons.join(' ')} ${metadata.industry} ${(metadata.tags || []).join(' ')}`;
+      const embedding = await generateEmbedding(embeddingText);
+      console.log(`   ✅ Embedding dimension: ${embedding.length}`);
 
-  const { error } = await supabase.from('case_studies').insert([finalData]);
-  if (error) {
-    if (error.message?.includes('duplicate key') || error.code === '23505') {
-      console.log(`   ⚠ Duplicate key — ${target} was already stored`);
-      return;
+      // ── Save to Database ─────────────────────────────
+      console.log('\n💾 Saving to database...');
+      const { funding_rounds, legacy_impact, failure_analysis, evidence_images, ...restEnriched } = enriched;
+      const finalData: Record<string, unknown> = {
+        ...metadata,
+        logo_url: logoUrl,
+        content,
+        ...restEnriched,
+        financial_rounds: funding_rounds,
+        failure_analysis: failure_analysis as Record<string, unknown>,
+        evidence_images: (evidence_images || []) as string[],
+        published: false,
+        published_at: null,
+        review_status: 'draft',
+        reviewed_at: null,
+        fact_check_score: factScore,
+        verified_sources: factSources,
+        embedding,
+      };
+
+      if (fixAttempt === 0) {
+        const { error, data } = await supabase.from('case_studies').insert([finalData]).select('id').single();
+        if (error) {
+          if (error.message?.includes('duplicate key') || error.code === '23505') {
+            console.log(`   ⚠ Duplicate key — ${target} was already stored`);
+            return;
+          }
+          throw error;
+        }
+        dbId = data?.id;
+        console.log('   ✅ Stored in Supabase');
+      } else if (dbId) {
+        delete finalData.embedding;
+        const { error } = await supabase.from('case_studies').update(finalData).eq('id', dbId);
+        if (error) throw error;
+        const embeddingUpdate = await supabase.from('case_studies').update({ embedding }).eq('id', dbId);
+        if (embeddingUpdate.error) throw embeddingUpdate.error;
+        console.log('   ✅ Updated in Supabase');
+      }
+
+      // ── Save to Filesystem ───────────────────────────
+      fs.mkdirSync(contentDir, { recursive: true });
+      fs.mkdirSync(dataDir, { recursive: true });
+      fs.writeFileSync(path.join(contentDir, `${metadata.slug}.md`), content);
+      fs.writeFileSync(path.join(dataDir, `${metadata.slug}.json`), JSON.stringify(finalData, null, 2));
+      console.log('   ✅ Saved to filesystem');
+
+      // ── Stage 7: AI Review ──────────────────────────
+      console.log('\n🔎 Stage 7/7: AI quality review...');
+      const review = await aiReview(target, metadata, enriched, content, factSources);
+      console.log(`   📊 Score: ${review.score}/100`);
+      console.log(`   📝 ${review.summary}`);
+
+      if (review.approved) {
+        // Auto-publish
+        const { error: pubError } = await supabase
+          .from('case_studies')
+          .update({
+            published: true,
+            published_at: new Date().toISOString(),
+            review_status: 'published',
+            review_notes: review.summary,
+          })
+          .eq('id', dbId);
+        if (pubError) throw pubError;
+
+        console.log(`\n✅ PUBLISHED: ${target}`);
+        console.log(`   Score: ${review.score}/100`);
+        console.log(`   Industry: ${metadata.industry}`);
+        console.log(`   Timeline: ${metadata.founded_year} → ${metadata.shutdown_year}`);
+        console.log(`   Content: ${content.length} chars`);
+        return; // Success — exactly one case published
+      }
+
+      if (!review.fixable) {
+        if (review.hold_for_review) {
+          // Review engine failure: keep the case as a draft for human review, never auto-publish
+          const { error: holdErr } = await supabase
+            .from('case_studies')
+            .update({ review_status: 'in_review', published: false, review_notes: review.summary })
+            .eq('id', dbId);
+          if (holdErr) throw holdErr;
+          console.log(`   🛑 Held for human review (not published): "${target}"`);
+          break; // Break inner retry loop, try next candidate
+        }
+        console.log(`   ❌ Unfixable issues — deleting case "${target}"`);
+        if (dbId) await supabase.from('case_studies').delete().eq('id', dbId);
+        for (const file of [`${metadata.slug}.md`, `${metadata.slug}.json`]) {
+          try { fs.unlinkSync(path.join(contentDir, file)); } catch { /* ok */ }
+          try { fs.unlinkSync(path.join(dataDir, file)); } catch { /* ok */ }
+        }
+        break; // Break inner retry loop, try next candidate
+      }
+
+      // Fixable — set feedback for next retry
+      fixInstructions = review.fix_instructions;
+      console.log(`   🔄 Fixable — retry ${fixAttempt + 1}/${MAX_FIX_RETRIES}`);
     }
-    throw error;
+
+    // If we exhausted retries and got here, the case was unfixable or maxed out
+    console.log(`   ➡️  Moving to next candidate...\n`);
   }
-  console.log('   ✅ Stored in Supabase');
-
-  // ── Save to Filesystem ───────────────────────────────
-  const contentDir = path.join(process.cwd(), 'content', 'case-studies');
-  const dataDir = path.join(process.cwd(), 'data', 'case-studies');
-  if (!fs.existsSync(contentDir)) fs.mkdirSync(contentDir, { recursive: true });
-  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
-  fs.writeFileSync(path.join(contentDir, `${metadata.slug}.md`), content);
-  fs.writeFileSync(path.join(dataDir, `${metadata.slug}.json`), JSON.stringify(finalData, null, 2));
-  console.log('   ✅ Saved to filesystem');
-
-  // ── Summary ──────────────────────────────────────────
-  const { data: updatedExisting } = await supabase.from('case_studies').select('company_name');
-  const updatedNames = new Set((updatedExisting || []).map((e: { company_name: string }) => e.company_name.toLowerCase()));
-  const remaining = CANDIDATES.filter((c) => !updatedNames.has(c.toLowerCase()));
-  console.log(`\n🚀 Published: ${target}`);
-  console.log(`   Industry: ${metadata.industry}`);
-  console.log(`   Timeline: ${metadata.founded_year} → ${metadata.shutdown_year}`);
-  console.log(`   Content: ${content.length} chars`);
-  console.log(`   Logo: ${logoUrl ? '✅' : '🔲 Placeholder'}`);
-  console.log(`   Embedding: ${embedding.length} dimensions`);
-  console.log(`📋 Queue remaining: ${remaining.length}`);
-  if (remaining.length > 0) console.log(`   Next up: ${remaining[0]}`);
 }
+
+let fixInstructions = '';
 
 runDailyAutopsy().catch(console.error);

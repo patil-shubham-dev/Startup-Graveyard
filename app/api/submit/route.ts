@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { supabase, isSupabaseConfigured } from '@/lib/db/config';
+import { isSupabaseConfigured, createServerDataClient } from '@/lib/db/config';
+import { checkRateLimit, getRateLimitKey } from '@/lib/rate-limiter';
 
 const SubmissionSchema = z.object({
   company: z.string().min(1, 'Company name is required').max(200),
@@ -13,6 +14,14 @@ const SubmissionSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const rateLimit = await checkRateLimit(getRateLimitKey(req));
+  if (!rateLimit.allowed) {
+    return NextResponse.json({ error: 'Rate limit exceeded. Please try again later.' }, {
+      status: 429,
+      headers: { 'Retry-After': String(Math.ceil((rateLimit.resetAt - Date.now()) / 1000)) },
+    });
+  }
+
   try {
     const body = await req.json();
     const parsed = SubmissionSchema.safeParse(body);
@@ -36,7 +45,8 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const { error } = await supabase.from('submissions').insert({
+    const db = createServerDataClient();
+    const { error } = await db.from('submissions').insert({
       company_name: parsed.data.company,
       website: parsed.data.website || null,
       industry: parsed.data.industry || null,

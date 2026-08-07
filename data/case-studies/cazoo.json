@@ -5,7 +5,7 @@
   "founded_year": 2018,
   "shutdown_year": 2022,
   "industry": "E-commerce",
-  "funding_raised": 150000000000,
+  "funding_raised": 280000000000,
   "employees_peak": 1000,
   "valuation_peak": 1500000000000,
   "investors": [
@@ -42,7 +42,7 @@
     "burn": 50
   },
   "metrics": {
-    "capital_raised": "£150M",
+    "capital_raised": "$2.8B",
     "peak_valuation": "£1.5B",
     "years_active": 4,
     "peak_employees": "1,000",

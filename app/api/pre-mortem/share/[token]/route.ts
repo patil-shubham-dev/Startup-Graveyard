@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase, isSupabaseConfigured } from '@/lib/db/config';
-import { PremortemSession } from '@/lib/db/premortem';
+import { isSupabaseConfigured, createServerDataClient } from '@/lib/db/config';
 
 export async function GET(
   _req: NextRequest,
@@ -18,7 +17,8 @@ export async function GET(
 
   try {
     const sanitizedToken = token.replace(/[^a-zA-Z0-9_-]/g, '');
-    const { data, error } = await supabase
+    const db = createServerDataClient();
+    const { data, error } = await db
       .from('premortem_sessions')
       .select('pitch, report, risk_score, created_at, share_token')
       .eq('share_token', sanitizedToken)

@@ -47,3 +47,17 @@ next-env.d.ts
 
 # scratch
 scratch/
+
+# agent harness (local tooling, not part of the product)
+/AGENTIC.md
+/dev-log.txt
+/nul
+/.opencode/
+/.impeccable/
+/.agentic/
+/.agentic-os/
+/.lavish/
+/.githooks/
+/.github/agents/
+/.github/hooks/
+/.github/skills/

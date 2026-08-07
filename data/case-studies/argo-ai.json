@@ -5,7 +5,7 @@
   "founded_year": 2016,
   "shutdown_year": 2022,
   "industry": "Autonomous Vehicles",
-  "funding_raised": 100000000000,
+  "funding_raised": 360000000000,
   "employees_peak": 2000,
   "valuation_peak": 750000000000,
   "investors": [
@@ -44,7 +44,7 @@
     "burn": 30
   },
   "metrics": {
-    "capital_raised": "$4.7B",
+    "capital_raised": "$3.6B",
     "peak_valuation": "$7.5B",
     "years_active": 6,
     "peak_employees": "2,000",

@@ -1,102 +1,231 @@
-import { getCaseStudy, getSimilarCases } from '@/lib/db/case-studies';
-import { notFound } from 'next/navigation';
-import { compileMDX } from 'next-mdx-remote/rsc';
-import { Metadata } from 'next';
-import { EditorialHero } from '@/components/case-study/editorial-hero';
-import { EditorialBody } from '@/components/case-study/editorial-body';
+import type { Metadata } from "next"
+import Link from "next/link"
+import { notFound } from "next/navigation"
+import type { CaseStudy } from "@/lib/db/case-studies"
+import { formatCurrencyCompact } from "@/lib/utils"
+import fs from "fs"
+import path from "path"
+import { MDXRemote } from "next-mdx-remote/rsc"
+import remarkGfm from "remark-gfm"
 
-export const revalidate = 3600;
-
-export async function generateStaticParams() {
-  const { supabase } = await import('@/lib/db/config');
-  const { data: cases } = await supabase
-    .from('case_studies')
-    .select('slug')
-    .eq('published', true);
-  return (cases || []).map((c) => ({ slug: c.slug }));
+interface PageProps {
+  params: Promise<{ slug: string }>
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-  const { slug } = await params;
-  const study = await getCaseStudy(slug);
-  if (!study) return {};
-  return {
-    title: `${study.company_name} — Case Study | Startup Graveyard`,
-    description: study.summary,
-    openGraph: {
-      title: `${study.company_name} — Case Study`,
-      description: study.summary,
-      type: 'article',
-      images: [{
-        url: `/api/og?title=${encodeURIComponent(study.company_name)}&type=CASE_STUDY`,
-        width: 1200, height: 630,
-      }],
-    },
-  };
+function getCase(slug: string): CaseStudy | null {
+  try {
+    const fp = path.join(process.cwd(), "data", "case-studies", `${slug}.json`)
+    if (!fs.existsSync(fp)) return null
+    const d = JSON.parse(fs.readFileSync(fp, "utf-8"))
+    return d.published ? d : null
+  } catch { return null }
 }
 
-export default async function CaseStudyPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
-  const study = await getCaseStudy(slug);
-  if (!study) return notFound();
+function getAllCases(): CaseStudy[] {
+  const dir = path.join(process.cwd(), "data", "case-studies")
+  try {
+    return fs.readdirSync(dir)
+      .filter((f) => f.endsWith(".json"))
+      .map((f) => JSON.parse(fs.readFileSync(path.join(dir, f), "utf-8")))
+      .filter((c) => c.published)
+  } catch { return [] }
+}
 
-  const similarCases = await getSimilarCases(study.id);
+function formatCurrency(value: number): string {
+  if (!value) return "N/A"
+  return formatCurrencyCompact(value)
+}
 
-  const mdxComponents = {};
-  const { content } = await compileMDX({
-    source: study.content || '# Dossier Content Pending\n\nFull investigation is currently being finalized.',
-    components: mdxComponents,
-  });
+function RiskBar({ label, score }: { label: string; score: number }) {
+  return (
+    <div>
+      <span>{label}</span>
+      <span>{score}%</span>
+    </div>
+  )
+}
 
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Article',
-    headline: `${study.company_name} — Case Study | Startup Graveyard`,
-    description: study.summary,
-    datePublished: study.published_at || undefined,
-    author: { '@type': 'Organization', name: 'Startup Graveyard' },
-    about: {
-      '@type': 'Corporation',
-      name: study.company_name,
-      industry: study.industry || undefined,
-      foundingDate: study.founded_year?.toString(),
-      dissolutionDate: study.shutdown_year?.toString(),
-    },
-    keywords: ['startup failure', 'case study', study.industry, ...(study.failure_reasons || [])].filter(Boolean).join(', '),
-  };
+function extractContent(mdx: string): string {
+  const match = mdx.match(/```mdx\n([\s\S]*?)```/)
+  return match ? match[1].trim() : mdx.trim()
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params
+  const c = getCase(slug)
+  if (!c) return { title: "Case Not Found" }
+  return { title: c.company_name, description: c.summary }
+}
+
+export default async function CasePage({ params }: PageProps) {
+  const { slug } = await params
+  const c = getCase(slug)
+  if (!c) notFound()
+
+  const allCases = getAllCases()
+  const related = allCases
+    .filter((x) => x.slug !== slug && (x.industry === c.industry || x.failure_reasons?.some((r) => c.failure_reasons?.includes(r))))
+    .slice(0, 3)
+
+  const lifespan = c.founded_year && c.shutdown_year ? c.shutdown_year - c.founded_year : null
+  const rawContent = c.content ? extractContent(c.content) : ""
+  const cAny = c as unknown as { investors?: string[]; founders?: string[] }
 
   return (
-    <main className="min-h-screen bg-[var(--cream-base)]">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-
-      <div className="fixed top-0 left-0 w-full h-0.5 z-50 bg-[var(--cream-dark)]/30">
-        <div id="scroll-progress-bar" className="h-full bg-[var(--rust-accent)] transition-all duration-100" style={{ width: '0%' }} />
-        <ScrollProgress />
+    <main>
+      <div>
+        <Link href="/explore">Back to archive</Link>
       </div>
 
-      <EditorialHero study={study} />
+      <section>
+        <p>
+          {c.industry || "General"}
+          {c.shutdown_year && <span>{c.shutdown_year}</span>}
+          <span>{c.case_number}</span>
+        </p>
+        <h1>{c.company_name}</h1>
+        <p>{c.summary}</p>
+      </section>
 
-      <div className="mx-auto max-w-[960px] px-6 py-16 md:py-24">
-        <EditorialBody study={study} narrativeContent={content} similarCases={similarCases} />
-      </div>
+      <section>
+        <p>Case File</p>
+        <div>
+          {c.founded_year && (
+            <div>
+              <p>Founded</p>
+              <p>{c.founded_year}</p>
+            </div>
+          )}
+          {c.shutdown_year && (
+            <div>
+              <p>Shutdown</p>
+              <p>{c.shutdown_year}</p>
+            </div>
+          )}
+          {lifespan && (
+            <div>
+              <p>Lifespan</p>
+              <p>{lifespan} years</p>
+            </div>
+          )}
+          {c.funding_raised && (
+            <div>
+              <p>Funding Raised</p>
+              <p>{formatCurrency(c.funding_raised)}</p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {c.risk_scores && Object.keys(c.risk_scores).length > 0 && (
+        <section>
+          <p>Risk Assessment</p>
+          <div>
+            {Object.entries(c.risk_scores).map(([key, score]) => (
+              <RiskBar key={key} label={key} score={score as number} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section>
+        <div>
+          <p>Failure Reasons</p>
+          <ul>
+            {(c.failure_reasons || []).map((r) => (
+              <li key={r}>{r}</li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <p>Lessons</p>
+          <ul>
+            {(c.lessons || []).map((l) => (
+              <li key={l}>{l}</li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      {rawContent && (
+        <section>
+          <p>Narrative</p>
+          <div>
+            <MDXRemote source={rawContent} options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }} />
+          </div>
+        </section>
+      )}
+
+      {(c.tags || []).length > 0 && (
+        <section>
+          <p>Tags</p>
+          <div>
+            {(c.tags || []).map((t) => <span key={t}>{t}</span>)}
+          </div>
+        </section>
+      )}
+
+      {(cAny.investors || cAny.founders) && (
+        <section>
+          <div>
+            {cAny.investors && (
+              <div>
+                <p>Investors</p>
+                <div>
+                  {cAny.investors.map((i) => <span key={i}>{i}</span>)}
+                </div>
+              </div>
+            )}
+            {cAny.founders && (
+              <div>
+                <p>Founders</p>
+                <div>
+                  {cAny.founders.map((f) => <span key={f}>{f}</span>)}
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {c.metrics && (
+        <section>
+          <p>Metrics</p>
+          <div>
+            {Object.entries(c.metrics as Record<string, string>).map(([key, val]) => (
+              <div key={key}>
+                <p>{key.replace(/_/g, " ")}</p>
+                <p>{String(val)}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {related.length > 0 && (
+        <section>
+          <p>Related</p>
+          <h2>Similar failures</h2>
+          <ul>
+            {related.map((r) => (
+              <li key={r.slug}>
+                <Link href={`/case/${r.slug}`}>
+                  <span>{r.industry || "General"}</span>
+                  {r.shutdown_year && <span>{r.shutdown_year}</span>}
+                  <span>{r.company_name}</span>
+                  <span>{r.summary}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <section>
+        <h3>Want to learn more?</h3>
+        <p>Ask Graveyard Intelligence about this case or compare it to others.</p>
+        <Link href="/ask">Ask AI</Link>
+      </section>
     </main>
-  );
-}
-
-function ScrollProgress() {
-  return (
-    <script
-      dangerouslySetInnerHTML={{
-        __html: `
-          document.addEventListener('scroll', function() {
-            var scrollTop = window.scrollY;
-            var docHeight = document.documentElement.scrollHeight - window.innerHeight;
-            var progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-            var bar = document.getElementById('scroll-progress-bar');
-            if (bar) bar.style.width = progress + '%';
-          });
-        `,
-      }}
-    />
-  );
+  )
 }

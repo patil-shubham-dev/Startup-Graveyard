@@ -5,7 +5,7 @@
   "founded_year": 2016,
   "shutdown_year": 2022,
   "industry": "Autonomous Delivery",
-  "funding_raised": 150000000000,
+  "funding_raised": 100000000000,
   "employees_peak": 200,
   "valuation_peak": 150000000000,
   "investors": [
@@ -43,7 +43,7 @@
     "burn": 10
   },
   "metrics": {
-    "capital_raised": "$1.5B",
+    "capital_raised": "$1.0B",
     "peak_valuation": "$1.5B",
     "years_active": 6,
     "peak_employees": "200",

@@ -1,9 +1,9 @@
 {
   "company_name": "Katerra",
   "slug": "katerra",
-  "summary": "Katerra was a construction technology company that aimed to revolutionize the building industry with its software and manufacturing capabilities. Despite raising significant funding, the company struggled to achieve profitability and ultimately shut down in 2022.",
+  "summary": "Katerra was a construction technology company that aimed to revolutionize the building industry with its software and manufacturing capabilities. Despite raising significant funding, the company struggled to achieve profitability and ultimately shut down in 2021.",
   "founded_year": 2015,
-  "shutdown_year": 2022,
+  "shutdown_year": 2021,
   "industry": "Hardware",
   "country": "US",
   "business_model": "Hardware + Subscription",
@@ -12,7 +12,7 @@
     "Paul Savage",
     "Matt Kavanaugh"
   ],
-  "funding_raised": 150000000000,
+  "funding_raised": 200000000000,
   "employees_peak": 1500,
   "valuation_peak": 150000000000,
   "investors": [
@@ -56,7 +56,7 @@
     "burn": 80
   },
   "metrics": {
-    "capital_raised": "$1.5B",
+    "capital_raised": "$2B",
     "peak_valuation": "$15B",
     "years_active": 7,
     "peak_employees": "1,500",

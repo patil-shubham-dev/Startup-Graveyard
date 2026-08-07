@@ -3,9 +3,9 @@
   "slug": "convoy",
   "summary": "Convoy was a US-based logistics and freight brokerage startup that failed to scale despite significant funding.",
   "founded_year": 2015,
-  "shutdown_year": 2021,
+  "shutdown_year": 2023,
   "industry": "Logistics and Freight Brokerage",
-  "funding_raised": 150000000000,
+  "funding_raised": 93000000000,
   "employees_peak": 500,
   "valuation_peak": 1500000000000,
   "investors": [
@@ -48,7 +48,7 @@
     "burn": 70
   },
   "metrics": {
-    "capital_raised": "$1.5B",
+    "capital_raised": "$930M",
     "peak_valuation": "$15B",
     "years_active": 6,
     "peak_employees": "500",

@@ -2,57 +2,33 @@
 
 > **"He who does not learn from history is condemned to repeat it. He who learns from failure is destined to survive."**
 
-Startup Graveyard AI is a professional forensic intelligence platform designed to deconstruct startup failures. It transforms raw data from billion-dollar collapses into actionable intelligence reports. Built with a "Forensic Dossier" aesthetic, the platform leverages advanced RAG (Retrieval-Augmented Generation) and predictive AI to help founders identify fatal risks before they manifest.
+Startup Graveyard AI is a case study library and AI-powered research platform that deconstructs startup failures. It turns documented collapses into structured, searchable intelligence — backed by retrieval-augmented AI — so founders and researchers can identify fatal risks before they manifest.
 
 ---
 
-## 📸 Platform Interface
+## 🧠 Intelligence Modules
 
-### 1. Forensic Archive Dashboard
-Our minimalist dashboard offers real-time visualization of startup mortality rates, total venture capital lost, and failure case archives.
-![Forensic Archive Dashboard](public/screenshots/homepage.png)
-
-### 2. Forensic Autopsy Case Study
-Classified dossier layout featuring Failure DNA profiles, capital decay charts, and chronological post-mortem analysis.
-![Case Study Dossier](public/screenshots/dossier.png)
-
----
-
-## 🏛️ Intelligence Modules
-
-- **Forensic Autopsy Archive**: A high-density library of failed ventures. Each entry features a "Failure DNA" map, capital decay metrics, and chronological evidence timelines.
-- **AI Pre-Mortem Engine**: An interactive interrogation module. Submit your venture details to receive a 4-stage forensic risk report, comparing your strategy against 1,000+ historical fail-points.
-- **The Graveyard Keeper (AI Assistant)**: A streaming, contextual intelligence officer capable of answering complex research queries about market hazards and execution errors.
-- **Insights Dashboard**: Real-time visualization of startup mortality rates, industry-specific risks, and capital burn taxonomies.
-
----
-
-## 📐 Design System & CSS Philosophy
-The UI is inspired by classified intelligence dossiers and investigative boards:
-* **Anti-Aliased Typography:** Explicitly configures pixel-perfect font scaling. Avoids overlay layers that disrupt subpixel antialiasing.
-* **Refined Grids:** Uses fluid responsive grids (`featured-cases-grid` and `pattern-grid`) scaling dynamically from 4-columns on desktop to 1-column on mobile.
-* **Tactile Texture:** Displays a subtle dot pattern directly inside the page background rather than z-index viewport overlays, ensuring crisp text legibility.
-* **Palette:**
-  * **Background Base:** `#F5F0E8` (Warm Cream Base)
-  * **Text Primary:** `#1A1714` (Deep Charcoal Ink)
-  * **Primary Accent:** `#B54A2A` (Rust Red)
+- **Forensic Archive**: A library of failed ventures (22 documented cases and growing). Each entry documents funding history, timelines, root causes, and a structured failure analysis.
+- **AI Pre-Mortem Engine**: An interactive multi-stage diagnostic. Submit your venture details to receive a risk report comparing your strategy against the archived failure patterns.
+- **Graveyard Intelligence (AI Assistant)**: A streaming, contextual chat assistant that answers research questions about market hazards and execution errors using RAG over the case archive.
+- **Insights Dashboard**: Analytics and charts surfacing failure patterns — reasons, industries, funding lost, and more.
+- **Content Review Queue**: AI-generated case studies are fact-checked against web sources and pass through a human review queue before publication.
 
 ---
 
 ## 🛠️ Technical Architecture
 
 ### Core Stack
-- **Framework**: [Next.js 15](https://nextjs.org/) (App Router, ISR, TypeScript Strict)
-- **Styling**: [Tailwind CSS v4](https://tailwindcss.com/) + [Framer Motion](https://www.framer.com/motion/)
-- **Database & Vector Store**: [Supabase](https://supabase.com/) (PostgreSQL + pgvector)
-- **AI Integration**: [Vercel AI SDK v6](https://sdk.vercel.ai/docs)
+- **Framework**: Next.js 15 (App Router, TypeScript strict)
+- **Styling**: Tailwind CSS v4 + Framer Motion
+- **Database & Vector Store**: Supabase (PostgreSQL + pgvector, 1024-dim embeddings via `nvidia/nv-embedqa-e5-v5`)
+- **AI Integration**: Vercel AI SDK v6 (`ai`, `@ai-sdk/openai`)
 
-### AI Provider Agnostic
-The platform is built on top of the **Vercel AI SDK**, making it completely provider-agnostic. While it is configured for **NVIDIA NIM (DeepSeek-V3)** by default for high-performance forensic analysis, you can easily switch to:
-- **OpenAI** (GPT-4o)
-- **Anthropic** (Claude 3.5 Sonnet)
-- **Google** (Gemini 1.5 Pro)
-- **Groq/Local Models** (Llama 3)
+### AI Provider
+The AI layer is built on the Vercel AI SDK and is configured for **NVIDIA NIM** by default (`https://integrate.api.nvidia.com/v1`), using **`meta/llama-3.1-70b-instruct`** for chat and generation (overridable via the `AI_DEFAULT_MODEL` env var). Because it goes through the provider-agnostic AI SDK, swapping in another OpenAI-compatible provider is a config change rather than a rewrite.
+
+### Automation
+`scripts/daily-autopsy.ts` generates new case study drafts on a schedule (GitHub Actions, daily at 05:00 UTC), verifies facts against live web search, scores them, and places them in the review queue for human approval.
 
 ---
 
@@ -61,7 +37,7 @@ The platform is built on top of the **Vercel AI SDK**, making it completely prov
 ### Prerequisites
 - Node.js 20+
 - Supabase Account
-- AI Provider API Key (NVIDIA, OpenAI, etc.)
+- NVIDIA NIM API Key (from https://build.nvidia.com/)
 
 ### 1. Environment Configuration
 Copy `.env.example` to `.env.local` and fill in your values:
@@ -74,8 +50,11 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
 # AI Provider (from https://build.nvidia.com/)
 NVIDIA_API_KEY=your-nvidia-api-key-here
 
-# AI Model (optional, default: meta/llama-3.1-8b-instruct)
-AI_DEFAULT_MODEL=meta/llama-3.1-8b-instruct
+# AI Model (optional, default: meta/llama-3.1-70b-instruct)
+AI_DEFAULT_MODEL=meta/llama-3.1-70b-instruct
+
+# Admin emails for the content review queue (comma-separated)
+ADMIN_EMAILS=admin@example.com
 
 # Site URLs
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
@@ -83,7 +62,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
 ### 2. Database Initialization
-Execute the migrations found in `supabase/migrations/` and seed the database with the provided `supabase/seed.sql` to populate the initial graveyard archives.
+Execute the migrations found in `supabase/migrations/` (001–010) and seed the database with the provided `supabase/seed.sql` to populate the initial graveyard archives.
 
 ### 3. Launch Development Server
 ```bash
@@ -93,7 +72,18 @@ npm run dev
 
 ---
 
+## 🧪 Testing
+
+```bash
+npm test        # vitest unit tests
+npm run lint    # eslint
+npm run build   # production build
+```
+
+---
+
 ## 🤝 Contributing
-We are looking for forensic data contributors and AI engineers. Please see the `docs/` folder for the Architecture and PRD details.
+
+We are looking for forensic data contributors and AI engineers. See `docs/PRD.md` for product details and `supabase/migrations/` for the schema.
 
 *Built with 💀 by [patil-shubham-dev](https://github.com/patil-shubham-dev)*

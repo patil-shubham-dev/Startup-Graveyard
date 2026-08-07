@@ -5,7 +5,7 @@
   "founded_year": 2015,
   "shutdown_year": 2020,
   "industry": "Sustainable Living",
-  "funding_raised": 10000000000,
+  "funding_raised": 15000000000,
   "employees_peak": 50,
   "valuation_peak": 5000000000,
   "investors": [
@@ -41,7 +41,7 @@
     "burn": 80
   },
   "metrics": {
-    "capital_raised": "$100M",
+    "capital_raised": "$150M",
     "peak_valuation": "$500M",
     "years_active": 5,
     "peak_employees": "50",

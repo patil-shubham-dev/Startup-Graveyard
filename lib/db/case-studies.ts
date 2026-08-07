@@ -1,5 +1,13 @@
-import { supabase, isSupabaseConfigured } from './config';
+import { isSupabaseConfigured, createServerDataClient, supabaseAdmin } from './config';
 import { unstable_cache } from 'next/cache';
+
+let db: ReturnType<typeof createServerDataClient> | null = null;
+
+function getDb(): ReturnType<typeof createServerDataClient> {
+  if (!db) db = createServerDataClient();
+  if (!dbAvailable) throw new Error('Supabase is not configured');
+  return db!;
+}
 
 type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 
@@ -67,7 +75,7 @@ export const getCaseStudy = unstable_cache(
 
     try {
       const result = await withRetry(async () =>
-        supabase
+        getDb()
           .from('case_studies')
           .select('*')
           .eq('slug', slug)
@@ -85,89 +93,85 @@ export const getCaseStudy = unstable_cache(
   { revalidate: 3600, tags: ['case-studies'] }
 );
 
-export const listCaseStudies = unstable_cache(
-  async (params: {
-    industry?: string;
-    failType?: string;
-    search?: string;
-    country?: string;
-    fundingMin?: number;
-    fundingMax?: number;
-    yearMin?: number;
-    yearMax?: number;
-    limit?: number;
-    offset?: number;
-  } = {}): Promise<CaseStudy[]> => {
-    if (!dbAvailable) return EMPTY_ARRAY;
+export async function listCaseStudies(params: {
+  industry?: string;
+  failType?: string;
+  search?: string;
+  country?: string;
+  fundingMin?: number;
+  fundingMax?: number;
+  yearMin?: number;
+  yearMax?: number;
+  limit?: number;
+  offset?: number;
+} = {}): Promise<CaseStudy[]> {
+  if (!dbAvailable) return EMPTY_ARRAY;
 
-    try {
-      let query = supabase
-        .from('case_studies')
-        .select('*')
-        .eq('published', true)
-        .order('published_at', { ascending: false });
+  try {
+    let query = getDb()
+      .from('case_studies')
+      .select('*')
+      .eq('published', true)
+      .order('published_at', { ascending: false });
 
-      if (params.industry) {
-        query = query.eq('industry', params.industry);
-      }
-
-      if (params.failType) {
-        query = query.contains('failure_reasons', [params.failType]);
-      }
-
-      if (params.country) {
-        query = query.ilike('country', `%${params.country}%`);
-      }
-
-      if (params.fundingMin !== undefined) {
-        query = query.gte('funding_raised', params.fundingMin);
-      }
-
-      if (params.fundingMax !== undefined) {
-        query = query.lte('funding_raised', params.fundingMax);
-      }
-
-      if (params.yearMin !== undefined) {
-        query = query.gte('shutdown_year', params.yearMin);
-      }
-
-      if (params.yearMax !== undefined) {
-        query = query.lte('shutdown_year', params.yearMax);
-      }
-
-      if (params.search) {
-        const sanitized = params.search.replace(/[^a-zA-Z0-9\s-]/g, '').trim();
-        if (sanitized) {
-          query = query.or(
-            `company_name.ilike.%${sanitized}%,summary.ilike.%${sanitized}%,industry.ilike.%${sanitized}%`
-          );
-        }
-      }
-
-      if (params.limit) {
-        query = query.limit(params.limit);
-      }
-
-      if (params.offset) {
-        query = query.range(params.offset, params.offset + (params.limit || 20) - 1);
-      }
-
-      const result = await withRetry(async () => query);
-      if (result.error) return EMPTY_ARRAY;
-      return (result.data || EMPTY_ARRAY) as CaseStudy[];
-    } catch {
-      return EMPTY_ARRAY;
+    if (params.industry) {
+      query = query.eq('industry', params.industry);
     }
-  },
-  ['case-studies-list'],
-  { revalidate: 3600, tags: ['case-studies'] }
-);
+
+    if (params.failType) {
+      query = query.contains('failure_reasons', [params.failType]);
+    }
+
+    if (params.country) {
+      query = query.ilike('country', `%${params.country}%`);
+    }
+
+    if (params.fundingMin !== undefined) {
+      query = query.gte('funding_raised', params.fundingMin);
+    }
+
+    if (params.fundingMax !== undefined) {
+      query = query.lte('funding_raised', params.fundingMax);
+    }
+
+    if (params.yearMin !== undefined) {
+      query = query.gte('shutdown_year', params.yearMin);
+    }
+
+    if (params.yearMax !== undefined) {
+      query = query.lte('shutdown_year', params.yearMax);
+    }
+
+    if (params.search) {
+      const sanitized = params.search.replace(/[^a-zA-Z0-9\s-]/g, '').trim();
+      if (sanitized) {
+        query = query.or(
+          `company_name.ilike.%${sanitized}%,summary.ilike.%${sanitized}%,industry.ilike.%${sanitized}%`
+        );
+      }
+    }
+
+    if (params.limit) {
+      query = query.limit(params.limit);
+    }
+
+    if (params.offset) {
+      query = query.range(params.offset, params.offset + (params.limit || 20) - 1);
+    }
+
+    const result = await withRetry(async () => query);
+    if (result.error) return EMPTY_ARRAY;
+    return (result.data || EMPTY_ARRAY) as CaseStudy[];
+  } catch {
+    return EMPTY_ARRAY;
+  }
+}
 
 export async function getSimilarCases(id: string, limit = 3): Promise<CaseStudy[]> {
   if (!dbAvailable) return [];
 
   try {
-    const { data: current } = await supabase
+    const { data: current } = await getDb()
       .from('case_studies')
       .select('industry, tags')
       .eq('id', id)
@@ -175,7 +179,7 @@ export async function getSimilarCases(id: string, limit = 3): Promise<CaseStudy[
 
     if (!current) return [];
 
-    const { data, error } = await supabase
+    const { data, error } = await getDb()
       .from('case_studies')
       .select('*')
       .eq('published', true)
@@ -195,7 +199,7 @@ export const getGlobalStats = unstable_cache(
     if (!dbAvailable) return NOT_CONFIGURED_RESPONSE;
 
     try {
-      const { data, error } = await supabase.rpc('get_archive_stats');
+      const { data, error } = await getDb().rpc('get_archive_stats');
 
       if (error || !data) {
         return NOT_CONFIGURED_RESPONSE;
@@ -230,8 +234,8 @@ export const getInsightsData = unstable_cache(
 
     try {
       const [statsResult, fundingResult] = await Promise.all([
-        supabase.rpc('get_archive_stats'),
-        supabase
+        getDb().rpc('get_archive_stats'),
+        getDb()
           .from('case_studies')
           .select('shutdown_year, funding_raised')
           .eq('published', true)
@@ -320,7 +324,7 @@ export async function searchCaseStudies(embedding: number[], limit = 5) {
   if (!dbAvailable) return [];
 
   try {
-    const { data, error } = await supabase.rpc('match_case_studies', {
+    const { data, error } = await getDb().rpc('match_case_studies', {
       query_embedding: embedding,
       match_threshold: 0.5,
       match_count: limit,
@@ -351,7 +355,7 @@ export async function getTopCasesByFunding(limit = 2): Promise<Array<{
   if (!dbAvailable) return [];
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await getDb()
       .from('case_studies')
       .select('company_name, funding_raised, shutdown_year, slug')
       .eq('published', true)
@@ -370,7 +374,7 @@ export async function getIndustryCounts(): Promise<Array<{ industry: string; cou
   if (!dbAvailable) return [];
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await getDb()
       .from('case_studies')
       .select('industry')
       .eq('published', true)
@@ -396,7 +400,7 @@ export async function getOldestCase(): Promise<{ company_name: string; founded_y
   if (!dbAvailable) return null;
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await getDb()
       .from('case_studies')
       .select('company_name, founded_year, slug, industry')
       .eq('published', true)
@@ -415,7 +419,7 @@ export async function getNewestCase(): Promise<{ company_name: string; shutdown_
   if (!dbAvailable) return null;
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await getDb()
       .from('case_studies')
       .select('company_name, shutdown_year, slug, industry')
       .eq('published', true)
@@ -437,7 +441,7 @@ export async function getCaseByCompanyName(name: string): Promise<CaseStudy | nu
     const sanitized = name.replace(/[^a-zA-Z0-9\s'-]/g, '').trim();
     if (!sanitized) return null;
 
-    const { data, error } = await supabase
+    const { data, error } = await getDb()
       .from('case_studies')
       .select('*')
       .eq('published', true)
@@ -455,7 +459,7 @@ export async function getTotalFundingByIndustry(): Promise<Array<{ industry: str
   if (!dbAvailable) return [];
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await getDb()
       .from('case_studies')
       .select('industry, funding_raised')
       .eq('published', true)
@@ -488,7 +492,7 @@ export async function getCaseListForSidebar(): Promise<Array<{
   if (!dbAvailable) return [];
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await getDb()
       .from('case_studies')
       .select('id, slug, case_number, company_name, shutdown_year')
       .eq('published', true)
@@ -500,3 +504,88 @@ export async function getCaseListForSidebar(): Promise<Array<{
     return [];
   }
 }
+
+export interface LedgerStats {
+  documented: number;
+  published: number;
+  inReview: number;
+  industries: number;
+  avgLifespan: number;
+  span: string;
+}
+
+interface LedgerRow {
+  published: boolean;
+  industry: string | null;
+  founded_year: number | null;
+  shutdown_year: number | null;
+}
+
+function computeLedger(rows: LedgerRow[]): LedgerStats | null {
+  if (rows.length === 0) return null;
+
+  const publishedRows = rows.filter((r) => r.published);
+  const withYears = publishedRows.filter((r) => r.founded_year != null && r.shutdown_year != null);
+  const industries = new Set(publishedRows.map((r) => r.industry).filter(Boolean)).size;
+
+  const avgLifespan =
+    withYears.length > 0
+      ? withYears.reduce((sum, r) => sum + ((r.shutdown_year as number) - (r.founded_year as number)), 0) /
+        withYears.length
+      : 0;
+
+  const shutdowns = publishedRows
+    .map((r) => r.shutdown_year)
+    .filter((y): y is number => y != null)
+    .sort((a, b) => a - b);
+
+  const span =
+    shutdowns.length > 0
+      ? `${shutdowns[0]}–${String(shutdowns[shutdowns.length - 1]).slice(2)}`
+      : '—';
+
+  return {
+    documented: rows.length,
+    published: publishedRows.length,
+    inReview: rows.length - publishedRows.length,
+    industries,
+    avgLifespan: Math.round(avgLifespan * 10) / 10,
+    span,
+  };
+}
+
+/**
+ * Home-page ledger, sourced from the backend (Supabase).
+ *
+ * Prefers the service-role client so unpublished "in review" drafts are
+ * counted; falls back to the anon client (published rows only) when no
+ * service key is present. Returns null when Supabase is not configured so
+ * callers can fall back to the local JSON snapshot (dev mode).
+ */
+export const getLedgerStats = unstable_cache(
+  async (): Promise<LedgerStats | null> => {
+    if (!dbAvailable) return null;
+
+    try {
+      if (supabaseAdmin) {
+        const { data, error } = await supabaseAdmin
+          .from('case_studies')
+          .select('published, industry, founded_year, shutdown_year');
+        if (error || !data) return null;
+        return computeLedger(data as LedgerRow[]);
+      }
+
+      const { data, error } = await getDb()
+        .from('case_studies')
+        .select('published, industry, founded_year, shutdown_year')
+        .eq('published', true);
+      if (error || !data) return null;
+      // Anon RLS hides unpublished drafts, so the documented count equals published here.
+      return computeLedger(data as LedgerRow[]);
+    } catch {
+      return null;
+    }
+  },
+  ['ledger-stats'],
+  { revalidate: 3600, tags: ['stats', 'case-studies'] }
+);

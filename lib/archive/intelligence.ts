@@ -7,6 +7,7 @@ import {
   getTotalFundingByIndustry,
   listCaseStudies,
 } from '@/lib/db/case-studies';
+import { centsToDollars } from '@/lib/utils/format';
 
 export interface ArchiveReport {
   type: 'archive_stats' | 'company_lookup' | 'industry_breakdown' | 'comparison' | 'general';
@@ -115,7 +116,7 @@ export async function queryArchive(userMessage: string): Promise<ArchiveReport> 
       if (stats.totalCases > 0) {
         lines.push(`VERIFIED_ARCHIVE_DATA:`);
         lines.push(`- Total published case studies: ${stats.totalCases}`);
-        lines.push(`- Total funding tracked across all cases: $${(stats.totalBurned / 1_000_000_000).toFixed(2)}B`);
+        lines.push(`- Total funding tracked across all cases: $${(centsToDollars(stats.totalBurned) / 1_000_000_000).toFixed(2)}B`);
 
         if (industryCounts.length > 0) {
           lines.push(`- Industries represented: ${industryCounts.length}`);
@@ -130,7 +131,7 @@ export async function queryArchive(userMessage: string): Promise<ArchiveReport> 
         }
 
         if (totalCases.length > 0) {
-          lines.push(`- Highest-funded cases: ${totalCases.map(c => `[[${c.company_name}]] ($${(c.funding_raised / 1_000_000).toFixed(0)}M)`).join(', ')}`);
+          lines.push(`- Highest-funded cases: ${totalCases.map(c => `[[${c.company_name}]] ($${(centsToDollars(c.funding_raised) / 1_000_000_000).toFixed(1)}B)`).join(', ')}`);
         }
       } else {
         lines.push('VERIFIED_ARCHIVE_DATA: The archive exists but current statistics are unavailable. Do not fabricate counts.');
@@ -142,7 +143,7 @@ export async function queryArchive(userMessage: string): Promise<ArchiveReport> 
         verifiedData: lines.join('\n'),
         retrievedCases: totalCases.map(c => ({
           company_name: c.company_name,
-          summary: `Raised $${(c.funding_raised / 1_000_000).toFixed(0)}M, shut down ${c.shutdown_year || 'unknown'}`,
+          summary: `Raised $${(centsToDollars(c.funding_raised) / 1_000_000_000).toFixed(1)}B, shut down ${c.shutdown_year || 'unknown'}`,
           slug: c.slug,
         })),
       };
@@ -217,7 +218,7 @@ export async function queryArchive(userMessage: string): Promise<ArchiveReport> 
 - Company: [[${company.company_name}]]
 - Industry: ${company.industry || 'Unknown'}
 - Founded: ${company.founded_year || 'Unknown'} | Shut down: ${company.shutdown_year || 'Unknown'}
-- Funding raised: $${(company.funding_raised || 0).toLocaleString()}
+- Funding raised: $${(centsToDollars(company.funding_raised) || 0).toLocaleString()}
 - Summary: ${company.summary}
 - Failure reasons: ${(company.failure_reasons || []).join(', ')}
 - Key lessons: ${(company.lessons || []).join(', ')}
@@ -282,7 +283,7 @@ export async function queryArchive(userMessage: string): Promise<ArchiveReport> 
         lines.push(`- [[${c.company_name}]]:`);
         lines.push(`  Industry: ${c.industry || 'Unknown'}`);
         lines.push(`  Founded: ${c.founded_year || '?'} → Shut down: ${c.shutdown_year || '?'}`);
-        lines.push(`  Raised: $${(c.funding_raised || 0).toLocaleString()}`);
+        lines.push(`  Raised: $${(centsToDollars(c.funding_raised) || 0).toLocaleString()}`);
         lines.push(`  Failure reasons: ${(c.failure_reasons || []).join(', ')}`);
         lines.push(`  Key lesson: ${(c.lessons || []).slice(0, 2).join('; ')}`);
       });

@@ -36,7 +36,9 @@ export async function middleware(request: NextRequest) {
     await supabase.auth.getSession();
   }
 
-  if (request.nextUrl.pathname.startsWith('/api/')) {
+  const { pathname } = request.nextUrl;
+
+  if (pathname.startsWith('/api/')) {
     const origin = request.headers.get('origin');
 
     if (request.method === 'OPTIONS') {
@@ -59,11 +61,17 @@ export async function middleware(request: NextRequest) {
       response.headers.set('Access-Control-Allow-Origin', origin!);
       response.headers.set('Access-Control-Allow-Credentials', 'true');
     }
+
+    // API responses should not be cached by CDNs
+    response.headers.set('Cache-Control', 'no-store, must-revalidate');
+  } else if (pathname.startsWith('/ask') || pathname.startsWith('/pre-mortem') || pathname.startsWith('/explore') || pathname.startsWith('/insights')) {
+    // Dynamic pages — do not cache (use ISR via revalidate instead)
+    response.headers.set('Cache-Control', 'no-store, must-revalidate');
   }
 
   return response;
 }
 
 export const config = {
-  matcher: ['/api/:path*', '/ask', '/pre-mortem'],
+  matcher: ['/api/:path*', '/ask', '/ask/:path*', '/pre-mortem', '/pre-mortem/:path*'],
 };

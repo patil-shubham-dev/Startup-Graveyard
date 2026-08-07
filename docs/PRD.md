@@ -22,21 +22,22 @@ The startup ecosystem suffers from "success bias" and collective amnesia regardi
 
 ### 4.1 The Case Study Library ("The Graveyard")
 A database of structured "intelligence dossiers" for failed startups.
-- **Narrative & Timeline:** Full origin-to-failure arc with dated evidence cards.
+- **Narrative & Timeline:** Full origin-to-failure arc with dated evidence.
 - **Financials:** Funding history and round-by-round breakdown.
-- **Forensic Analysis:** Root cause analysis and Failure DNA radar charts (PMF, Burn, Competition, Execution, Timing, Team).
-- **Daily Updates:** Automated AI pipeline (GitHub Actions) for new case publication.
+- **Forensic Analysis:** Root cause analysis and structured failure taxonomy (PMF, Burn, Competition, Execution, Timing, Team).
+- **Daily Updates:** Automated AI pipeline (GitHub Actions) that drafts new cases and fact-checks them against web sources.
+- **Human Review:** Drafts enter a review queue; nothing publishes without admin approval.
 
 ### 4.2 The Pre-Mortem Engine
 An interactive tool for founders to stress-test their ideas.
-- **Pitch Intake:** 50-500 word startup description.
-- **AI Interrogation:** 5 targeted questions (Market, Revenue, Moat, Team, Timing).
-- **Intelligence Report:** Generates risk scores, strength zones, and failure risk zones linked to real case studies.
+- **Pitch Intake:** Startup description input.
+- **AI Interrogation:** A set of targeted questions (Market, Revenue, Moat, Team, Timing).
+- **Intelligence Report:** Generates risk scores, strength zones, and failure risk zones linked to real case studies; reports can be shared.
 
 ### 4.3 Ask the Graveyard (RAG Chat)
 A research assistant grounded in the case study database.
-- **Retrieval-Augmented Generation:** Answers based strictly on database evidence.
-- **Inline Case Cards:** Renders interactive summary cards when mentioning companies.
+- **Retrieval-Augmented Generation:** Answers based on database evidence via semantic (vector) search.
+- **Case References:** Mentions of archived companies are grounded in the real case study records.
 
 ### 4.4 Insights Dashboard
 Macro-level analytics surfacing failure patterns.
@@ -47,19 +48,20 @@ Macro-level analytics surfacing failure patterns.
 ### 5.1 Tech Stack
 - **Framework:** Next.js 15 (App Router, TS Strict).
 - **Styling:** Tailwind CSS v4 + Framer Motion.
-- **Database/Auth:** Supabase (PostgreSQL + pgvector + Auth).
-- **AI:** Gemini 2.0 Flash via OpenRouter.
+- **Database/Auth:** Supabase (PostgreSQL + pgvector + Auth, email/password).
+- **AI:** NVIDIA NIM (`meta/llama-3.1-70b-instruct`) via the Vercel AI SDK; embeddings via `nvidia/nv-embedqa-e5-v5` (1024-dim).
 - **Content:** MDX via next-mdx-remote.
+- **Review Pipeline:** Admin review API (`ADMIN_EMAILS` allowlist) + web fact-checking in the generation script.
 
 ### 5.2 Database Schema Highlights
-- `case_studies`: Core data + pgvector embeddings.
+- `case_studies`: Core data + pgvector embeddings (1024-dim), review lifecycle (`review_status`, `fact_check_score`, `verified_sources`).
 - `premortem_sessions`: User pitch data and generated reports.
 - `chat_sessions`: Persistent RAG chat history.
+- `submissions`: Community-submitted cases feeding the review queue.
+- `rate_limits`: API rate limiting.
 
-## 6. Design System: "Forensic Intelligence"
-- **Aesthetic:** Premium dark mode, editorial, high-density data.
-- **Typography:** Fraunces (Headlines), Inter (Body), JetBrains Mono (Stats).
-- **Color Palette:** Deep backgrounds (#08080D), Violet primary (#7C3AED), Amber warnings (#F59E0B).
+## 6. Design System
+**Status: under active redesign.** Prior visual directions (dark "Forensic Intelligence" and a warm-cream dossier theme) have both been superseded; UI components are being rebuilt and no design language, typography, or palette is currently committed. See `PRODUCT.md` for product truth and `DESIGN.md` once the new world is established.
 
 ## 7. Success Metrics
 - Growth of the case study database.

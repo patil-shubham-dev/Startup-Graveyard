@@ -9,6 +9,9 @@ export async function GET(req: NextRequest) {
     const title = searchParams.get('title') || 'Startup Graveyard';
     const type = searchParams.get('type') || 'CASE_STUDY';
 
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://startupgraveyard.com';
+    const bg = `${siteUrl}/og-bg.png`;
+
     return new ImageResponse(
       (
         <div
@@ -19,8 +22,8 @@ export async function GET(req: NextRequest) {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: '#1a1a1a',
-            backgroundImage: 'radial-gradient(circle at 25% 25%, #2a2a2a 0%, #0a0a0a 100%)',
+            backgroundImage: `url(${bg})`,
+            backgroundSize: '1200px 630px',
             position: 'relative',
             fontFamily: 'Georgia, serif',
           }}
@@ -46,6 +49,7 @@ export async function GET(req: NextRequest) {
                 position: 'absolute',
                 top: -1,
                 left: 48,
+                display: 'flex',
                 backgroundColor: '#1a1a1a',
                 padding: '0 12px',
                 fontSize: 10,

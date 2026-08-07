@@ -1,72 +1,57 @@
-import type { Metadata } from 'next';
+import type { Metadata } from "next"
+import { getLedgerStats } from "@/lib/db/case-studies"
+import { readAllCases, ledgerFromCases } from "@/lib/archive-ledger"
 
 export const metadata: Metadata = {
-  title: 'About | Startup Graveyard',
-  description: 'About the Startup Graveyard forensic intelligence archive.',
-};
+  title: "About",
+  description: "About the Start-up Graveyard project.",
+}
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const cases = readAllCases()
+  const ledger = (await getLedgerStats()) || ledgerFromCases(cases)
+  const documented = ledger?.documented ?? cases.length
+  const industries = ledger?.industries ?? 0
+
   return (
-    <main className="sg-container section-pad" style={{ minHeight: '80vh' }}>
-      <div style={{ maxWidth: '640px', margin: '0 auto' }}>
-        <div
-          style={{
-            fontFamily: 'var(--font-dm-mono), monospace',
-            fontSize: '10px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.14em',
-            color: 'var(--rust-accent)',
-            marginBottom: '12px',
-          }}
-        >
-          FORENSIC ARCHIVE
+    <main className="mx-auto max-w-3xl px-5 py-20 sm:px-6 md:py-28">
+      <p className="label-catalog">About the archive</p>
+      <h1 className="mt-5 text-4xl font-semibold leading-[1.08] tracking-[-0.02em] text-ink sm:text-5xl">
+        About the Graveyard
+      </h1>
+
+      <div className="mt-10 space-y-6 text-[16px] leading-relaxed text-ink-mute">
+        <p>
+          Start-up Graveyard is a forensic intelligence archive documenting
+          why startups fail. Every case is researched, structured, and
+          analyzed to extract actionable lessons for founders, investors, and
+          students.
+        </p>
+
+        <div className="border-t border-line pt-6">
+          <h2 className="text-xl font-semibold tracking-tight text-ink">
+            Our mission
+          </h2>
+          <p className="mt-3">
+            Failure is the best teacher, but only if you study it. We
+            document startup failures forensically so the next generation of
+            founders can learn from the dead.
+          </p>
         </div>
-        <h1 className="t-h1" style={{ marginBottom: '24px' }}>About the Archive</h1>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          <section>
-            <h2 className="t-h3" style={{ marginBottom: '8px', fontFamily: 'var(--font-cormorant), Georgia, serif' }}>What This Is</h2>
-            <p className="t-body" style={{ color: 'var(--ink-muted)' }}>
-              Startup Graveyard is a forensic intelligence archive documenting startup failures. We analyze why companies die — the strategy errors, market misfires, cash mismanagement, and team fractures — so founders can learn from the dead.
-            </p>
-          </section>
+        <p>
+          The archive currently contains {documented} documented case studies
+          across {industries} industries, spanning from food tech to fintech,
+          hardware to healthcare. Each case study follows a consistent format:
+          founding story, rise, fall, failure analysis, and key lessons.
+        </p>
 
-          <section>
-            <h2 className="t-h3" style={{ marginBottom: '8px', fontFamily: 'var(--font-cormorant), Georgia, serif' }}>The Forensics Approach</h2>
-            <p className="t-body" style={{ color: 'var(--ink-muted)' }}>
-              Each case study is assembled from publicly available sources: news reports, investor notes, employee accounts, and financial disclosures. We do not speculate — we assemble evidence and identify failure patterns. Our AI-powered analysis engine cross-references every case against historical data to surface common failure archetypes.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="t-h3" style={{ marginBottom: '8px', fontFamily: 'var(--font-cormorant), Georgia, serif' }}>Why It Exists</h2>
-            <p className="t-body" style={{ color: 'var(--ink-muted)' }}>
-              90% of startups fail. Most of those failures follow recognizable patterns that have been documented for decades. We believe that by making this data accessible and searchable, we can help founders identify death spirals before they happen — and build companies that last.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="t-h3" style={{ marginBottom: '8px', fontFamily: 'var(--font-cormorant), Georgia, serif' }}>The Data</h2>
-            <p className="t-body" style={{ color: 'var(--ink-muted)' }}>
-              Cases include funding history, founder backgrounds, market conditions at time of failure, product timelines, and documented failure reasons. All data points link back to original sources. The archive is updated regularly as new shutdowns are confirmed.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="t-h3" style={{ marginBottom: '8px', fontFamily: 'var(--font-cormorant), Georgia, serif' }}>The Graveyard Keeper AI</h2>
-            <p className="t-body" style={{ color: 'var(--ink-muted)' }}>
-              The Graveyard Keeper is a forensic AI that analyzes startup failure patterns. It draws on vector-searchable case embeddings to provide context-aware analysis. Available under the Forensic Chat tab, it can answer questions about specific cases, failure patterns, and comparative risk analysis.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="t-h3" style={{ marginBottom: '8px', fontFamily: 'var(--font-cormorant), Georgia, serif' }}>Colophon</h2>
-            <p className="t-body" style={{ color: 'var(--ink-muted)' }}>
-              Built with Next.js and Supabase. Fonts: Cormorant Garamond, Space Grotesk, IBM Plex Mono. Vector embeddings powered by NVIDIA NIM. Themed after historical autopsy reports and forensic case files.
-            </p>
-          </section>
-        </div>
+        <p>
+          Beyond the archive, we offer AI-powered research tools — Graveyard
+          Intelligence for querying the data, and a Pre-mortem diagnostic tool
+          for evaluating new ideas against known failure patterns.
+        </p>
       </div>
     </main>
-  );
+  )
 }

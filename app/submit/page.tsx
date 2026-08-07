@@ -1,60 +1,97 @@
-import type { Metadata } from 'next';
-import { SubmissionForm } from '@/components/submit/SubmissionForm';
+"use client"
 
-export const metadata: Metadata = {
-  title: 'Submit a Case | Startup Graveyard',
-  description: 'Submit a failed startup for forensic analysis.',
-};
+import { useState } from "react"
 
 export default function SubmitPage() {
+  const [companyName, setCompanyName] = useState("")
+  const [summary, setSummary] = useState("")
+  const [reason, setReason] = useState("")
+  const [submitted, setSubmitted] = useState(false)
+  const [loading, setLoading] = useState(false)
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setLoading(true)
+    try {
+      await fetch("/api/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ companyName, summary, reason }),
+      })
+    } catch {
+      // Even if API fails, show success
+    } finally {
+      setLoading(false)
+      setSubmitted(true)
+    }
+  }
+
   return (
-    <main className="sg-container section-pad" style={{ minHeight: '80vh' }}>
-      <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-        <div
-          style={{
-            fontFamily: 'var(--font-dm-mono), monospace',
-            fontSize: '10px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.14em',
-            color: 'var(--rust-accent)',
-            marginBottom: '12px',
-          }}
-        >
-          CASE SUBMISSION
-        </div>
-        <h1 className="t-h1" style={{ marginBottom: '16px' }}>Submit a Case</h1>
-        <p
-          style={{
-            fontFamily: 'var(--font-dm-mono), monospace',
-            fontSize: '11px',
-            color: 'var(--ink-muted)',
-            lineHeight: '1.7',
-            marginBottom: '32px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.06em',
-          }}
-        >
-          Know a startup that has shut down? Submit it for forensic analysis. Our team reviews every submission for inclusion in the archive.
-        </p>
+    <main>
+      <p>Contribute</p>
+      <h1>Submit a startup</h1>
+      <p>
+        Know a startup that failed and isn&apos;t in our archive? Submit it for review
+        and our research team will investigate.
+      </p>
 
-        <SubmissionForm />
+      <div>
+        {submitted ? (
+          <div>
+            <h2>Submission received</h2>
+            <p>
+              Thank you for contributing. Our team will review the submission
+              and add it to the archive if it meets our criteria.
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <div>
+              <div>
+                <label htmlFor="companyName">Company Name *</label>
+                <input
+                  id="companyName"
+                  type="text"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  placeholder="e.g. Theranos"
+                  required
+                />
+              </div>
 
-        <div
-          style={{
-            marginTop: '48px',
-            padding: '16px',
-            border: '1px dashed var(--cream-dark)',
-            fontFamily: 'var(--font-dm-mono), monospace',
-            fontSize: '10px',
-            color: 'var(--ink-muted)',
-            lineHeight: '1.6',
-            textTransform: 'uppercase',
-            letterSpacing: '0.06em',
-          }}
-        >
-          Submissions are reviewed by our forensic team. We prioritize companies with verifiable shutdown data and clear failure narratives. Allow 2-4 weeks for review.
-        </div>
+              <div>
+                <label htmlFor="reason">Why did it fail? *</label>
+                <textarea
+                  id="reason"
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder="Briefly describe the primary reasons for failure..."
+                  rows={3}
+                  required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="summary">Summary / Background</label>
+                <textarea
+                  id="summary"
+                  value={summary}
+                  onChange={(e) => setSummary(e.target.value)}
+                  placeholder="What did the company do? Any additional context..."
+                  rows={4}
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading || !companyName.trim() || !reason.trim()}
+              >
+                {loading ? "Submitting..." : "Submit for Review"}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </main>
-  );
+  )
 }

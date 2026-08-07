@@ -37,7 +37,7 @@ const QuestionsResultSchema = z.object({
   questions: z.array(z.object({
     id: z.string(),
     text: z.string(),
-    options: z.array(z.string()).length(3),
+    options: z.array(z.string()).min(2).max(4),
   })),
 });
 
@@ -92,11 +92,12 @@ export async function POST(req: NextRequest) {
   }
 
   const auth = await authenticateRequest(req);
-  if (!auth.authenticated) {
+  const isGuest = auth.authenticated ? false : req.headers.get('x-guest-mode') === 'true';
+  if (!auth.authenticated && !isGuest) {
     return auth.response;
   }
 
-  const { userId } = auth.data;
+  const userId = auth.authenticated ? auth.data.userId : `guest-${Date.now()}`;
 
   try {
     if (!hasValidKey) {
@@ -202,8 +203,20 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
 
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Analysis failed';
+  } catch (error: unknown) {
+    let message = 'Analysis failed';
+    if (error instanceof Error) {
+      message = error.message;
+    } else if (typeof error === 'object' && error !== null) {
+      const obj = error as Record<string, unknown>;
+      message = typeof obj.message === 'string' ? obj.message
+        : typeof obj.error === 'string' ? obj.error
+        : typeof obj.toString === 'function' && obj.toString !== Object.prototype.toString
+          ? (obj as { toString(): string }).toString()
+          : JSON.stringify(error);
+    } else if (typeof error === 'string') {
+      message = error;
+    }
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -1,5 +1,7 @@
-import { supabase } from './config';
+import { supabaseAdmin, createServerDataClient } from './config';
 import { nanoid } from 'nanoid';
+
+const supabase = () => supabaseAdmin || createServerDataClient();
 
 interface Question {
   id: string;
@@ -33,7 +35,7 @@ export interface PremortemSession {
 }
 
 export async function createPremortemSession(userId: string, pitch: string): Promise<PremortemSession> {
-  const { data, error } = await supabase
+  const { data, error } = await supabase()
     .from('premortem_sessions')
     .insert({ user_id: userId, pitch, answers: {}, questions: [] })
     .select()
@@ -44,7 +46,7 @@ export async function createPremortemSession(userId: string, pitch: string): Pro
 }
 
 export async function getPremortemSession(id: string): Promise<PremortemSession | null> {
-  const { data, error } = await supabase
+  const { data, error } = await supabase()
     .from('premortem_sessions')
     .select('*')
     .eq('id', id)
@@ -55,7 +57,7 @@ export async function getPremortemSession(id: string): Promise<PremortemSession 
 }
 
 export async function updateSessionAnswers(id: string, answers: Record<string, string>): Promise<void> {
-  const { error } = await supabase
+  const { error } = await supabase()
     .from('premortem_sessions')
     .update({ answers })
     .eq('id', id);
@@ -64,7 +66,7 @@ export async function updateSessionAnswers(id: string, answers: Record<string, s
 }
 
 export async function savePremortemReport(id: string, report: PremortemReport, riskScore: number): Promise<void> {
-  const { error } = await supabase
+  const { error } = await supabase()
     .from('premortem_sessions')
     .update({ 
       report, 

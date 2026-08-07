@@ -1,4 +1,6 @@
-import { supabase } from './config';
+import { createServerDataClient } from './config';
+
+const db = createServerDataClient();
 import { searchCaseStudies } from './case-studies';
 
 export interface HybridSearchResult {
@@ -55,7 +57,7 @@ export async function hybridSearchCaseStudies(
   try {
     const vectorResults = await searchCaseStudies(embedding, limit * 2);
 
-    let dbQuery = supabase
+    let dbQuery = db
       .from('case_studies')
       .select('id, slug, company_name, summary, industry, funding_raised, published, tags')
       .eq('published', true);

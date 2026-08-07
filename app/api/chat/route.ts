@@ -1,22 +1,11 @@
 import { NextRequest } from 'next/server';
-import { createOpenAI } from '@ai-sdk/openai';
-import { streamText, createUIMessageStream, createUIMessageStreamResponse } from 'ai';
+import { streamText } from 'ai';
 import { checkRateLimit, getRateLimitKey } from '@/lib/rate-limiter';
 import { authenticateRequest } from '@/lib/auth';
+import { hasValidKey, getNvidiaModel } from '@/lib/ai';
 import { z } from 'zod';
 
-const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY || '';
-const hasValidKey = NVIDIA_API_KEY.length > 20 && !NVIDIA_API_KEY.includes('your-nvidia') && !NVIDIA_API_KEY.includes('your-api');
 const MODEL_ID = process.env.AI_DEFAULT_MODEL || 'meta/llama-3.1-70b-instruct';
-const NVIDIA_BASE_URL = process.env.NVIDIA_BASE_URL || 'https://integrate.api.nvidia.com/v1';
-
-let nvidia: ReturnType<typeof createOpenAI> | null = null;
-if (hasValidKey) {
-  nvidia = createOpenAI({
-    apiKey: NVIDIA_API_KEY,
-    baseURL: NVIDIA_BASE_URL,
-  });
-}
 
 const ChatRequestSchema = z.object({
   messages: z.array(z.object({
@@ -384,7 +373,8 @@ export async function POST(req: NextRequest) {
   }
 
   const auth = await authenticateRequest(req);
-  if (!auth.authenticated) {
+  const isGuest = auth.authenticated ? false : req.headers.get('x-guest-mode') === 'true';
+  if (!auth.authenticated && !isGuest) {
     return auth.response;
   }
 
@@ -403,7 +393,7 @@ export async function POST(req: NextRequest) {
 
     const { messages, context: customContext } = parsed.data;
 
-    if (!nvidia || !hasValidKey) {
+    if (!hasValidKey) {
       return new Response(JSON.stringify({
         role: 'assistant',
         content: "Forensic Intelligence Offline.\n\nGraveyard Intelligence requires a valid NVIDIA API key to analyze business failure patterns. Please configure `NVIDIA_API_KEY` in your environment variables and restart the server.\n\n---\n### SYSTEM_STATUS\n**VECTOR_ENGINE:** UNAVAILABLE\n**AI_MODEL:** NOT_CONFIGURED\n**AUTOPSY_DB:** STANDBY",
@@ -484,29 +474,18 @@ Use these cases as evidence. Present them naturally — never mention the search
     const fullSystemPrompt = parts.join('\n\n');
 
     const result = streamText({
-      model: nvidia.chat(MODEL_ID),
+      model: getNvidiaModel(MODEL_ID)!,
       messages: convertUIMessages(messages),
       system: fullSystemPrompt,
     });
 
-    const stream = createUIMessageStream({
-      execute: async ({ writer }) => {
-        const { textStream } = result;
-        const msgId = `msg-${Date.now()}`;
-        writer.write({ type: 'text-start', id: msgId });
-        for await (const chunk of textStream) {
-          writer.write({ type: 'text-delta', id: msgId, delta: chunk });
-        }
-        writer.write({ type: 'text-end', id: msgId });
-      },
-      originalMessages: messages as never,
-      onError: () => {
-        return 'The forensic analysis encountered a temporary interruption. Please try your query again.';
+    return result.toTextStreamResponse({
+      headers: {
+        'Content-Type': 'text/event-stream; charset=utf-8',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
       },
     });
-
-    const response = createUIMessageStreamResponse({ stream });
-    return response;
 
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Internal Server Error';

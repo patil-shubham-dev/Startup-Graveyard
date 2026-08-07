@@ -1,41 +1,14 @@
 import { unstable_cache } from 'next/cache';
-import { supabase, isSupabaseConfigured } from './config';
+import { isSupabaseConfigured, createServerDataClient } from './config';
+import type { CaseStudy } from './case-studies';
 
 type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 
-export interface CaseStudy {
-  id: string;
-  slug: string;
-  case_number: string;
-  company_name: string;
-  logo_url: string | null;
-  website: string | null;
-  founded_year: number | null;
-  shutdown_year: number | null;
-  industry: string | null;
-  funding_raised: number | null;
-  summary: string;
-  failure_reasons: string[];
-  lessons: string[];
-  tags: string[];
-  risk_scores: Record<string, number>;
-  content: string | null;
-  published_at: string | null;
-  employees_peak: number | null;
-  location: string | null;
-  timeline_events: JsonValue[] | null;
-  financial_data: JsonValue | null;
-  marginalia: JsonValue[] | null;
-  evidence_images: string[] | null;
-  audio_briefing_url: string | null;
-  metrics: JsonValue | null;
-  competitors: JsonValue[] | null;
-  quotes: JsonValue[] | null;
-  sources: JsonValue[] | null;
-  financial_rounds: JsonValue[] | null;
-  failure_analysis: JsonValue | null;
-  verdict: JsonValue | null;
-  archived_media: JsonValue[] | null;
+let db: ReturnType<typeof createServerDataClient> | null = null;
+
+function getDb(): ReturnType<typeof createServerDataClient> {
+  if (!db) db = createServerDataClient();
+  return db;
 }
 
 export interface IntelligenceBriefing {
@@ -1297,7 +1270,7 @@ export const getInsightsIntelligenceData = unstable_cache(
     }
 
     try {
-      const result = await supabase
+      const result = await getDb()
         .from('case_studies')
         .select('*')
         .eq('published', true);

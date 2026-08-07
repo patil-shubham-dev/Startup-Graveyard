@@ -1,150 +1,51 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Space_Grotesk, Inter, IBM_Plex_Mono } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
+import { Header } from "@/components/site/Header";
+import { Footer } from "@/components/site/Footer";
 import "./globals.css";
-import { Navigation } from "@/components/layout/Navigation";
-import Script from "next/script";
-import dynamic from "next/dynamic";
-import { AuthProvider } from "@/context/AuthContext";
-import { ProgressBar } from "@/components/layout/ProgressBar";
-import { PageWrapper } from "@/components/layout/PageWrapper";
-import { Providers } from "@/lib/providers";
-import { Suspense } from "react";
-
-export const revalidate = 3600; // Revalidate every hour by default
-
-const Footer = dynamic(() => import("@/components/layout/Footer").then(m => m.Footer), {
-  loading: () => <footer className="h-24 bg-cream-deep border-t border-cream-dark" />,
-});
-
-const GlobalSearch = dynamic(() => import("@/components/search/GlobalSearchWrapper"), {
-  loading: () => null,
-});
-
-function safeOrigin(urlString: string | undefined, fallback: string): string {
-  try {
-    return new URL(urlString || fallback).origin;
-  } catch {
-    return new URL(fallback).origin;
-  }
-}
-
-const nvidiaOrigin = safeOrigin(process.env.NVIDIA_BASE_URL, 'https://integrate.api.nvidia.com');
-const supabaseOrigin = safeOrigin(process.env.NEXT_PUBLIC_SUPABASE_URL, 'https://db.supabase.co');
-
-const cormorant = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  style: ["normal", "italic"],
-  variable: "--font-cormorant",
-  display: "swap",
-  preload: true,
-});
-
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-space-grotesk",
-  display: "swap",
-  preload: false,
-});
-
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-inter",
-  display: "swap",
-  preload: true,
-});
-
-const ibmPlexMono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-ibm-plex-mono",
-  display: "swap",
-  preload: false,
-});
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://startupgraveyard.com'),
-  title: "Startup Graveyard | Forensic Intelligence Archive",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
+  title: {
+    default: "Start-up Graveyard — Forensic Intelligence Archive",
+    template: "%s — Start-up Graveyard",
+  },
   description:
-    "The world's most comprehensive forensic database of startup failures. Analyze the billion-dollar mistakes, death spirals, and autopsy reports of failed ventures.",
-  keywords: ["startup failures", "post-mortem", "business autopsies", "entrepreneurship risk", "venture capital", "why startups fail"],
-  authors: [{ name: "Forensic Intelligence Team" }],
+    "A forensic research archive documenting why startups fail. Investigate real case studies, analyze failure patterns, and learn from the dead.",
   openGraph: {
-    title: "Startup Graveyard | Forensic Intelligence Archive",
-    description: "Analyze the billion-dollar mistakes of failed ventures.",
-    url: "https://startupgraveyard.com",
-    siteName: "Startup Graveyard",
-    images: [
-      {
-        url: "/assets/og-image.jpg",
-        width: 1200,
-        height: 630,
-        alt: "Startup Graveyard Forensic Archive",
-      },
-    ],
-    locale: "en_US",
+    title: "Start-up Graveyard",
+    description: "Forensic Intelligence Archive — documenting why startups fail.",
+    siteName: "Start-up Graveyard",
     type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Startup Graveyard | Forensic Intelligence Archive",
-    description: "Analyze the billion-dollar mistakes of failed ventures.",
-    images: ["/assets/og-image.jpg"],
-  },
-  icons: {
-    icon: "/assets/logo-icon.svg",
-    shortcut: "/assets/logo-icon.svg",
-    apple: "/assets/logo-icon.svg",
+    images: [{ url: "/api/og", width: 1200, height: 630, alt: "Start-up Graveyard — forensic research archive" }],
   },
 };
 
-export const viewport = {
-  width: "device-width",
-  initialScale: 1,
-};
-
-export default async function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="en"
-      className={`${cormorant.variable} ${spaceGrotesk.variable} ${inter.variable} ${ibmPlexMono.variable} antialiased`}
-      suppressHydrationWarning
-    >
-      <head>
-        <link rel="preconnect" href={nvidiaOrigin} />
-        <link rel="preconnect" href={supabaseOrigin} />
-        <link rel="dns-prefetch" href={nvidiaOrigin} />
-        <link rel="dns-prefetch" href={supabaseOrigin} />
-        {process.env.NEXT_PUBLIC_SIMPLE_ANALYTICS_DOMAIN && (
-          <Script
-            src="https://scripts.simpleanalyticscdn.com/latest.js"
-            data-domain={process.env.NEXT_PUBLIC_SIMPLE_ANALYTICS_DOMAIN}
-            strategy="afterInteractive"
-          />
-        )}
-      </head>
-      <body className="bg-[var(--cream-base)] text-[var(--ink-black)]">
-        <AuthProvider>
-          <Providers>
-            <div className="relative flex min-h-screen flex-col">
-              <Suspense fallback={null}>
-                <ProgressBar />
-              </Suspense>
-              <Navigation />
-              <GlobalSearch />
-              <main className="relative flex-1">
-                <PageWrapper>{children}</PageWrapper>
-              </main>
-              <Footer />
-            </div>
-          </Providers>
-        </AuthProvider>
+    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
+      <body>
+        {/* START-UP GRAVEYARD — DIRECTION CONTRACT
+        THESIS: A canonical research archive: evidence over atmosphere. Refuses the graveyard-kitsch register and the
+        data-viz-theatre register; the page is an institution, not a gimmick or a demo.
+        OWN-WORLD: Paper-white ground (#faf9f6), charcoal ink, oxblood accent, hairline rules, Geist sans with
+        tabular figures for every measure; one near-black well for the living-archive section. No gradients, no glass,
+        no emoji, no icons-as-decoration.
+        STORY: The visitor believes this archive is serious, real, and alive — every figure verifiable from the case
+        data, four cases under human review, growing weekly — and acts: explore, run a pre-mortem, ask the archive.
+        FIRST VIEWPORT: Wordmark and primary nav above a ruled hero: one-line tribute headline with a serif italic
+        phrase, purpose lead, two actions (Explore / Pre-mortem), and a data ledger of the archive as it stands today.
+        FORM: canon — category standard taken via the standing exit (roll 6c35e3d4 declined); craft bar set by
+        Linear/Stripe/Vercel, The Economist/FT, McKinsey/BCG, Wikipedia.
+        FINISH: "unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md"
+        */}
+        <a href="#main" className="skip-link">
+          Skip to content
+        </a>
+        <Header />
+        <main id="main">{children}</main>
+        <Footer />
       </body>
     </html>
   );

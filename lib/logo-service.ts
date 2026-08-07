@@ -40,33 +40,50 @@ function deriveDomains(companyName: string): string[] {
 
 const CLEARBIT_URL = 'https://logo.clearbit.com';
 
-async function checkClearbit(domain: string): Promise<string | null> {
-  const url = `${CLEARBIT_URL}/${domain}`;
+async function fetchWithTimeout(url: string, timeoutMs = 5000): Promise<Response | null> {
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
-    const response = await fetch(url, { method: 'HEAD', signal: controller.signal });
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    const response = await fetch(url, { signal: controller.signal });
     clearTimeout(timeout);
-    if (response.ok) return url;
-    return null;
+    return response;
   } catch {
     return null;
   }
 }
 
+async function verifyImageResponse(url: string): Promise<boolean> {
+  // First do a HEAD to check availability
+  const headResponse = await fetchWithTimeout(url);
+  if (!headResponse?.ok) return false;
+
+  // Then do a lightweight GET to verify content type
+  // We only read headers, not the body, to keep it fast
+  const getResponse = await fetchWithTimeout(url);
+  if (!getResponse?.ok) return false;
+
+  const contentType = getResponse.headers.get('content-type') || '';
+  if (!contentType.startsWith('image/')) {
+    return false;
+  }
+
+  return true;
+}
+
+async function checkClearbit(domain: string): Promise<string | null> {
+  // Request specific size to avoid oversized logos
+  const url = `${CLEARBIT_URL}/${domain}?size=256`;
+  const valid = await verifyImageResponse(url);
+  if (valid) return url;
+  return null;
+}
+
 /** Also try Google favicons service as a fallback */
 async function checkGoogleFavicons(domain: string): Promise<string | null> {
   const url = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
-    const response = await fetch(url, { method: 'HEAD', signal: controller.signal });
-    clearTimeout(timeout);
-    if (response.ok) return url;
-    return null;
-  } catch {
-    return null;
-  }
+  const valid = await verifyImageResponse(url);
+  if (valid) return url;
+  return null;
 }
 
 /**
