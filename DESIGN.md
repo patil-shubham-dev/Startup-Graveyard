@@ -372,3 +372,51 @@ draft. Same tokens; every addition is printed, catalogued, or stamped.
   column -> `Instruments` with the renamed links; closing line now
   carries the review-queue count (`Evidence over opinion · N cases
   awaiting review`).
+
+### Archive register — /explore (Aug 2026)
+
+New surface, same world: the archive index as a printed register of plates.
+Assigned by surface seed 9fc2d8bb (candidate 4 of the grounded list); brief
+in .impeccable/surfaces/app-explore-page-tsx.md.
+
+- **Direction:** every published case is a ruled full-width plate, like the
+  plate list of a museum catalogue. No card grid, no plain list. Accession
+  order = published_at descending (newest filed first), computed on the
+  server from eadAllCases() filtered to published — the shared loader, not
+  a second fs read.
+- **Plate anatomy:** mono accession line (No. 01 · Filed JUN 2026), company
+  name at display size (3xl/4xl) that darkens to ccent-deep on hover,
+  one-line summary at 15px/1.625, failure-pattern tags as 4px oxblood
+  square + mono label (max 3, +N more), and a dossier rail (Raised /
+  Lifespan / Industry) with label-catalog dt and mono tabular dd. The rail
+  separates with order-l hairline on md+, order-t on mobile. Whole
+  plate is one Link; hover fills paper-2 and the Open case file → arrow
+  nudges. Focus-visible is the global 2px accent ring on the Link.
+- **Accession stability:** plate numbers are fixed at load time via an
+  accession map (slug -> index); filtering reorders the view, never the
+  number. Verified: ScaleFactor reads No. 02 filtered and unfiltered.
+- **Search:** Q. affix field (.field-search) filters live on keystroke;
+  Enter / Search records commits the query to the URL (/explore?q=…) so
+  register queries are deep-linkable. Facet hint line replaced with a mono
+  count line (N files · indexed by accession · verified against sources).
+- **Facet rail:** industry + failure-pattern chips computed from the data
+  via useMemo (never hardcoded — replaces the incumbent's fixed 8+8 arrays).
+  New system atom .chip / .chip-active in globals.css: mono 10px,
+  0.14em, hairline border, 2px radius, 30px tall; hover darkens border to
+  ink; active fills ccent-deep with paper text (9.54:1). Chips carry
+  ria-pressed + a descriptive ria-label ("Fintech, 2 files"); counts
+  are aria-hidden.
+- **States:** result line above the plates (N of M records match /
+  All N records in order of accession, ria-live="polite"), Clear all
+  filters link-editorial when any filter is active, empty state (serif
+  italic line + muted instruction + Clear search btn-outline). Loading is
+  a skeleton of pulse bars on the header band; error is a serif line +
+  Retry / Return home.
+- **Contrast (computed):** body/labels/tags 5.89:1; h1 and dd 16.53:1;
+  active chip paper-on-oxblood 9.54:1; hover name on paper-2 8.89:1.
+- **Follow-ups (data-side, out of this build's scope):** the failure-pattern
+  taxonomy carries near-duplicate labels ("Fintech" vs "Financial
+  Technology", "Competition" vs "Intense Competition", "No Market Need" vs
+  "Insufficient Market Need") which split the facet counts; normalizing in
+  the JSON/seed content model (not the component) would tighten both the
+  facet rail and /insights.
