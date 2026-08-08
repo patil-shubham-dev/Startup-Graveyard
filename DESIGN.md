@@ -121,6 +121,18 @@ counts. All copy is grounded — no invented numbers.
   `well` token tone; adds felt-like depth.
 - `public/mark.png` (32×32) — header wordmark mark. `public/logo-placeholder.png`
   (256×256) — logo fallback for case graphics (not yet rendered in UI).
+- `public/grave-marker.png` (900×675) — fine-line engraving of an unmarked
+  grave on a cream field (corner tone 250,249,244 ≈ paper). Used on the
+  global 404 ("This grave is unmarked.") and the case not-found ("No case
+  file by that name."): right-column plate at 280px (desktop) / min(56vw,
+  300px) (mobile), rendered with `mix-blend-mode: multiply` (cream field
+  x paper is imperceptible — the established engraving treatment) plus a
+  vertical fade mask (transparent 0-12% / black 12-88% / transparent
+  100%). Decorative — `alt=""`, `aria-hidden`.
+- `public/mark.png` (32×32 display) — pending regeneration: the generated
+  replacement came back inverted (light headstone on a near-black field,
+  shaded render, 70% dark coverage) and is NOT integrated. Needs dark ink
+  strokes on light paper per the prompt below.
 
 ## Accessibility
 
