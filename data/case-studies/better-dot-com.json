@@ -1,26 +1,27 @@
 {
   "company_name": "Better.com",
   "slug": "better-dot-com",
-  "summary": "Failed fintech startup offering mortgage refinancing and home equity loans, known for its high-profile layoffs and controversies.",
+  "summary": "AI-native mortgage platform founded by Vishal Garg in 2016, once valued at $7.7B. A 2021-22 meltdown (layoffs scandal, stalled SPAC, cash burn) was widely read as fatal, but Better never shut down: it listed as Better Home Finance (NASDAQ: BETR) and is still operating and growing as of 2026. Excluded from this archive because it is not a failure; retained as a rejected record so the pipeline never re-invents a shutdown for it.",
   "founded_year": 2016,
-  "shutdown_year": 2022,
+  "shutdown_year": null,
   "industry": "Fintech",
-  "funding_raised": 150000000000,
+  "funding_raised": 90500000000,
   "employees_peak": 10000,
-  "valuation_peak": 800000000000,
+  "valuation_peak": 770000000000,
   "investors": [
-    "Valeo Partners",
-    "Crosslink Capital",
-    "Tiger Global Management"
+    "SoftBank (SB Management)",
+    "Activant Capital",
+    "L Catterton",
+    "Novator Capital (SPAC sponsor)"
   ],
   "founders": [
     "Vishal Garg"
   ],
   "country": "US",
   "failure_reasons": [
+    "Blitzscaling",
     "Cash Exhaustion",
-    "Poor Management",
-    "Regulatory Issues"
+    "Leadership"
   ],
   "lessons": [
     "Monitor burn rate closely",
@@ -43,22 +44,45 @@
     "burn": 90
   },
   "metrics": {
-    "capital_raised": "$1.5B",
-    "peak_valuation": "$8B",
-    "years_active": 6,
-    "peak_employees": "10,000",
-    "burn_rate": "100%",
-    "exit_value": "0"
+    "peak_valuation": "$7.7B (2021)",
+    "peak_employees": "10,000 (2021)",
+    "years_active": 10
   },
   "case_number": "CASE-MQB5UO7I",
-  "content": "```mdx\n## The Story — How it started, founding story, vision\n\nBetter.com was founded in 2016 by Vishal Garg, a former Wall Street executive. The company's initial vision was to disrupt the traditional mortgage refinancing and home equity loan industry by offering a streamlined, online application process. Garg's goal was to make it easier for homeowners to access affordable financing options.\n\nBetter.com's early success was fueled by a strong team of experienced professionals and a robust technology platform. The company secured $200 million in funding from prominent investors, including SoftBank and Kleiner Perkins. As the company grew, it expanded its offerings to include a range of financial products, including home equity loans and lines of credit.\n\n### Founding Team\n\n*   Vishal Garg: Founder and CEO\n*   Kevin Ryan: Co-Founder and President\n*   Jay Faris: Co-Founder and CTO\n\n### Early Funding\n\n*   $200 million in Series A funding from SoftBank and Kleiner Perkins\n*   $100 million in Series B funding from Tiger Global Management\n\n## The Rise — Growth, funding, traction\n\nBetter.com experienced rapid growth in the early years, with the company's valuation reaching $7 billion in 2021. The company's online application process and streamlined approval process made it easier for homeowners to access affordable financing options.\n\n### Key Milestones\n\n*   2016: Better.com is founded by Vishal Garg and Kevin Ryan\n*   2017: Company secures $200 million in Series A funding\n*   2018: Company expands offerings to include home equity loans and lines of credit\n*   2020: Company secures $100 million in Series B funding\n*   2021: Company's valuation reaches $7 billion\n\n### Marketing and Branding\n\n*   Company invested heavily in digital marketing and branding efforts\n*   Social media campaigns and influencer partnerships helped to raise awareness and drive engagement\n\n## Warning Signs — Early red flags, missed signals\n\nDespite the company's rapid growth and success, there were early warning signs that the company was struggling. These signs were largely ignored or downplayed by the company's leadership.\n\n### Early Red Flags\n\n*   High employee turnover rates\n*   Poor customer service ratings\n*   Regulatory issues and fines\n*   Lack of transparency in company finances\n\n### Missed Signals\n\n*   Failure to address employee concerns and complaints\n*   Inadequate training and support for new hires\n*   Insufficient resources and budget for customer service and support\n\n## The Collapse — The shutdown, what happened\n\nIn March 2022, Better.com announced that it would be laying off 900 employees, approximately 9% of its workforce. The layoffs were a result of the company's failure to secure additional funding and its struggles to remain profitable.\n\n### Layoffs and Restructuring\n\n*   900 employees laid off, approximately 9% of workforce\n*   Company undergoes significant restructuring efforts\n*   CEO Vishal Garg steps down as CEO, but remains on company's board\n\n### Bankruptcy and Liquidation\n\n*   Company files for Chapter 11 bankruptcy protection\n*   Assets are sold off to pay creditors\n*   Company's intellectual property and technology platform are acquired by a rival company\n\n## Aftermath — Lessons learned, legacy\n\nThe collapse of Better.com serves as a cautionary tale for startups and established companies alike. The company's failure to address early warning signs and its struggles to remain profitable ultimately led to its downfall.\n\n### Lessons Learned\n\n*   Importance of prioritizing employee well-being and satisfaction\n*   Need for transparency and open communication in company finances and operations\n*   Importance of regulatory compliance and adherence to industry standards\n\n### Legacy\n\n*   Better.com's legacy serves as a reminder of the importance of prioritizing people and processes in the pursuit of innovation and growth.\n*   The company's failure to address early warning signs and its struggles to remain profitable serve as a cautionary tale for startups and established companies alike.\n```",
+  "content": "\n```mdx\n## The Record — Why this file exists\n\nBetter Home & Finance Holding Company (NASDAQ: BETR) is still operating. This\narchive documents failures; Better is not one — so this case file is rejected\nand unpublished. It is retained for two reasons:\n\n1. The inbound pipeline lists Better.com as a candidate company; this row and\n   file act as a permanent guard against generation of a fictional \"shutdown\"\n   case.\n2. The company's near-death episode (2021-2022) is one of the best-documented\n   blitzscaling disasters in startup history. It is worth keeping on record —\n   with sources — for the day a real verdict is possible.\n\n## The Episode (facts, verified 2026-08-08)\n\n- **2016** — Founded by Vishal Garg (solo founder) in New York. Thesis: strip\n  cost and friction out of US mortgage origination with an online-only\n  brokerage that is \"truly better\".\n- **2017-2020** — Grows through the refinancing boom. Raises ~$905M across 9\n  rounds (~$30M Series A 2016; ~$15M Series B 2017; ~$160M Series C led by\n  Activant Capital, Jan 2019; ~$200M Series D led by L Catterton at ~$4B\n  valuation, Nov 2020).\n- **April 2021** — SoftBank (SB Management) buys $500M of existing shares\n  (secondary) at a $6B valuation. Peak private valuation: $7.7B; peak\n  headcount about 10,000.\n- **May 2021** — SPAC announced: merger with Aurora Acquisition Corp.\n  (Novator Capital) at a claimed $7.7B post-equity value with a ~$1.5B PIPE\n  led by a SoftBank subsidiary (CNBC, HousingWire, TechCrunch, 2021-05-11).\n  The deal takes over two years to close.\n- **December 1, 2021** — About 900 employees (9%) laid off on a Zoom call;\n  a leaked recording shows Garg's combative language. Becomes a defining\n  tech-layoffs moment; Garg later apologizes, and complaints about the\n  severance terms draw further criticism.\n- **2022** — Interest-rate shock ends the refi boom; further rounds of cuts\n  follow. Quarterly losses run into nine digits. The SPAC keeps slipping.\n  The 2021-22 sequence is why outsiders (including this archive's original\n  draft) believed Better had died.\n- **July 2023** — The Aurora SPAC finally closes; BETR begins trading.\n- **2024-2025** — Rationalization: headcount down to roughly 1,500-2,000;\n  listed equity trades at a fraction of the 2021 marks. The company hinges\n  its turnaround on its proprietary \"Tinman\" AI origination engine and\n  launches better.com on a direct-to-consumer basis (among the first US\n  lenders in years to do so).\n- **2026** — Still public, still growing: Q2 2026 funded volume $1.67B (+38%\n  YoY), revenue $54.7M (+28% YoY), net loss narrowed to $30.6M, adjusted\n  EBITDA -$14.0M. Cumulative funded volume tops $110B. In July 2026 Garg\n  steps down as CEO; the Board appoints Daniel Lewis interim CEO. The stock\n  has slid about 45% in three months and press coverage cites a securities\n  investigation (Simply Wall St, Aug 2026). The company is streamlining:\n  selling its UK bank (Birmingham) as discontinued operations, cutting\n  ~$25M annualized costs, and expanding its warehouse facility from $575M to\n  $850M.\n\n## Why it is not published\n\n- A shutdown_year for Better would be fabricated — the company is not shut\n  down.\n- This archive's bar is \"evidence over opinion\" and documented failures. A\n  still-operating public company that grew revenue 28% YoY in its latest\n  quarter does not belong in a register of the dead.\n- If it eventually dies, this record plus the 2021-2026 timeline is the\n  scaffold for a proper case file.\n\n## Sources\n\n- Better IR (investors.better.com) — Q1/Q2 2026 results; Lewis interim CEO\n  announced July 2026.\n- CNBC / HousingWire / TechCrunch — SPAC announcement 2021-05-11,\n  valuations and PIPE.\n- Simply Wall St — BETR Q2 2026 review noting the securities-investigation\n  coverage.\n- The original case file's claims (\"shutdown in 2022\", \"$1.5B raised\",\n  \"$8B peak valuation\") were checked against these and found to be wrong;\n  nothing from the original file is carried forward except the company name\n  and year founded.\n\n```\n",
   "published": false,
   "published_at": null,
-  "review_status": "in_review",
+  "review_status": "rejected",
   "reviewed_at": null,
-  "fact_check_score": 0,
-  "verified_sources": [],
-  "review_notes": "Depublished pending factual rewrite: company is still operating (publicly listed as BETR; ~$905M raised per Crunchbase; $868M funded volume, +31% YoY in Q1 2026). File's 'shutdown 2022' claim is inaccurate.",
+  "fact_check_score": 85,
+  "verified_sources": [
+    {
+      "source_title": "Better IR — Q2 2026 preliminary results and Daniel Lewis interim CEO",
+      "url": "https://investors.better.com/",
+      "confidence": "high"
+    },
+    {
+      "source_title": "CNBC — SoftBank-backed mortgage lender Better in $7.7B SPAC (2021-05-11)",
+      "url": "https://www.cnbc.com/2021/05/11/softbank-backed-mortgage-lender-better-in-7point7-billion-spac.html",
+      "confidence": "high"
+    },
+    {
+      "source_title": "TechCrunch — Digging into digital mortgage lender Better.com's huge SPAC",
+      "url": "https://techcrunch.com/2021/05/11/digging-into-better-coms-huge-spac/",
+      "confidence": "high"
+    },
+    {
+      "source_title": "HousingWire — Better sets SPAC deal value at $9.1B with $1.5B PIPE (2021-05-11)",
+      "url": "https://www.housingwire.com/articles/better-com-to-go-public-via-spac-at-7-7b-valuation/",
+      "confidence": "high"
+    },
+    {
+      "source_title": "Simply Wall St — BETR: slide deepens as breakeven slips",
+      "url": "https://simplywall.st/stocks/us/diversified-financials/nasdaq-betr/better-home-finance-holding/news/better-betr-stock-slide-deepens-as-breakeven-timeline-slips",
+      "confidence": "high"
+    }
+  ],
+  "review_notes": "REJECTED — not a failure. Better Home & Finance (NASDAQ: BETR) is an operating public company: Q2 2026 funded volume $1.67B (+38% YoY), revenue $54.7M (+28% YoY), net loss $30.6M, cumulative funded volume >$110B; Garg stepped down and Lewis became interim CEO in July 2026. The original file's \"shutdown 2022\", \"$1.5B raised\", and \"$8B peak valuation\" were inaccurate. Kept as a rejected guard row so the daily pipeline cannot regenerate a fictional shutdown case. Facts verified 2026-08-08 from Better IR, 2021 SPAC coverage, and market data (see verified_sources). If the company ever dies, this record is the scaffold for a real case file.",
   "embedding": [
     0.0221710205078125,
     0.0406494140625,
