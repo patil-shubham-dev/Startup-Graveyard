@@ -568,3 +568,72 @@ taxonomy, lint gate restored.
   import rule via `eslint.config.mjs` (CommonJS by definition), plus the
   standard `^_` ignore + `ignoreRestSiblings` conventions. `eslint` and
   `tsc` both exit 0 across `app`/`components`/`scripts`.
+
+### Archive register v2 — /explore (Aug 2026)
+
+The register rebuilt as a forensic research instrument (per the 24-section
+v2 brief; supersedes the v1 plate list in the surface brief, retaining its
+constraints: stable accession, computed counts, one tab stop per plate,
+reduced-motion honored). Scope lock: `app/explore/*` only — no globals,
+tokens, or type changes.
+
+- **Frontispiece band:** `texture-paper`; kicker `The archive · N case
+  files on record` (N computed from data) with the oxblood square; h1
+  `A register of documented failures` at 4xl/6xl; intro paragraph; a
+  `Reveal` on the header only. Right side is reserved for an engraved
+  frieze (`public/archive-plate.webp`, 1600×360, 50% opacity + multiply +
+  left fade mask) — auto-mounted server-side via `fs.existsSync`, page is
+  fully functional text-first without it.
+- **Sticky instrument bar** (`position: sticky; top: 4rem` below the h-16
+  header): search (`Q.` affix, `type="search"`, commits to
+  `/explore?q=…` on submit so queries deep-link), four filter dropdowns
+  (Industry, Country, Failure cause, Funding) + Sort dropdown (9 sorts:
+  newest filed default, oldest, alpha, funding, valuation, lifespan
+  short/long, team, risk). A sentinel IntersectionObserver adds the hairline
+  shadow when the bar sticks. Active filter chips + Clear all filters
+  (link-editorial) sit under the bar; `aria-live="polite"` result line
+  (N of M records match / All N records in order of accession).
+- **Dropdowns are APG menu-buttons**, not chips: `FilterDropdown.tsx` with
+  roving tabindex, option 0 as the "Any …" reset row, ArrowDown/Up/Home/
+  End/Enter/Space/Escape/Tab, click-outside close, right-aligned menus for
+  Funding/Sort (verified inside 390px viewports). Built around the
+  `react-hooks/set-state-in-effect` lint rule: no setState in effects —
+  open/close state lives on the trigger, the listbox receives focus via a
+  DOM-only `focus()` effect; `aria-haspopup/expanded/controls/listbox/
+  selected` throughout.
+- **Plate anatomy v2:** accession + `Risk · {label}` (max of
+  `risk_scores`, dossier thresholds Critical ≥70 / High ≥40 / Moderate
+  ≥20 / Low, oxblood dot); name 3xl/4xl darkening to accent-deep on
+  hover; kicker industry · country · years; summary clamped 3 lines
+  (2 mobile) with mask fade; ≤3 failure-reason tags + "+N more"; meta
+  panel `dl` 1×4 desktop / 2×2 mobile — Raised (with proportional funding
+  bar, min 3% width, relative to archive max $3.6B Argo AI), Peak
+  valuation, Lifespan (start/end dots on a rail across the archive year
+  span 2003–2023), Peak team. Related line inherits the dossier rule
+  (shared industry OR failure reason, slice 3); sources count shown only
+  for the 8 files that have them (honesty gate — no invented rows).
+- **Hover preview** (`aria-hidden`, pointer-hover only, removed under
+  reduced-motion): Principals / Backers / Record (valuation, team,
+  sources, primary cause) in a bordered panel sliding in from the left
+  below the plate — never overlays the row. Whole plate is one Link; the
+  toolbar's hairline doubles as the first plate's rule.
+- **Honest data gates:** no "most viewed / most similar / failure score"
+  sorts (no data exists for them); every count, tag, and year computed
+  from the JSON via useMemo — nothing hardcoded.
+- **Empty + end states:** empty — serif italic `No records match this
+  query.` + instruction + Clear search (btn-outline), art reserved
+  (`public/archive-empty.webp`, 800×600) above it; end band — `Continue
+  the investigation` (label-catalog) + serif italic line + links to the
+  pre-mortem engine and the dossier archive.
+- **Performance:** no virtualization — 16 rows is beneath the cost of a
+  windowing dependency; `React.memo` on the plate + memoized filter/sort
+  pipelines keep interactions at zero-jank. Verified by Playwright: 29
+  checks (desktop + mobile + reduced-motion) incl. keyboard dropdown
+  navigation, URL commit, no console errors, no horizontal overflow.
+- **Assets (pending):** the two engravings are authored externally per
+  brief §23 — full generation prompts are in the session record; drop
+  the outputs as `archive-plate.webp` / `archive-empty.webp` in
+  `public/` and the page mounts them automatically.
+- **Follow-up (data-side):** the same taxonomy normalization noted in the
+  v1 register — merging "Fintech"/"Financial Technology" etc. would
+  tighten the Industry and Failure cause facets too.

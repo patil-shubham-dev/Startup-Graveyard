@@ -1,82 +1,180 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Reveal } from "@/components/site/Reveal";
-import { formatCurrencyCompact } from "@/lib/utils/format";
+import { CasePlate } from "./CasePlate";
+import { FilterDropdown, type DropdownOption } from "./FilterDropdown";
 import type { CaseStudy } from "@/lib/db/case-studies";
+import styles from "./explore.module.css";
 
 /*
- * DIRECTION CONTRACT — /explore archive register
- * THESIS: the archive index as a printed register of plates. Refuses the
- * card-grid catalogue default and the plain list; every record is a ruled
- * folio plate carrying its accession number, dossier facts, and verdict.
- * OWN-WORLD: established editorial system unchanged — paper/ink/oxblood,
- * hairline rules, label-catalog metadata, mono tabular figures, Geist sans;
- * one new atom, the .chip facet (mono 10px, hairline, accent-deep active).
- * STORY: a researcher scans plates like library stacks, narrows by facet
- * chips computed from the data, and opens a file; every figure traces to a
- * case file.
- * FIRST VIEWPORT: archive header band — oxblood-dot kicker, register h1,
- * search field with Q. affix, facet rail, then the ruled plates beginning
- * immediately, each a full-width row with dossier rail on the right.
- * FORM: folio/plate register — candidate 4 of the grounded list, assigned
- * by surface seed 9fc2d8bb.
- * FINISH: "unreviewed and undocumented is unfinished; this build ends with
- * the finish review, the verdict, and DESIGN.md"
+ * DIRECTION CONTRACT v2 — /explore archive register
+ * v1 was a ruled plate list with facet chips. v2 makes the page a working
+ * forensic research instrument: a frontispiece band, a sticky instrument
+ * bar (search / filters / sort / result count that never scrolls away),
+ * and plates that carry the whole record — funding bar, lifespan timeline,
+ * risk tag, related files — plus a hover preview on desktop. Everything is
+ * still computed from the case files; nothing is hardcoded or invented.
+ * Constraints carried from v1: accession numbers never renumber on
+ * filtering; counts are computed; one tab stop per plate; soft transitions
+ * that honour prefers-reduced-motion.
  */
+
+type SortKey =
+  | "newest"
+  | "oldest"
+  | "alpha"
+  | "funding"
+  | "valuation"
+  | "lifespan-short"
+  | "lifespan-long"
+  | "team"
+  | "risk";
+
+const SORT_OPTIONS: Array<{ value: SortKey; label: string }> = [
+  { value: "newest", label: "Newest filed" },
+  { value: "oldest", label: "Oldest filed" },
+  { value: "alpha", label: "Alphabetical" },
+  { value: "funding", label: "Highest funding" },
+  { value: "valuation", label: "Highest valuation" },
+  { value: "lifespan-short", label: "Shortest lifespan" },
+  { value: "lifespan-long", label: "Longest lifespan" },
+  { value: "team", label: "Largest team" },
+  { value: "risk", label: "Highest risk" },
+];
+
+/* Funding buckets in cents (funding_raised is stored in cents). */
+const FUNDING_BUCKETS: Array<{ value: string; label: string; test: (cents: number) => boolean }> = [
+  { value: "lt100m", label: "Under $100M", test: (f) => f < 10_000_000_000 },
+  { value: "100m-500m", label: "$100M–$500M", test: (f) => f >= 10_000_000_000 && f < 50_000_000_000 },
+  { value: "500m-2b", label: "$500M–$2B", test: (f) => f >= 50_000_000_000 && f < 200_000_000_000 },
+  { value: "over-2b", label: "Over $2B", test: (f) => f >= 200_000_000_000 },
+];
 
 interface ExploreClientProps {
   initialCases: CaseStudy[];
   initialSearch?: string;
+  plateArt?: boolean;
+  emptyArt?: boolean;
 }
 
-function accessionIndex(caseStudy: CaseStudy): string {
-  return caseStudy.case_number || caseStudy.slug.toUpperCase();
+function riskScoreOf(study: CaseStudy): number {
+  const vals = Object.values(study.risk_scores ?? {}).filter(
+    (v): v is number => typeof v === "number",
+  );
+  return vals.length ? Math.max(...vals) : 0;
 }
 
-export function ExploreClient({ initialCases, initialSearch = "" }: ExploreClientProps) {
+export function ExploreClient({
+  initialCases,
+  initialSearch = "",
+  plateArt = false,
+  emptyArt = false,
+}: ExploreClientProps) {
   const router = useRouter();
   const [search, setSearch] = useState(initialSearch);
-  const [selectedIndustry, setSelectedIndustry] = useState<string | null>(null);
-  const [selectedFailType, setSelectedFailType] = useState<string | null>(null);
+  const [industry, setIndustry] = useState<string | null>(null);
+  const [country, setCountry] = useState<string | null>(null);
+  const [cause, setCause] = useState<string | null>(null);
+  const [funding, setFunding] = useState<string | null>(null);
+  const [sort, setSort] = useState<SortKey>("newest");
+  const [stuck, setStuck] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
-  // Stable accession sequence: the plate number is the record's place in the
-  // register, fixed at load time — filters reorder the view, never the index.
+  // Stable accession sequence — plate numbers never renumber on filtering.
   const accession = useMemo(
     () => new Map(initialCases.map((c, i) => [c.slug, i + 1])),
     [initialCases],
   );
 
-  const industries = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const c of initialCases) {
-      if (!c.industry) continue;
-      counts.set(c.industry, (counts.get(c.industry) ?? 0) + 1);
-    }
-    return [...counts.entries()].sort((a, b) => b[1] - a[1]);
+  // Archive-wide reference values — stable while filtering so bars don't jump.
+  const archiveBounds = useMemo(() => {
+    const funds = initialCases.map((c) => c.funding_raised ?? 0);
+    const years = initialCases
+      .flatMap((c) => [c.founded_year ?? null, c.shutdown_year ?? null])
+      .filter((y): y is number => y !== null);
+    return {
+      maxFunding: Math.max(0, ...funds),
+      minYear: years.length ? Math.min(...years) : 0,
+      maxYear: years.length ? Math.max(...years) : 0,
+    };
   }, [initialCases]);
 
-  const failureTypes = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const c of initialCases) {
-      for (const r of c.failure_reasons || []) {
-        counts.set(r, (counts.get(r) ?? 0) + 1);
+  const industries: DropdownOption[] = useMemo(
+    () =>
+      [...countBy(initialCases, (c) => c.industry)].map(([value, count]) => ({
+        value,
+        label: value,
+        count,
+      })),
+    [initialCases],
+  );
+
+  const countries: DropdownOption[] = useMemo(
+    () =>
+      [...countBy(initialCases, (c) => (c as unknown as { country?: string }).country ?? null)]
+        .map(([value, count]) => ({ value, label: value, count }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
+    [initialCases],
+  );
+
+  const causes: DropdownOption[] = useMemo(
+    () => {
+      const counts = new Map<string, number>();
+      for (const c of initialCases) {
+        for (const r of c.failure_reasons || []) {
+          counts.set(r, (counts.get(r) ?? 0) + 1);
+        }
       }
+      return [...counts.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .map(([value, count]) => ({ value, label: value, count }));
+    },
+    [initialCases],
+  );
+
+  const fundingOptions: DropdownOption[] = useMemo(
+    () =>
+      FUNDING_BUCKETS.map((b) => ({
+        value: b.value,
+        label: b.label,
+        count: initialCases.filter((c) => b.test(c.funding_raised ?? 0)).length,
+      })),
+    [initialCases],
+  );
+
+  // Related files — same rule as the dossier: shared industry or failure reason.
+  const relatedMap = useMemo(() => {
+    const map = new Map<string, CaseStudy[]>();
+    for (const c of initialCases) {
+      const rel = initialCases
+        .filter(
+          (x) =>
+            x.slug !== c.slug &&
+            (x.industry === c.industry ||
+              x.failure_reasons?.some((r) => c.failure_reasons?.includes(r))),
+        )
+        .slice(0, 3);
+      map.set(c.slug, rel);
     }
-    return [...counts.entries()].sort((a, b) => b[1] - a[1]);
+    return map;
   }, [initialCases]);
 
   const filtered = useMemo(() => {
-    return initialCases.filter((c) => {
+    let list = initialCases.filter((c) => {
       if (search) {
         const q = search.toLowerCase();
         const haystack = [
           c.company_name,
           c.summary,
           c.industry,
-          accessionIndex(c),
+          c.case_number,
+          (c as unknown as { country?: string }).country,
+          c.founded_year ? String(c.founded_year) : null,
+          c.shutdown_year ? String(c.shutdown_year) : null,
           ...(c.failure_reasons || []),
           ...(c.tags || []),
         ]
@@ -85,26 +183,106 @@ export function ExploreClient({ initialCases, initialSearch = "" }: ExploreClien
           .toLowerCase();
         if (!haystack.includes(q)) return false;
       }
-      if (selectedIndustry && c.industry !== selectedIndustry) return false;
-      if (selectedFailType && !(c.failure_reasons || []).includes(selectedFailType))
-        return false;
+      if (industry && c.industry !== industry) return false;
+      if (country && (c as unknown as { country?: string }).country !== country) return false;
+      if (cause && !(c.failure_reasons || []).includes(cause)) return false;
+      if (funding) {
+        const bucket = FUNDING_BUCKETS.find((b) => b.value === funding);
+        if (!bucket?.test(c.funding_raised ?? 0)) return false;
+      }
       return true;
     });
-  }, [initialCases, search, selectedIndustry, selectedFailType]);
 
-  const hasFilters = Boolean(search || selectedIndustry || selectedFailType);
+    const valuation = (x: CaseStudy) => (x as unknown as { valuation_peak?: number }).valuation_peak ?? 0;
+    const lifespan = (x: CaseStudy) =>
+      x.founded_year && x.shutdown_year ? x.shutdown_year - x.founded_year : Infinity;
 
-  const clearAll = () => {
+    switch (sort) {
+      case "oldest":
+        list = [...list].sort(
+          (a, b) =>
+            new Date(a.published_at ?? 0).getTime() - new Date(b.published_at ?? 0).getTime(),
+        );
+        break;
+      case "alpha":
+        list = [...list].sort((a, b) => a.company_name.localeCompare(b.company_name));
+        break;
+      case "funding":
+        list = [...list].sort((a, b) => (b.funding_raised ?? 0) - (a.funding_raised ?? 0));
+        break;
+      case "valuation":
+        list = [...list].sort((a, b) => valuation(b) - valuation(a));
+        break;
+      case "lifespan-short":
+        list = [...list].sort((a, b) => lifespan(a) - lifespan(b));
+        break;
+      case "lifespan-long":
+        list = [...list].sort((a, b) => lifespan(b) - lifespan(a));
+        break;
+      case "team":
+        list = [...list].sort((a, b) => (b.employees_peak ?? 0) - (a.employees_peak ?? 0));
+        break;
+      case "risk":
+        list = [...list].sort((a, b) => riskScoreOf(b) - riskScoreOf(a));
+        break;
+      case "newest":
+      default:
+        break;
+    }
+    return list;
+  }, [initialCases, search, industry, country, cause, funding, sort]);
+
+  const hasFilters = Boolean(search || industry || country || cause || funding);
+
+  const clearAll = useCallback(() => {
     setSearch("");
-    setSelectedIndustry(null);
-    setSelectedFailType(null);
-  };
+    setIndustry(null);
+    setCountry(null);
+    setCause(null);
+    setFunding(null);
+  }, []);
+
+  const chips = useMemo(() => {
+    const list: Array<{ label: string; clear: () => void }> = [];
+    if (search) list.push({ label: `Q. ${search}`, clear: () => setSearch("") });
+    if (industry) list.push({ label: industry, clear: () => setIndustry(null) });
+    if (country) list.push({ label: country, clear: () => setCountry(null) });
+    if (cause) list.push({ label: cause, clear: () => setCause(null) });
+    if (funding) {
+      const label = FUNDING_BUCKETS.find((b) => b.value === funding)?.label ?? funding;
+      list.push({ label, clear: () => setFunding(null) });
+    }
+    return list;
+  }, [search, industry, country, cause, funding]);
+
+  // Shadow the tool bar once it sticks below the header.
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([entry]) => setStuck(!entry.isIntersecting), {
+      threshold: 0,
+    });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
 
   return (
     <div>
-      {/* Archive header band */}
-      <section className="texture-paper">
-        <div className="mx-auto max-w-6xl px-5 pb-14 pt-16 sm:px-6 md:pb-16 md:pt-20">
+      {/* ── Frontispiece band ── */}
+      <section className="texture-paper relative">
+        {plateArt && (
+          <div aria-hidden className={styles.frontispieceArt}>
+            <Image
+              src="/archive-plate.webp"
+              alt=""
+              width={1600}
+              height={360}
+              priority
+              sizes="(min-width: 768px) 780px, 0px"
+            />
+          </div>
+        )}
+        <div className="relative mx-auto max-w-6xl px-5 pb-12 pt-16 sm:px-6 md:pb-14 md:pt-20">
           <Reveal>
             <p className="label-catalog flex items-center gap-2 text-accent-deep">
               <span aria-hidden className="inline-block h-1.5 w-1.5 bg-accent-deep" />
@@ -115,120 +293,136 @@ export function ExploreClient({ initialCases, initialSearch = "" }: ExploreClien
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-relaxed text-ink-mute">
               Every published file in the collection — funding histories,
-              lifespans, failure patterns, and verdicts — indexed by accession
-              and searchable by keyword, industry, or cause of death.
+              lifespans, failure patterns, and verdicts — indexed by accession.
+              Search, filter, and sort the records like a working archive.
             </p>
           </Reveal>
+        </div>
+        <div ref={sentinelRef} aria-hidden className="h-px" />
+      </section>
 
-          <Reveal delay={0.08}>
+      {/* ── Sticky instrument bar ── */}
+      <div className={`${styles.toolbar} ${stuck ? styles.toolbarStuck : ""}`}>
+        <div className="border-b border-line">
+          <div className="mx-auto max-w-6xl px-5 sm:px-6">
             <form
               role="search"
               aria-label="Search the archive"
-              className="mt-10 border-t border-line pt-8"
+              className="flex flex-col gap-2 py-4 lg:flex-row lg:items-center lg:gap-3"
               onSubmit={(e) => {
                 e.preventDefault();
-                router.replace(search.trim() ? `/explore?q=${encodeURIComponent(search.trim())}` : "/explore");
+                router.replace(
+                  search.trim() ? `/explore?q=${encodeURIComponent(search.trim())}` : "/explore",
+                );
               }}
             >
-              <div className="flex max-w-3xl flex-col gap-3 sm:flex-row">
-                <div className="relative flex-1">
-                  <span
-                    aria-hidden
-                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 font-mono text-xs text-ink-mute"
-                  >
-                    Q.
-                  </span>
-                  <input
-                    id="explore-search"
-                    type="search"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    aria-label="Search case files"
-                    placeholder="Company, industry, failure pattern, or accession…"
-                    className="field field-search w-full"
-                  />
-                </div>
-                <button type="submit" className="btn btn-primary">
+              <div className={styles.searchWrap}>
+                <span aria-hidden className={styles.searchAffix}>
+                  Q.
+                </span>
+                <input
+                  id="explore-search"
+                  type="search"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  aria-label="Search case files"
+                  placeholder="Company, industry, country, year, or cause of death…"
+                  className={styles.searchInput}
+                />
+                <button type="submit" className="sr-only">
                   Search records
                 </button>
               </div>
-              <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.16em] text-ink-mute">
-                {initialCases.length} files · indexed by accession · verified
-                against sources
+
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:flex lg:flex-none">
+                <FilterDropdown
+                  label="Industry"
+                  options={industries}
+                  selected={industry}
+                  onSelect={setIndustry}
+                />
+                <FilterDropdown
+                  label="Country"
+                  options={countries}
+                  selected={country}
+                  onSelect={setCountry}
+                />
+                <FilterDropdown
+                  label="Failure cause"
+                  options={causes}
+                  selected={cause}
+                  onSelect={setCause}
+                />
+                <FilterDropdown
+                  label="Funding"
+                  options={fundingOptions}
+                  selected={funding}
+                  onSelect={setFunding}
+                  align="right"
+                />
+                <FilterDropdown
+                  label="Sort"
+                  options={SORT_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+                  selected={sort}
+                  onSelect={(v) => setSort((v as SortKey | null) ?? "newest")}
+                  align="right"
+                />
+              </div>
+
+              <p
+                aria-live="polite"
+                className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-mute lg:ml-auto lg:whitespace-nowrap"
+              >
+                {hasFilters
+                  ? `${filtered.length} of ${initialCases.length} records match`
+                  : `All ${initialCases.length} records in order of accession`}
               </p>
             </form>
 
-            {/* Facet rail — computed from the data, never hardcoded */}
-            <div className="mt-6 border-t border-line pt-6">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="label-catalog mr-1">Industry</span>
-                {industries.map(([ind, count]) => (
-                  <button
-                    key={ind}
-                    type="button"
-                    aria-pressed={selectedIndustry === ind}
-                    aria-label={`${ind}, ${count} ${count === 1 ? "file" : "files"}`}
-                    onClick={() =>
-                      setSelectedIndustry(selectedIndustry === ind ? null : ind)
-                    }
-                    className={`chip ${selectedIndustry === ind ? "chip-active" : ""}`}
-                  >
-                    {ind}
-                    <span aria-hidden className="tabular-nums">{count}</span>
-                  </button>
+            {chips.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 border-t border-line py-3">
+                {chips.map((chip) => (
+                  <span key={chip.label} className={styles.activeChip}>
+                    {chip.label}
+                    <button
+                      type="button"
+                      className={styles.chipRemove}
+                      onClick={chip.clear}
+                      aria-label={`Remove ${chip.label} filter`}
+                    >
+                      ×
+                    </button>
+                  </span>
                 ))}
+                <button type="button" onClick={clearAll} className="link-editorial">
+                  Clear all filters
+                </button>
               </div>
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="label-catalog mr-1">Failure pattern</span>
-                {failureTypes.map(([reason, count]) => (
-                  <button
-                    key={reason}
-                    type="button"
-                    aria-pressed={selectedFailType === reason}
-                    aria-label={`${reason}, ${count} ${count === 1 ? "file" : "files"}`}
-                    onClick={() =>
-                      setSelectedFailType(selectedFailType === reason ? null : reason)
-                    }
-                    className={`chip ${selectedFailType === reason ? "chip-active" : ""}`}
-                  >
-                    {reason}
-                    <span aria-hidden className="tabular-nums">{count}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* Register of plates */}
-      <section className="border-t border-line">
-        <div className="mx-auto max-w-6xl px-5 sm:px-6">
-          {/* Result status line */}
-          <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-line py-4">
-            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-mute" aria-live="polite">
-              {hasFilters
-                ? `${filtered.length} of ${initialCases.length} records match`
-                : `All ${initialCases.length} records in order of accession`}
-            </p>
-            {hasFilters && (
-              <button
-                type="button"
-                onClick={clearAll}
-                className="link-editorial"
-              >
-                Clear all filters
-              </button>
             )}
           </div>
+        </div>
+      </div>
 
+      {/* ── Register of plates ── */}
+      <section>
+        <div className="mx-auto max-w-6xl px-5 sm:px-6">
           {filtered.length === 0 ? (
-            <div className="py-20 text-center md:py-28">
-              <div aria-hidden className="mx-auto w-12 border-t border-line" />
+            <div className="py-16 text-center md:py-20">
+              {emptyArt && (
+                <Image
+                  src="/archive-empty.webp"
+                  alt=""
+                  aria-hidden
+                  width={800}
+                  height={600}
+                  className="mx-auto w-56 mix-blend-multiply md:w-64"
+                  sizes="256px"
+                />
+              )}
               <p className="mt-8 font-serif text-2xl italic leading-snug text-ink sm:text-3xl">
                 No records match this query.
               </p>
-              <p className="mt-4 text-[15px] leading-relaxed text-ink-mute">
+              <p className="mx-auto mt-4 max-w-md text-[15px] leading-relaxed text-ink-mute">
                 The archive holds {initialCases.length} published files. Broaden
                 the search, or start again.
               </p>
@@ -237,96 +431,57 @@ export function ExploreClient({ initialCases, initialSearch = "" }: ExploreClien
               </button>
             </div>
           ) : (
-            <ol className="divide-y divide-line">
-              {filtered.map((c) => {
-                const lifespan =
-                  c.founded_year && c.shutdown_year
-                    ? `${c.shutdown_year - c.founded_year} ${
-                        c.shutdown_year - c.founded_year === 1 ? "yr" : "yrs"
-                      }`
-                    : "—";
-                return (
-                  <li key={c.slug}>
-                    <Link
-                      href={`/case/${c.slug}`}
-                      className="group grid gap-6 py-9 transition-colors hover:bg-paper-2 md:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] md:gap-12 md:py-11"
-                    >
-                      <div>
-                        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-mute">
-                          No. {String(accession.get(c.slug) ?? 0).padStart(2, "0")}
-                          {c.published_at ? (
-                            <>
-                              {" · "}
-                              Filed{" "}
-                              {new Intl.DateTimeFormat("en-US", {
-                                month: "short",
-                                year: "numeric",
-                              })
-                                .format(new Date(c.published_at))
-                                .toUpperCase()}
-                            </>
-                          ) : null}
-                        </p>
-                        <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink transition-colors group-hover:text-accent-deep sm:text-4xl">
-                          {c.company_name}
-                        </h2>
-                        <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-ink-mute">
-                          {c.summary}
-                        </p>
-                        <div className="mt-5 flex flex-wrap items-center gap-2">
-                          {(c.failure_reasons || []).slice(0, 3).map((r) => (
-                            <span
-                              key={r}
-                              className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-ink-mute"
-                            >
-                              <span aria-hidden className="inline-block h-1 w-1 bg-accent-deep" />
-                              {r}
-                            </span>
-                          ))}
-                          {c.failure_reasons && c.failure_reasons.length > 3 ? (
-                            <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-mute">
-                              +{c.failure_reasons.length - 3} more
-                            </span>
-                          ) : null}
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col justify-between gap-6 border-t border-line pt-6 md:border-l md:border-t-0 md:pl-10 md:pt-0">
-                        <dl className="grid grid-cols-2 gap-x-8 gap-y-6 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3">
-                          <div>
-                            <dt className="label-catalog">Raised</dt>
-                            <dd className="mt-1.5 font-mono text-[15px] tabular-nums text-ink">
-                              {formatCurrencyCompact(c.funding_raised)}
-                            </dd>
-                          </div>
-                          <div>
-                            <dt className="label-catalog">Lifespan</dt>
-                            <dd className="mt-1.5 font-mono text-[15px] tabular-nums text-ink">
-                              {lifespan}
-                            </dd>
-                          </div>
-                          <div>
-                            <dt className="label-catalog">Industry</dt>
-                            <dd className="mt-1.5 font-mono text-[15px] tabular-nums text-ink">
-                              {c.industry || "—"}
-                            </dd>
-                          </div>
-                        </dl>
-                        <span className="link-editorial mt-2 inline-flex items-center gap-2 self-start md:mt-0">
-                          Open case file
-                          <span aria-hidden className="transition-transform duration-200 group-hover:translate-x-0.5">
-                            →
-                          </span>
-                        </span>
-                      </div>
-                    </Link>
-                  </li>
-                );
-              })}
+            <ol>
+              {filtered.map((c) => (
+                <CasePlate
+                  key={c.slug}
+                  study={c}
+                  accession={accession.get(c.slug) ?? 0}
+                  maxFunding={archiveBounds.maxFunding}
+                  minYear={archiveBounds.minYear}
+                  maxYear={archiveBounds.maxYear}
+                  related={relatedMap.get(c.slug) ?? []}
+                />
+              ))}
             </ol>
           )}
         </div>
       </section>
+
+      {/* ── End of archive — next investigation ── */}
+      <section className="border-t border-line">
+        <div className="mx-auto max-w-6xl px-5 py-16 text-center sm:px-6 md:py-20">
+          <p className="label-catalog flex items-center justify-center gap-2 text-accent-deep">
+            <span aria-hidden className="inline-block h-1.5 w-1.5 bg-accent-deep" />
+            Continue the investigation
+          </p>
+          <p className="mx-auto mt-5 max-w-xl font-serif text-2xl italic leading-snug text-ink sm:text-3xl">
+            The archive is a starting point, not the last word.
+          </p>
+          <div className="mt-9 flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
+            <Link href="/pre-mortem" className="link-editorial inline-flex items-center gap-2">
+              Run a forensic pre-mortem
+              <span aria-hidden>→</span>
+            </Link>
+            <Link href="/ask" className="link-editorial inline-flex items-center gap-2">
+              Interrogate the archive
+              <span aria-hidden>→</span>
+            </Link>
+          </div>
+        </div>
+      </section>
     </div>
   );
+}
+
+/* ─── helpers ─── */
+
+function countBy(studies: CaseStudy[], keyOf: (c: CaseStudy) => string | null): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const c of studies) {
+    const key = keyOf(c);
+    if (!key) continue;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return counts;
 }
