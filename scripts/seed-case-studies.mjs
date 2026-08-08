@@ -60,6 +60,7 @@ function toRow(json) {
     tags: json.tags ?? [],
     external_references: json.external_references ?? null,
     risk_scores: json.risk_scores ?? null,
+    evidence_images: json.evidence_images ?? [],
     content: json.content ?? null,
     published: json.published === true,
     published_at: json.published ? (json.published_at ?? new Date().toISOString()) : null,

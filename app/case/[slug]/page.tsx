@@ -17,6 +17,7 @@ import {
   getLifespan,
 } from "@/lib/case-study-utils"
 import { readAllCases } from "@/lib/archive-ledger"
+import { ExhibitGallery } from "@/components/case/ExhibitGallery"
 import { MDXRemote } from "next-mdx-remote/rsc"
 import remarkGfm from "remark-gfm"
 
@@ -268,6 +269,8 @@ export default async function CasePage({ params }: PageProps) {
             </div>
           </section>
         )}
+
+        <ExhibitGallery study={c} />
 
         {c.risk_scores && Object.keys(c.risk_scores).length > 0 && (
           <section>
