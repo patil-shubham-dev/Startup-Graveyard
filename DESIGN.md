@@ -182,6 +182,12 @@ counts. All copy is grounded — no invented numbers.
   goes through `formatCurrencyCompact` in `lib/utils/format.ts` (divides by
   100). Do not render `funding_raised` with a page-local formatter — that was
   the source of a $100B-vs-$1B display bug on `/insights`.
+- Generation is single-source for money and valuation: `metrics
+  .capital_raised` and `metrics.peak_valuation` were removed from the
+  `CoreMetadataSchema` in `scripts/daily-autopsy.ts` and its prompt — the
+  top-level `funding_raised` / `valuation_peak` fields are the only source
+  (dossier's `DUPLICATE_METRIC_KEYS` skips are now vestigial guards for
+  legacy rows).
 - **Ledger (home, about, pre-mortem):** computed by `getLedgerStats()` in
   `lib/db/case-studies.ts` — service-role counts all rows (including drafts),
   falls back to anon published-only, then to `ledgerFromCases()` over local
@@ -209,14 +215,25 @@ counts. All copy is grounded — no invented numbers.
 
 ## Known limitations / follow-ups
 
-- `better-dot-com.json` is depublished (`published: false`, review_status
-  `in_review`) pending a factual rewrite: Better Home & Finance is still
-  operating (NASDAQ: BETR; $868M funded volume, +31% YoY in Q1 2026), so the
-  file's "shutdown 2022" claim was inaccurate.
-- `metrics.capital_raised` duplicates `funding_raised` and has to be kept in
-  step; a single-source schema would remove the risk.
-- `scripts/seed-case-studies.mjs` is a manual runbook step today; wiring it
-  into the daily automation (post-edit sync) is a follow-up.
+- `better-dot-com.json` is a **rejected guard record** (`published: false`,
+  review_status `rejected`, fact-checked 2026-08-08): Better Home & Finance
+  is still operating (NASDAQ: BETR — Q2 2026 funded volume $1.67B, +38%
+  YoY), so the file's "shutdown 2022" claim was inaccurate. It stays on disk
+  so the daily pipeline's dedup guard can never regenerate a fictional
+  shutdown case for it. `review_notes` + `verified_sources` carry the full
+  evidence trail.
+- Seed governance: `seed-case-studies.mjs` **preserves DB governance by
+  default** (`published` / `review_status` / `published_at` /
+  `review_notes` are kept from the DB when a row already exists); pass
+  `--force` to re-sync governance from the files (e.g. after a rewrite like
+  Better's).
+- `juicero` has a NULL embedding (its file carries a 768-dim vector;
+  column is 1024). Re-run `re-embed-existing.ts` before any RAG work that
+  should return it.
+- One DB-only row remains: `fab-com` (Fab.com, unpublished draft) — the
+  pre-renaming artifact, left untouched by design (seed never deletes).
+- `scripts/seed-case-studies.mjs` is still a manual runbook step today;
+  wiring it into the daily automation (post-edit sync) is a follow-up.
 
 ## Editorial elevation (2026-08-07)
 
@@ -630,10 +647,19 @@ tokens, or type changes.
   pipelines keep interactions at zero-jank. Verified by Playwright: 29
   checks (desktop + mobile + reduced-motion) incl. keyboard dropdown
   navigation, URL commit, no console errors, no horizontal overflow.
-- **Assets (pending):** the two engravings are authored externally per
-  brief §23 — full generation prompts are in the session record; drop
-  the outputs as `archive-plate.webp` / `archive-empty.webp` in
-  `public/` and the page mounts them automatically.
-- **Follow-up (data-side):** the same taxonomy normalization noted in the
-  v1 register — merging "Fintech"/"Financial Technology" etc. would
-  tighten the Industry and Failure cause facets too.
+- **Assets (done 2026-08-08):** the two engravings were authored as pure
+  SVG linework (cream ground `#f2f1ed`, ink `#d8d4c8` — no shading, no
+  gray blend) and rasterized with sharp → `public/archive-plate.webp`
+  (1600×360, ink coverage ≈3%) and `public/archive-empty.webp` (800×600,
+  ink ≈2%). The page mounts them automatically; no changes needed in
+  plate/empty-state components.
+- **Follow-up (data-side, done 2026-08-08):** failure-reason labels were
+  canonicalized across `data/case-studies/*.json` (near-dupes like
+  "Poor Execution" → "Execution", "Regulatory Issues" → "Regulatory",
+  "Lack of Traction" → "No Market Need"). The canonical list and map now
+  live in `lib/taxonomy.ts` (`canonicalizeFailureReasons`), re-applied by
+  `scripts/normalize-failure-taxonomy.ts` (idempotent) and enforced inline
+  on every new `daily-autopsy.ts` generation. Industries were already
+  clean (audited — no near-dupes), so they were left untouched. Two labels
+  are intentionally non-canonical: "Lack of Scalability" and "Insufficient
+  Revenue Growth" — distinct semantics, no near-duplicate.

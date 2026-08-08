@@ -1,6 +1,6 @@
 # AI Automation Pipeline — Remediation Plan
 
-## Status (audited 2026-08-06 against working tree)
+## Status (audited 2026-08-08 against working tree)
 
 | ID | Status | Evidence |
 |----|--------|----------|
@@ -8,14 +8,20 @@
 | F2 | ✅ Done | Migrations `008` + `010`; final state is `vector(1024)` — `010` corrected 008's 768-dim assumption (model actually outputs 1024) |
 | F3 | ✅ Done (variant) | `lib/web-search.ts` implements fact verification via DuckDuckGo HTML search + `verifyFacts()` scoring (not Tavily as originally planned); `fact_check_score` + `verified_sources` added in migration `009` |
 | F4 | ✅ Done | Migration `009` (review lifecycle), `/api/review` (GET list, PATCH approve/reject/request_changes, PUT draft edit), `ADMIN_EMAILS` allowlist |
-| F5 | ⬜ Unverified | Check `CANDIDATES` dedup in `scripts/daily-autopsy.ts` |
-| F6 | ⬜ Unverified | Check slug hint/override in `scripts/daily-autopsy.ts` |
-| F7 | ⬜ Unverified | Check alias handling in `scripts/daily-autopsy.ts` |
-| F8 | ✅ Partially | `lib/ai/index.ts` uses `generateObject()` (structured output) for generation; script-level `sanitizeJSON` status unverified |
-| F9 | ⬜ Open | No model fallback chain in `lib/ai/index.ts` (single `AI_DEFAULT_MODEL`) |
-| F10 | ⬜ Unverified | Check `lib/logo-service.ts` content-type/GET validation |
-| F11 | ✅ Done | Workflow and scripts run via `npx tsx` |
-| F12 | ✅ Done | `scripts/generate-embeddings.ts` removed; `scratch/` absent |
+| F5 | ✅ Done | `CANDIDATES` dedup + Set-based guard: each attempt re-queries DB `company_name`/`slug` sets, alias-matches via `COMPANY_ALIASES` (line 674-700), slug-collision check before generation |
+| F6 | ✅ Done | Slug hint in the Stage-1 prompt (`MUST be exactly "${expectedSlug}"`) + post-generation override when the AI slug differs (line 790-793) + DB slug re-check before insert (line 801+) |
+| F7 | ✅ Done | `COMPANY_ALIASES` table (line 484) + `getAllAliases()`, dedup loop checks primary name + aliases + slug (line 685-697) |
+| F8 | ✅ Done | `lib/ai/index.ts` uses `generateObject()` (structured output via tool calling) for all generation; script-level `sanitizeJSON` (line 213) is now a parse fallback layered under JSON.parse, with `tryParseJSON` logging structured errors — no longer the only strategy |
+| F9 | ✅ Done | Provider chain in `lib/ai/index.ts` `generate()`: NVIDIA (`NVIDIA_API_KEY`) → OpenAI-compatible fallback (`OPENAI_API_KEY` + `OPENAI_BASE_URL`, reuses `@ai-sdk/openai`), per-provider retry with warning logs; clear error if none configured |
+| F10 | ✅ Done | `lib/logo-service.ts` now URL-scheme validates, uses single GET (HEAD often 405s), checks `content-type` starts with `image/`, and rejects trivial placeholder bodies (content-length < 1KB when present) |
+| F11 | ✅ Done | Workflow and scripts run via `npx tsx`; `normalize-failure-taxonomy.ts` verified this run |
+| F12 | ✅ Done | `scripts/generate-embeddings.ts` removed; `scratch/` absent; orphaned content artifacts `better-com.md` + `fab-com.md` deleted 2026-08-08 |
+
+Follow-ups raised 2026-08-08 (tracked in DESIGN.md, not part of the F-plan):
+- Better.com rejected-record rewrite + canonical failure taxonomy (data + `lib/taxonomy.ts`).
+- `metrics.capital_raised` / `metrics.peak_valuation` removed from generation (single-source: top-level `funding_raised` / `valuation_peak`).
+- `seed-case-studies.mjs` gained governance-preserving default + `--force` sync.
+- `juicero` row has a NULL embedding (768-dim source record) — re-embed before RAG can return it.
 
 Items below are the original plan as written.
 
