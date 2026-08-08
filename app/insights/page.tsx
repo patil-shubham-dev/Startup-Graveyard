@@ -47,7 +47,7 @@ export default async function InsightsPage() {
     .slice(0, 5)
 
   return (
-    <main>
+    <div>
       <div className="mx-auto max-w-3xl px-5 pt-12 sm:px-6 md:pt-16">
         <p className="label-catalog flex items-center gap-2">
           <span aria-hidden className="inline-block h-1.5 w-1.5 bg-accent-deep" />
@@ -232,6 +232,6 @@ export default async function InsightsPage() {
           </div>
         </section>
       </div>
-    </main>
+    </div>
   )
 }

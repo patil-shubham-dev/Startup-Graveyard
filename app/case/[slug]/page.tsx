@@ -125,7 +125,7 @@ export default async function CasePage({ params }: PageProps) {
     : []
 
   return (
-    <main>
+    <div>
       <div className="mx-auto max-w-3xl px-5 pt-12 sm:px-6 md:pt-16">
         <Link href="/explore" className="link-editorial">
           ← Back to the archive
@@ -498,6 +498,6 @@ export default async function CasePage({ params }: PageProps) {
           </div>
         </div>
       </section>
-    </main>
+    </div>
   )
 }

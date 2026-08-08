@@ -51,7 +51,7 @@ export default function AuthPage() {
   }
 
   return (
-    <main className="mx-auto max-w-md px-5 py-20 sm:px-6 md:py-28">
+    <div className="mx-auto max-w-md px-5 py-20 sm:px-6 md:py-28">
       <p className="label-catalog flex items-center gap-2">
         <span aria-hidden className="inline-block h-1.5 w-1.5 bg-accent-deep" />
         Archive access
@@ -153,6 +153,6 @@ export default function AuthPage() {
           </div>
         </form>
       </div>
-    </main>
+    </div>
   )
 }

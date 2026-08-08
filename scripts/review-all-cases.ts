@@ -79,25 +79,6 @@ Return JSON:
   }
 }
 
-function extractLargestJSON(text: string): string | null {
-  let start = -1;
-  for (let i = 0; i < text.length; i++) { if (text[i] === '{') { start = i; break; } }
-  if (start === -1) return null;
-  let depth = 0, inStr = false, esc = false;
-  for (let i = start; i < text.length; i++) {
-    const ch = text[i];
-    if (esc) { esc = false; continue; }
-    if (ch === '\\' && inStr) { esc = true; continue; }
-    if (ch === '"') { inStr = !inStr; continue; }
-    if (!inStr) {
-      if (ch === '{') depth++;
-      if (ch === '}') depth--;
-      if (depth === 0) return text.slice(start, i + 1);
-    }
-  }
-  return null;
-}
-
 async function duckduckgoSearch(query: string): Promise<{ title: string; url: string; snippet: string }[]> {
   try {
     const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;

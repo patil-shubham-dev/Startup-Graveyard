@@ -88,7 +88,7 @@ export default function AskPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-3xl flex-col px-5 py-14 sm:px-6 md:py-20">
+    <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-3xl flex-col px-5 py-14 sm:px-6 md:py-20">
       <div>
         <p className="label-catalog">/ask</p>
         <h1 className="mt-4 text-4xl font-semibold leading-[1.08] tracking-[-0.02em] text-ink sm:text-5xl">
@@ -139,6 +139,6 @@ export default function AskPage() {
           </p>
         </form>
       </div>
-    </main>
+    </div>
   )
 }

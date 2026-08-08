@@ -17,7 +17,7 @@ export default async function AboutPage() {
   const inReview = ledger?.inReview ?? 0
 
   return (
-    <main className="mx-auto max-w-3xl px-5 py-20 sm:px-6 md:py-28">
+    <div className="mx-auto max-w-3xl px-5 py-20 sm:px-6 md:py-28">
       <p className="label-catalog flex items-center gap-2">
         <span aria-hidden className="inline-block h-1.5 w-1.5 bg-accent-deep" />
         About the archive · Volume I
@@ -84,6 +84,6 @@ export default async function AboutPage() {
           Submit a case
         </Link>
       </div>
-    </main>
+    </div>
   )
 }

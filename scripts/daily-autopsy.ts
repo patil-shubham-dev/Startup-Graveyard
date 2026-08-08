@@ -904,7 +904,7 @@ Use factual data where possible. Never fabricate funding amounts — use the tot
 
       // ── Save to Database ─────────────────────────────
       console.log('\n💾 Saving to database...');
-      const { funding_rounds, legacy_impact, failure_analysis, evidence_images, ...restEnriched } = enriched;
+      const { funding_rounds, legacy_impact: _legacy_impact, failure_analysis, evidence_images, ...restEnriched } = enriched;
       const finalData: Record<string, unknown> = {
         ...metadata,
         logo_url: logoUrl,

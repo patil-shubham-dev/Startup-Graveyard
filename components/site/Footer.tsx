@@ -57,7 +57,7 @@ export async function Footer() {
         className="archive-watermark absolute bottom-0 right-0 h-full w-1/2 max-w-[420px]"
       >
         <Image
-          src="/archive-mark.png"
+          src="/archive-mark.webp"
           alt=""
           fill
           sizes="420px"

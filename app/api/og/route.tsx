@@ -3,14 +3,17 @@ import { NextRequest } from 'next/server';
 
 export const runtime = 'edge';
 
+const PAPER = '#faf9f6';
+const INK = '#1b1a17';
+const INK_MUTE = '#63615a';
+const LINE = '#e7e4dc';
+const ACCENT = '#7a2416';
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const title = searchParams.get('title') || 'Startup Graveyard';
+    const title = searchParams.get('title') || 'Failure leaves clues. The archive preserves them.';
     const type = searchParams.get('type') || 'CASE_STUDY';
-
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://startupgraveyard.com';
-    const bg = `${siteUrl}/og-bg.png`;
 
     return new ImageResponse(
       (
@@ -22,13 +25,11 @@ export async function GET(req: NextRequest) {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundImage: `url(${bg})`,
-            backgroundSize: '1200px 630px',
+            backgroundColor: PAPER,
             position: 'relative',
-            fontFamily: 'Georgia, serif',
           }}
         >
-          {/* Forensic border frame */}
+          {/* Hairline frame */}
           <div
             style={{
               position: 'absolute',
@@ -36,80 +37,69 @@ export async function GET(req: NextRequest) {
               left: 24,
               right: 24,
               bottom: 24,
-              border: '1.5px solid rgba(180, 140, 100, 0.3)',
+              border: `1px solid ${LINE}`,
+            }}
+          />
+
+          {/* Top label */}
+          <div
+            style={{
+              position: 'absolute',
+              top: 42,
+              left: 48,
               display: 'flex',
-              flexDirection: 'column',
               alignItems: 'center',
-              justifyContent: 'center',
+              gap: 12,
             }}
           >
-            {/* Top label */}
+            <div style={{ width: 10, height: 10, backgroundColor: ACCENT }} />
             <div
               style={{
-                position: 'absolute',
-                top: -1,
-                left: 48,
-                display: 'flex',
-                backgroundColor: '#1a1a1a',
-                padding: '0 12px',
-                fontSize: 10,
-                letterSpacing: '0.2em',
-                color: '#b48c64',
+                fontSize: 11,
+                letterSpacing: '0.18em',
+                color: INK_MUTE,
                 textTransform: 'uppercase',
                 fontFamily: 'monospace',
               }}
             >
-              STARTUP GRAVEYARD // {type}
-            </div>
-
-            {/* Decorative line */}
-            <div
-              style={{
-                position: 'absolute',
-                top: 60,
-                left: 60,
-                right: 60,
-                height: 1,
-                backgroundColor: 'rgba(180, 140, 100, 0.15)',
-              }}
-            />
-
-            {/* Main title */}
-            <div
-              style={{
-                fontSize: title.length > 30 ? 48 : 64,
-                fontWeight: 700,
-                color: '#f0ede8',
-                textAlign: 'center',
-                maxWidth: '80%',
-                lineHeight: 1.1,
-                letterSpacing: '-0.02em',
-                fontStyle: 'italic',
-                fontFamily: 'Georgia, serif',
-              }}
-            >
-              {title}
-            </div>
-
-            {/* Category badge */}
-            <div
-              style={{
-                marginTop: 32,
-                padding: '8px 24px',
-                border: '1.5px solid rgba(180, 140, 100, 0.4)',
-                borderRadius: 2,
-                fontSize: 14,
-                letterSpacing: '0.3em',
-                color: '#b48c64',
-                textTransform: 'uppercase',
-                fontFamily: 'monospace',
-              }}
-            >
-              FORENSIC AUTOPSY
+              Start-up Graveyard · Forensic Intelligence Archive
             </div>
           </div>
 
-          {/* Bottom watermark */}
+          {/* Title */}
+          <div
+            style={{
+              fontSize: title.length > 40 ? 44 : 56,
+              fontWeight: 700,
+              color: INK,
+              textAlign: 'center',
+              maxWidth: '74%',
+              lineHeight: 1.12,
+              letterSpacing: '-0.02em',
+              fontStyle: 'italic',
+              fontFamily: 'Georgia, serif',
+            }}
+          >
+            {title}
+          </div>
+
+          {/* Badge */}
+          <div
+            style={{
+              marginTop: 32,
+              padding: '8px 20px',
+              border: `1px solid rgba(122, 36, 22, 0.4)`,
+              fontSize: 13,
+              letterSpacing: '0.28em',
+              color: ACCENT,
+              textTransform: 'uppercase',
+              fontFamily: 'monospace',
+            }}
+          >
+            {type === 'CASE_STUDY' ? 'Case file' : type.replace(/_/g, ' ')}
+          </div>
+
+          {/* Bottom mark */}
           <div
             style={{
               position: 'absolute',
@@ -117,11 +107,11 @@ export async function GET(req: NextRequest) {
               right: 48,
               fontSize: 10,
               letterSpacing: '0.15em',
-              color: 'rgba(180, 140, 100, 0.2)',
+              color: INK_MUTE,
               fontFamily: 'monospace',
             }}
           >
-            startupgraveyard.com
+            VOL. I · EVIDENCE OVER OPINION
           </div>
         </div>
       ),

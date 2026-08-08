@@ -105,12 +105,14 @@ counts. All copy is grounded — no invented numbers.
 
 ## Imagery
 
-- `public/engraving.png` (1024×1536, transparent background) — the only
-  graphic on the home page. A fine line engraving of a blank headstone,
-  positioned absolute right of the hero (desktop only, `hidden md:block`),
-  `opacity-60`, with a left-to-right mask fade so the headline column stays
-  legible. The engraving's top third is intentionally empty negative space
-  for the headline to sit over. Loaded via `next/image` with `priority`.
+- `public/engraving-2.webp` (1477×1065, WebP q80) — the home-page hero
+  graphic: a fine-line copperplate engraving of a blank headstone on a
+  cream field, positioned absolute right of the hero (desktop only,
+  `hidden md:block`), `mix-blend-mode: multiply`, opacity 0.5 (0.6 hover),
+  with a left-to-right mask fade so the headline column stays legible. The
+  engraving's top third is intentionally empty negative space for the
+  headline to sit over. Loaded via `next/image` with `priority`. (The
+  superseded transparent `public/engraving.png` remains unreferenced.)
 - `public/textures/paper.jpg` (1254×1254, warm-white ~#f2f1ed) — paper grain
   for light surfaces. Applied as a fixed `body::before` overlay
   (`background-size: 512px`, `opacity: 0.45`) and as the `.texture-paper`
@@ -129,14 +131,24 @@ counts. All copy is grounded — no invented numbers.
   verified: transparent corners, 12.5% of visible pixels are dark ink at
   the served size. `public/logo-placeholder.png`
   (256×256) — logo fallback for case graphics (not yet rendered in UI).
-- `public/grave-marker.png` (900×675) — fine-line engraving of an unmarked
-  grave on a cream field (corner tone 250,249,244 ≈ paper). Used on the
-  global 404 ("This grave is unmarked.") and the case not-found ("No case
-  file by that name."): right-column plate at 280px (desktop) / min(56vw,
-  300px) (mobile), rendered with `mix-blend-mode: multiply` (cream field
-   x paper is imperceptible — the established engraving treatment) plus a
-   vertical fade mask (transparent 0-12% / black 12-88% / transparent
-   100%). Decorative — `alt=""`, `aria-hidden`.
+- `public/grave-marker.webp` (900×675, WebP q80, 42KB) — fine-line
+  engraving of an unmarked grave on a cream field (corner tone
+  250,249,244 ≈ paper). Used on the global 404 ("This grave is unmarked.")
+  and the case not-found ("No case file by that name."): right-column
+  plate at 280px (desktop) / min(56vw, 300px) (mobile), rendered with
+  `mix-blend-mode: multiply` (cream field x paper is imperceptible — the
+  established engraving treatment) plus a vertical fade mask (transparent
+  0-12% / black 12-88% / transparent 100%). Decorative — `alt="",
+  aria-hidden`.
+- **Asset pipeline:** all engravings ship as WebP q80 (effort 6) — the
+  fidelity ceiling for shaded linework; ink ratios are preserved exactly
+  (engraving 8.1→8.2%, archive seal 45.4→45.3%) and a 250KB target is not
+  reachable without visible banding. Sizes: `engraving-2.webp` 1030KB
+  (was 4011KB PNG), `archive-mark.webp` 422KB (was 1538KB),
+  `grave-marker.webp` 42KB (was 476KB). The header `mark.png` (11.2KB) is
+  small enough to stay PNG. PNGs are keyed-to-alpha only when the ink is
+  pure linework with no soft shading; soft-shaded plates get the multiply
+  treatment instead (alpha keying haloed the shaded 404 plate).
 
 
 ## Accessibility
@@ -150,7 +162,10 @@ counts. All copy is grounded — no invented numbers.
   `:focus-visible`; skip link in components layer.
 - **Reduced motion** honoured (see above).
 - **Semantics:** heading order, `dl/dt/dd` ledger, `aria-label="Primary"`
-  nav, `aria-label` on mobile menu summary.
+  nav, `aria-label` on mobile menu summary. Exactly one landmark:
+  `<main id="main">` lives in `app/layout.tsx`; every page renders its
+  content as a plain `<div>` inside it (no nested `<main>`), verified per
+  route in Playwright.
 
 ## Data model & ledger
 
@@ -176,7 +191,9 @@ counts. All copy is grounded — no invented numbers.
   seed, bust the cache via `/api/revalidate` (requires `REVALIDATION_SECRET`)
   or restart the server.
 - Current live ledger: `Cases documented 20 · Published 16 · Under review 4
-  · Industries 14 · Archive span 2014–23`.
+  · Industries 12 · Archive span 2014–23` (normalized taxonomy seeded
+  2026-08-08; `/api/revalidate` busted cache — `/api/archive-stats`
+  confirms `documented 20, published 16, industries 12`).
 
 ## Verification process
 
@@ -338,7 +355,7 @@ draft. Same tokens; every addition is printed, catalogued, or stamped.
   block-level, mt 2/1/3). Dropped mobile size to text-4xl so the two
   sentences stay a tight two-line lockup at 390px; md back to text-7xl.
 - **Engraving 2.0:** replaced `engraving.png` with a copperplate plate
-  (`engraving-2.png`, 1477×1065) generated as an opaque cream PNG and
+  (`engraving-2.webp`, 1477×1065) generated as an opaque cream PNG and
   keyed to a real alpha channel (luminance-distance key, corner rgb
   (231,223,210) -> transparent; ink retained). Uses `mix-blend-mode:
   multiply` so the light-grey engraving ink darkens the paper (`ink *
@@ -354,9 +371,8 @@ draft. Same tokens; every addition is printed, catalogued, or stamped.
   tablet Δ9, mobile Δ6 (conservative — mobile paper baseline is
   understated by the headline box). Verified at 1440/900/390: h1 copy
   ends x1064 (desktop) so the ink core clears it; all CTA buttons sit
-  below the plate bottom (y480); no horizontal overflow. The old
-  headstone file stays in `public/` as fallback.
-- **Archive watermark:** new `archive-mark.png` (1254×1254 circular seal,
+  below the plate bottom (y480); no horizontal overflow.
+- **Archive watermark:** new `archive-mark.webp` (1254×1254 circular seal,
   keyed transparent). Used as a faint institutional stamp in exactly two
   places — the search section (right, 50% width, max 560px) and the
   footer (right, 50%, max 420px) — at opacity 0.045 with
@@ -505,10 +521,50 @@ tokens, no new families, no new assets.
   → Fintech; Hardware + Subscription → Hardware (only where
   business_model is "Hardware + Subscription" — jawbone, juicero).
   Result: 25 → 19 reason labels, 14 → 12 industries; 8 files updated,
-  all still parse. Next seed will carry the tightened facets to Supabase.
+  all still parse. Seed run 2026-08-08: 19 upserted, DB now carries the
+  tightened facets (verified: `/api/archive-stats` reports industries 12).
 - **Verification:** `tsc --noEmit` clean, eslint clean, impeccable
   detector 0 findings on all new surfaces, production build clean
   (`next build`: /insights now static with zero client JS), Playwright
   sweep of 14 routes × 2 viewports: every route 200, zero overflowX, zero
   console/page errors. `/case/[slug]` 404 status is a documented soft-404
   (noindex injected, verified in prod build).
+
+### Archive hardline (Aug 2026)
+
+Housekeeping pass: single landmark, paper OG card, WebP pipeline, seeded
+taxonomy, lint gate restored.
+
+- **Single landmark:** `<main id="main">` moved into `app/layout.tsx`
+  (the only `<main>` in the app); all 12 pages converted their wrapper
+  `<main>` to `<div>` — no nested landmarks. Verified per route (desktop +
+  mobile, dev and prod build) that exactly one `<main id="main">`
+  renders.
+- **OG card (`/api/og`):** rebuilt from the dark-gold register (bg image
+  `og-bg.png`, avg lum 30) to the paper editorial card: PAPER `#faf9f6`
+  / INK `#1b1a17` / INK_MUTE `#63615a` / LINE `#e7e4dc` / ACCENT
+  `#7a2416`; 24px hairline frame; oxblood square + mono uppercase top
+  label (`START-UP GRAVEYARD · FORENSIC INTELLIGENCE ARCHIVE`); serif
+  italic title 56px (44px > 40 chars), maxWidth 74%; mono uppercase badge
+  (`CASE FILE` / type param replaces `_`); `VOL. I · EVIDENCE OVER
+  OPINION` bottom-right. Defaults: `title='Failure leaves clues. The
+  archive preserves them.'`. Rendered card: 1200×630, 24,430 bytes,
+  corners at paper. `public/og-bg.png` deleted (no refs).
+- **WebP pipeline:** all engraving plates shipped as WebP q80 (effort 6)
+  — exact ink preservation, sizes 1030/422/42KB (from 4011/1538/476KB
+  PNGs). 250KB per-asset target explicitly not chased: banding on the
+  shaded engravings at that size violates the fidelity bar. Header
+  `mark.png` (11.2KB) stays PNG. Superseded PNGs deleted from `public/`
+  (git-recoverable).
+- **Seed + revalidate:** taxonomy seed executed (19 upserted, 0
+  inserted, DB-only row untouched); `/api/revalidate` busted
+  `case-studies`/`stats`/`insights`; `/api/archive-stats` now serves the
+  normalized counts. `/rss.xml` (16 items, valid XML) and `/api/health`
+  (all services operational) smoke-passed.
+- **Lint gate restored:** pre-existing script lint debt cleared —
+  `daily-autopsy.ts` underscore-discard destructure, dead
+  `extractLargestJSON` removed from `review-all-cases.ts`, `verify-rag.ts`
+  real result-row type (no `any`), `*.cjs` files exempted from the TS
+  import rule via `eslint.config.mjs` (CommonJS by definition), plus the
+  standard `^_` ignore + `ignoreRestSiblings` conventions. `eslint` and
+  `tsc` both exit 0 across `app`/`components`/`scripts`.

@@ -44,7 +44,7 @@ async function testRAG(query: string) {
   }
 
   console.log('Results:');
-  results.forEach((r: any) => {
+  results.forEach((r: { company_name: string; similarity: number }) => {
     console.log(`- ${r.company_name} (Similarity: ${r.similarity.toFixed(4)})`);
   });
 }

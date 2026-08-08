@@ -21,8 +21,8 @@ export default async function ExplorePage({
   )
 
   return (
-    <main>
+    <div>
       <ExploreClient initialCases={inAccessionOrder} initialSearch={q} />
-    </main>
+    </div>
   )
 }

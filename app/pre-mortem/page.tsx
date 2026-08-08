@@ -112,7 +112,7 @@ export default function PreMortemPage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-5 py-20 sm:px-6 md:py-28">
+    <div className="mx-auto max-w-3xl px-5 py-20 sm:px-6 md:py-28">
       <p className="label-catalog">/pre-mortem</p>
       <h1 className="mt-4 text-4xl font-semibold leading-[1.08] tracking-[-0.02em] text-ink sm:text-5xl">
         Pre-mortem Analysis
@@ -275,6 +275,6 @@ export default function PreMortemPage() {
           </div>
         )}
       </div>
-    </main>
+    </div>
   )
 }

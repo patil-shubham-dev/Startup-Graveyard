@@ -67,7 +67,7 @@ export default async function Home() {
       <section className="hero relative mx-auto overflow-hidden">
         <div aria-hidden className="hero-engraving -z-10 w-[66%] sm:w-[58%] md:w-[50%] lg:w-[48%]">
           <Image
-            src="/engraving-2.png"
+            src="/engraving-2.webp"
             alt=""
             fill
             priority
@@ -131,7 +131,7 @@ export default async function Home() {
           className="archive-watermark absolute right-0 top-0 h-full w-1/2 max-w-[560px]"
         >
           <Image
-            src="/archive-mark.png"
+            src="/archive-mark.webp"
             alt=""
             fill
             sizes="560px"

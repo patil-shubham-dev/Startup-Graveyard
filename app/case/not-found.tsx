@@ -3,7 +3,7 @@ import Link from "next/link"
 
 export default function CaseNotFound() {
   return (
-    <main className="mx-auto max-w-3xl px-5 py-20 sm:px-6 md:py-28">
+    <div className="mx-auto max-w-3xl px-5 py-20 sm:px-6 md:py-28">
       <div className="flex flex-col-reverse gap-12 md:flex-row md:items-start md:gap-16">
         <div className="min-w-0">
           <p className="label-catalog flex items-center gap-2">
@@ -28,7 +28,7 @@ export default function CaseNotFound() {
         </div>
         <div className="shrink-0 self-center md:self-start">
           <Image
-            src="/grave-marker.png"
+            src="/grave-marker.webp"
             alt=""
             width={900}
             height={675}
@@ -42,6 +42,6 @@ export default function CaseNotFound() {
           />
         </div>
       </div>
-    </main>
+    </div>
   )
 }
