@@ -13,8 +13,16 @@ const hasValidKey = NVIDIA_API_KEY.length > 20 && !NVIDIA_API_KEY.includes('your
 
 const DEFAULT_MODEL = process.env.AI_DEFAULT_MODEL || 'meta/llama-3.1-70b-instruct';
 
+// Optional fallback provider (OpenAI-compatible gateway). When both
+// OPENAI_API_KEY and OPENAI_BASE_URL are set, generation gracefully
+// degrades to it if NVIDIA is unavailable or errors out.
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
+const OPENAI_BASE_URL = process.env.OPENAI_BASE_URL || '';
+const hasOpenAICompatFallback = OPENAI_API_KEY.length > 20 && OPENAI_BASE_URL.startsWith('https://');
+
 let nvidiaInstance: ReturnType<typeof createOpenAI> | null = null;
 let openaiInstance: OpenAI | null = null;
+let openaiCompatInstance: ReturnType<typeof createOpenAI> | null = null;
 
 if (hasValidKey) {
   nvidiaInstance = createOpenAI({
@@ -27,6 +35,13 @@ if (hasValidKey) {
     baseURL: 'https://integrate.api.nvidia.com/v1',
     timeout: 30000,
     maxRetries: 2,
+  });
+}
+
+if (hasOpenAICompatFallback) {
+  openaiCompatInstance = createOpenAI({
+    apiKey: OPENAI_API_KEY,
+    baseURL: OPENAI_BASE_URL,
   });
 }
 
@@ -126,8 +141,8 @@ export class AIService {
   }
 
   async generate<T>(prompt: string, schema: ZodSchema<T>): Promise<T> {
-    if (!nvidiaInstance || !hasValidKey) {
-      throw new Error('AI service: NVIDIA_API_KEY not configured');
+    if (!hasValidKey && !hasOpenAICompatFallback) {
+      throw new Error('AI service: no AI provider configured (set NVIDIA_API_KEY, or OPENAI_API_KEY + OPENAI_BASE_URL)');
     }
 
     const cacheKey = `generate:${normalizeQuery(prompt)}`;
@@ -139,15 +154,32 @@ export class AIService {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(new Error('AI generation timed out after 20s')), 20000);
 
-    try {
-      const { object } = await generateObject({
-        model: nvidiaInstance.chat(DEFAULT_MODEL),
-        schema: schema,
-        prompt: prompt,
-      });
+    // Provider chain: NVIDIA first, then the OpenAI-compatible fallback.
+    // Structured generation is the site's critical path, so a provider
+    // failure degrades to the next configured provider instead of a 500.
+    const providers: Array<{ name: string; instance: ReturnType<typeof createOpenAI> | null }> = [];
+    if (hasValidKey) providers.push({ name: 'nvidia', instance: nvidiaInstance });
+    if (hasOpenAICompatFallback) providers.push({ name: 'openai-compat', instance: openaiCompatInstance });
 
-      responseCache.set(cacheKey, JSON.stringify(object));
-      return object as T;
+    let lastError: Error | null = null;
+    try {
+      for (const provider of providers) {
+        if (!provider.instance) continue;
+        try {
+          const { object } = await generateObject({
+            model: provider.instance.chat(DEFAULT_MODEL),
+            schema: schema,
+            prompt: prompt,
+          });
+
+          responseCache.set(cacheKey, JSON.stringify(object));
+          return object as T;
+        } catch (err) {
+          lastError = err instanceof Error ? err : new Error(String(err));
+          console.warn(`AI provider "${provider.name}" failed: ${lastError.message}`);
+        }
+      }
+      throw lastError ?? new Error('AI service: no providers available');
     } finally {
       clearTimeout(timeout);
     }
