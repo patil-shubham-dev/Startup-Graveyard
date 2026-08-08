@@ -119,20 +119,25 @@ counts. All copy is grounded — no invented numbers.
 - `public/textures/well.jpg` (1254×1254, near-black ~#141311) — dark stock
   grain for the `well` band via `.texture-well` pseudo-element. Matches the
   `well` token tone; adds felt-like depth.
-- `public/mark.png` (32×32) — header wordmark mark. `public/logo-placeholder.png`
+- `public/mark.png` (128×128 display, keyed transparent) — header wordmark
+  mark: fine copperplate linework of a blank headstone (rounded top, empty
+  oval inscription recess) in warm near-black ink on a cream field
+  (corner tone 249,248,242), background keyed to alpha at 128×128 (4× for
+  the 20px header slot). The first generated version came back inverted
+  (light headstone on a near-black field, shaded) and was rejected;
+  regenerated with explicit dark-ink-on-light-paper constraints and
+  verified: transparent corners, 12.5% of visible pixels are dark ink at
+  the served size. `public/logo-placeholder.png`
   (256×256) — logo fallback for case graphics (not yet rendered in UI).
 - `public/grave-marker.png` (900×675) — fine-line engraving of an unmarked
   grave on a cream field (corner tone 250,249,244 ≈ paper). Used on the
   global 404 ("This grave is unmarked.") and the case not-found ("No case
   file by that name."): right-column plate at 280px (desktop) / min(56vw,
   300px) (mobile), rendered with `mix-blend-mode: multiply` (cream field
-  x paper is imperceptible — the established engraving treatment) plus a
-  vertical fade mask (transparent 0-12% / black 12-88% / transparent
-  100%). Decorative — `alt=""`, `aria-hidden`.
-- `public/mark.png` (32×32 display) — pending regeneration: the generated
-  replacement came back inverted (light headstone on a near-black field,
-  shaded render, 70% dark coverage) and is NOT integrated. Needs dark ink
-  strokes on light paper per the prompt below.
+   x paper is imperceptible — the established engraving treatment) plus a
+   vertical fade mask (transparent 0-12% / black 12-88% / transparent
+   100%). Decorative — `alt=""`, `aria-hidden`.
+
 
 ## Accessibility
 
