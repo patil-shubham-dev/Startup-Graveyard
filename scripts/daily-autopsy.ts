@@ -5,6 +5,7 @@ import * as path from 'path';
 import OpenAI from 'openai';
 import { acquireLogoUrl } from '../lib/logo-service';
 import { verifyFacts, VerifiedSource } from '../lib/web-search';
+import { canonicalizeFailureReasons } from '../lib/taxonomy';
 
 // ── Config ──────────────────────────────────────────────
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -63,8 +64,6 @@ const CoreMetadataSchema = z.object({
     burn: z.number(),
   }),
   metrics: z.object({
-    capital_raised: z.string(),
-    peak_valuation: z.string(),
     years_active: z.number(),
     peak_employees: z.string(),
     burn_rate: z.string(),
@@ -752,7 +751,7 @@ Return a JSON object with these fields:
 - investors: array of 3-6 investor names
 
 --- Failure Analysis ---
-- failure_reasons: array of 3-6 categories from: "No Market Need", "Cash Exhaustion", "Competition", "Blitzscaling", "Regulatory", "Fraud", "Product-Market Fit", "Execution", "Pricing", "Leadership", "Timing", "Technology", "Business Model", "Strategy", "Operations", "Culture", "User Acquisition Cost", "Unit Economics"
+- failure_reasons: array of 3-6 categories from: "No Market Need", "Cash Exhaustion", "Competition", "Blitzscaling", "Regulatory", "Fraud", "Product-Market Fit", "Execution", "Pricing", "Leadership", "Timing", "Technology", "Business Model", "Strategy", "Operations", "Culture", "User Acquisition Cost", "Unit Economics", "Marketing"
 - root_causes: array of 3-5 deep, specific root causes (not categories — actual causes like "Over-expansion before achieving product-market fit" or "Unable to reduce customer acquisition cost below LTV")
 - warning_signs: array of 3-5 early warning signs that were missed or ignored
 - lessons: array of 4-6 actionable, specific lessons for founders (not generic platitudes)
@@ -765,8 +764,6 @@ Return a JSON object with these fields:
 
 --- Metrics Display (appears as Quick Facts cards on the page) ---
 - metrics: object {
-    capital_raised: string (e.g. "$2 billion"),
-    peak_valuation: string (e.g. "$1.75 billion"),
     years_active: number,
     peak_employees: string (e.g. "200"),
     burn_rate: string (e.g. "$1 billion per year"),
@@ -785,6 +782,7 @@ CRITICAL REQUIREMENTS:
 5. Keep values concise — this is structured data, not prose`;
 
       metadata = await generateJSON(metadataPrompt + (isRetry ? `${feedbackPrefix}${fixInstructions}` : ''), CoreMetadataSchema);
+      metadata.failure_reasons = canonicalizeFailureReasons(metadata.failure_reasons);
       (metadata as unknown as Record<string, unknown>).case_number = caseNumber;
 
       if (metadata.slug !== expectedSlug) {
