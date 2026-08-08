@@ -1,7 +1,5 @@
+import { PageSkeleton } from "@/components/site/PageSkeleton"
+
 export default function Loading() {
-  return (
-    <div>
-      <p>Loading</p>
-    </div>
-  )
+  return <PageSkeleton label="Opening the archive" />
 }

@@ -5,7 +5,7 @@
   "summary": "Varo Money, a digital bank, failed due to cash exhaustion and inability to scale its business model.",
   "founded_year": 2015,
   "shutdown_year": 2023,
-  "industry": "Financial Technology",
+  "industry": "Fintech",
   "funding_raised": 99240000000,
   "employees_peak": 500,
   "valuation_peak": 1500000000000,
@@ -20,7 +20,7 @@
   "country": "US",
   "failure_reasons": [
     "Cash Exhaustion",
-    "Inability to Scale",
+    "Lack of Scalability",
     "Lack of Clear Business Model"
   ],
   "lessons": [

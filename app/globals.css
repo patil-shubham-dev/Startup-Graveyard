@@ -284,6 +284,166 @@
   display: none;
 }
 
+/* Long-form inputs: same ledger treatment as .field, but multi-line */
+.field-area {
+  height: auto;
+  min-height: 6.5rem;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+/* Case narrative (MDX): archive prose, same world as the shell */
+.case-narrative {
+  font-size: 1rem;
+  line-height: 1.75;
+  color: var(--color-ink-mute);
+}
+
+.case-narrative > * + * {
+  margin-top: 1rem;
+}
+
+.case-narrative h2 {
+  margin-top: 2.5rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--color-ink);
+}
+
+.case-narrative h2:first-child {
+  margin-top: 0;
+}
+
+.case-narrative h3 {
+  margin-top: 2rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.case-narrative a {
+  color: var(--color-accent-deep);
+  text-decoration: underline;
+  text-decoration-color: var(--color-line);
+  text-underline-offset: 3px;
+  transition: color 0.2s ease, text-decoration-color 0.2s ease;
+}
+
+.case-narrative a:hover {
+  color: var(--color-accent-deeper);
+  text-decoration-color: var(--color-accent-deeper);
+}
+
+.case-narrative ul,
+.case-narrative ol {
+  padding-left: 0;
+  list-style: none;
+}
+
+.case-narrative li {
+  position: relative;
+  padding-left: 1.25rem;
+  margin-top: 0.5rem;
+}
+
+.case-narrative ul li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 5px;
+  height: 5px;
+  background-color: var(--color-accent-deep);
+}
+
+.case-narrative ol {
+  counter-reset: case-narrative;
+}
+
+.case-narrative ol li {
+  counter-increment: case-narrative;
+}
+
+.case-narrative ol li::before {
+  content: counter(case-narrative, decimal-leading-zero);
+  position: absolute;
+  left: 0;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--color-ink-mute);
+}
+
+.case-narrative blockquote {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1.25rem;
+  line-height: 1.5;
+  color: var(--color-ink);
+  margin-top: 2rem;
+  max-width: 40rem;
+}
+
+.case-narrative hr {
+  border: 0;
+  border-top: 1px solid var(--color-line);
+  margin: 2.5rem 0;
+}
+
+.case-narrative table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  margin-top: 1.5rem;
+}
+
+.case-narrative th,
+.case-narrative td {
+  border: 1px solid var(--color-line);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.case-narrative th {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-ink-mute);
+  background-color: var(--color-paper-2);
+}
+
+.case-narrative td {
+  color: var(--color-ink);
+}
+
+.case-narrative code {
+  font-family: var(--font-mono);
+  font-size: 0.8125em;
+  background-color: var(--color-paper-2);
+  padding: 0.1em 0.35em;
+  border-radius: 2px;
+}
+
+.case-narrative pre {
+  background-color: var(--color-well);
+  color: var(--color-well-ink);
+  padding: 1rem 1.25rem;
+  border-radius: 2px;
+  overflow-x: auto;
+}
+
+.case-narrative pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+
 /* Facet chips (archive register): printed catalog labels as toggle atoms */
 .chip {
   display: inline-flex;

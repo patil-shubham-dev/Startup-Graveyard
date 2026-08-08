@@ -1,20 +1,18 @@
 "use client"
 
-import Link from "next/link"
+import { PageError } from "@/components/site/PageError"
 
-export default function CaseError({
-  reset,
-}: {
+export default function CaseError(props: {
   error: Error & { digest?: string }
   reset: () => void
 }) {
   return (
-    <div>
-      <p>Failed to load this case study.</p>
-      <div>
-        <button onClick={reset}>Try again</button>
-        <Link href="/explore">Back to archive</Link>
-      </div>
-    </div>
+    <PageError
+      {...props}
+      title="This case file is misfiled."
+      copy="The dossier could not be opened. The records are unharmed — try again, or return to the register."
+      backHref="/explore"
+      backLabel="Back to the archive"
+    />
   )
 }

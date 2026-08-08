@@ -1,15 +1,18 @@
 "use client"
 
-export default function InsightsError({
-  reset,
-}: {
+import { PageError } from "@/components/site/PageError"
+
+export default function InsightsError(props: {
   error: Error & { digest?: string }
   reset: () => void
 }) {
   return (
-    <div>
-      <p>Failed to load insights.</p>
-      <button onClick={reset}>Try again</button>
-    </div>
+    <PageError
+      {...props}
+      title="The findings could not be collated."
+      copy="Something went wrong while computing the research figures. The records are unharmed — try again."
+      backHref="/explore"
+      backLabel="Back to the archive"
+    />
   )
 }

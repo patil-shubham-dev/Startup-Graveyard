@@ -1,15 +1,18 @@
 "use client"
 
-export default function PreMortemError({
-  reset,
-}: {
+import { PageError } from "@/components/site/PageError"
+
+export default function PreMortemError(props: {
   error: Error & { digest?: string }
   reset: () => void
 }) {
   return (
-    <div>
-      <p>Failed to load the pre-mortem tool.</p>
-      <button onClick={reset}>Try again</button>
-    </div>
+    <PageError
+      {...props}
+      title="The examination was interrupted."
+      copy="The pre-mortem instrument could not be prepared. The records are unharmed — try again."
+      backHref="/explore"
+      backLabel="Back to the archive"
+    />
   )
 }

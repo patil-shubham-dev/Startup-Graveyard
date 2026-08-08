@@ -420,3 +420,78 @@ in .impeccable/surfaces/app-explore-page-tsx.md.
   "Insufficient Market Need") which split the facet counts; normalizing in
   the JSON/seed content model (not the component) would tighten both the
   facet rail and /insights.
+
+### Every remaining surface — case dossier, findings, forms, legal, shells (Aug 2026)
+
+The last undressed pages now live inside the same editorial system. No new
+tokens, no new families, no new assets.
+
+- **Case dossier (`/case/[slug]`):** a printed case file. Back link,
+  oxblood evidence mark + `CASE FILE · {case_number}`, name at 5xl/6xl,
+  accession line (`No. {case_number} · Filed {date} · {country}` — country
+  read via the incumbent `as unknown as` cast, it lives outside the
+  CaseStudy type), summary, failure tags. Five-cell ledger dl (Raised /
+  Peak valuation / Lifespan / Peak headcount / Industry) on a wider
+  measure. Sections, each catalog-kickered: Case verdict (01-indexed
+  top_reasons, `extractTopReasons`), The record (facts dl — metric keys
+  duplicating the core cells are skipped via a DUPLICATE_METRIC_KEYS set),
+  Timeline (hairline rows, mono dates, `N records` count), The narrative
+  (MDXRemote + remarkGfm inside `.case-narrative`), Risk assessment
+  (`RiskBar` gained level labels: Critical ≥70 / High ≥40 / Moderate ≥20 /
+  Low, width clamped `max(2, min(100, score))`), Autopsy (warning signs /
+  root causes, oxblood vs mute dots), Lessons (01-indexed, skips
+  title==explanation dupes), Principals (founders / investors, `+N more`),
+  Evidence (serif italic quotes with role figcaptions), Sources (hairline
+  rows, `↗` mono type, `rel="noopener noreferrer"`), Related files (shared
+  industry/pattern plates, computed from `readAllCases()`), and Archive
+  instruments CTAs (/ask, /pre-mortem). Uses `readAllCases()` (shared
+  loader) for both getCase and related. Content wrapped in ` ```mdx `
+  fences is unwrapped before MDXRemote. Soft-404 for missing slugs:
+  `notFound()` renders the route-level `app/case/not-found.tsx` with an
+  injected `noindex` tag — Next 15.5's documented streamed status behavior
+  (200 + noindex), identical to the incumbent pattern, not a regression.
+- **Research findings (`/insights`):** server-rendered chapter (was a
+  client chart page). Kicker with live counts, stats dl (Cases / Avg
+  lifespan / Industries / Capital burned), Failure patterns prevalence
+  (01-indexed hairline bars scaled to the top mode + `% of top` foot),
+  Shutdowns by year (CSS flex bars — no chart lib), Industries list,
+  Capital burned top five (links to dossiers), Archive instruments. The
+  one client chart (recharts) was deleted; `recharts` is no longer a
+  runtime dependency. All numbers computed from the case files at render
+  time.
+- **Forms:** `/submit` (Add to the archive) and `/auth` (Sign in / Sign up
+  toggle). `.field` inputs with catalog labels, required attributes, real
+  error state (`role="alert"`, accent-deep text — replaced the silent
+  success), disabled/loading states on submit buttons, confirmation
+  surface on success.
+- **Editorial pages:** `/about` keeps its prose with a ledger dl (Cases
+  documented / published / Industries covered / Awaiting review);
+  `/terms` and `/privacy` keep copy verbatim in sectioned editorial
+  layout (hairline rows, catalog kickers).
+- **Shells:** shared `components/site/PageSkeleton.tsx` (label + pulse
+  bars) and `components/site/PageError.tsx` (serif recovery line, Try
+  again / Return home buttons). Wrapped by `app/loading.tsx`,
+  `app/error.tsx`, `app/not-found.tsx` ("This grave is unmarked."),
+  `app/case/[slug]/loading.tsx`, `app/case/error.tsx`, `app/case/not-found.tsx`
+  ("No case file by that name."), and the `/insights`, `/ask`,
+  `/pre-mortem` loading/error pairs.
+- **New CSS atoms:** `.field-area` (min-height 6.5rem, resizable textarea)
+  and `.case-narrative` (MDX prose: heading scale, accent-deep links,
+  square/oxblood list marks, decimal-leading-zero ordered lists, serif
+  blockquotes, table hairlines).
+- **Taxonomy normalization (data):** the facet-splitting labels from the
+  explore follow-up note are resolved in the content model. One-time
+  script (kept out of the repo, in TEMP): Insufficient Market Need / Lack
+  of Clear Market Need → No Market Need; Intense Competition →
+  Competition; Regulatory / Lack of Regulatory Compliance → Regulatory
+  Issues; Inability to Scale → Lack of Scalability; Financial Technology
+  → Fintech; Hardware + Subscription → Hardware (only where
+  business_model is "Hardware + Subscription" — jawbone, juicero).
+  Result: 25 → 19 reason labels, 14 → 12 industries; 8 files updated,
+  all still parse. Next seed will carry the tightened facets to Supabase.
+- **Verification:** `tsc --noEmit` clean, eslint clean, impeccable
+  detector 0 findings on all new surfaces, production build clean
+  (`next build`: /insights now static with zero client JS), Playwright
+  sweep of 14 routes × 2 viewports: every route 200, zero overflowX, zero
+  console/page errors. `/case/[slug]` 404 status is a documented soft-404
+  (noindex injected, verified in prod build).

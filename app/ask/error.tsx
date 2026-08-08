@@ -1,15 +1,18 @@
 "use client"
 
-export default function AskError({
-  reset,
-}: {
+import { PageError } from "@/components/site/PageError"
+
+export default function AskError(props: {
   error: Error & { digest?: string }
   reset: () => void
 }) {
   return (
-    <div>
-      <p>Failed to load the chat interface.</p>
-      <button onClick={reset}>Try again</button>
-    </div>
+    <PageError
+      {...props}
+      title="The terminal is silent."
+      copy="The archive terminal could not be reached. The records are unharmed — try again."
+      backHref="/explore"
+      backLabel="Back to the archive"
+    />
   )
 }

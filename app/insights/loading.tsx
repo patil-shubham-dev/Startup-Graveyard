@@ -1,3 +1,5 @@
+import { PageSkeleton } from "@/components/site/PageSkeleton"
+
 export default function InsightsLoading() {
-  return <div />
+  return <PageSkeleton label="Collating findings" />
 }
