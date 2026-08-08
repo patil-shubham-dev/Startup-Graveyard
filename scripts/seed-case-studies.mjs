@@ -30,6 +30,12 @@ function createTimeoutFetch(timeoutMs) {
 
 const EMBEDDING_DIM = 1024;
 
+// --force: re-sync editorial governance (published / review_status /
+// published_at / review_notes) from the files. Without it, governance is
+// preserved from the DB so a re-seed can't silently publish or unpublish
+// rows an editor has already decided on (content/metadata always syncs).
+const FORCE_GOVERNANCE = process.argv.includes('--force');
+
 function toRow(json) {
   const row = {
     slug: json.slug,
@@ -91,17 +97,26 @@ async function upsertWithRetry(row, attempts = 3) {
 
 async function main() {
   const files = readdirSync(DATA_DIR).filter((f) => f.endsWith('.json'));
-  console.log(`Found ${files.length} case study files`);
+  console.log(`Found ${files.length} case study files${FORCE_GOVERNANCE ? ' (--force: governance synced from files)' : ' (governance preserved from DB)'}`);
 
-  const { data: existingRows } = await admin.from('case_studies').select('slug');
-  const existingSlugs = new Set((existingRows ?? []).map((r) => r.slug));
+  const { data: existingRows } = await admin.from('case_studies').select('slug, published, published_at, review_status, review_notes');
+  const existingBySlug = new Map((existingRows ?? []).map((r) => [r.slug, r]));
 
   let inserted = 0;
   let updated = 0;
+  let preserved = 0;
   for (const file of files) {
     const json = JSON.parse(readFileSync(join(DATA_DIR, file), 'utf8'));
     const row = toRow(json);
-    const wasExisting = existingSlugs.has(json.slug);
+    const existing = existingBySlug.get(json.slug);
+
+    if (existing && !FORCE_GOVERNANCE) {
+      row.published = existing.published;
+      row.published_at = existing.published_at;
+      row.review_status = existing.review_status;
+      row.review_notes = existing.review_notes;
+      preserved += 1;
+    }
 
     const error = await upsertWithRetry(row);
 
@@ -110,11 +125,12 @@ async function main() {
       process.exitCode = 1;
       continue;
     }
-    console.log(`  ${wasExisting ? 'update' : 'insert'} ${json.slug}: published=${row.published} review=${row.review_status}`);
-    if (wasExisting) updated += 1;
+    const action = existing ? 'update' : 'insert';
+    console.log(`  ${action} ${json.slug}: published=${row.published} review=${row.review_status}${existing && !FORCE_GOVERNANCE ? ' (governance preserved)' : ''}`);
+    if (existing) updated += 1;
     else inserted += 1;
   }
-  console.log(`\nDone: ${inserted} inserted, ${updated} updated`);
+  console.log(`\nDone: ${inserted} inserted, ${updated} updated (${preserved} governance-preserved)`);
 
   const { data: dbRows, error: listError } = await admin
     .from('case_studies')
