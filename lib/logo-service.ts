@@ -40,6 +40,15 @@ function deriveDomains(companyName: string): string[] {
 
 const CLEARBIT_URL = 'https://logo.clearbit.com';
 
+// Clearbit serves a gray "logo not found" placeholder SVG (small body) for
+// unknown domains — content-type alone is not proof of a real logo.
+const MIN_IMAGE_BYTES = 1024;
+
+function isValidLogoUrl(url: string): boolean {
+  return url.startsWith('https://') && !url.includes(' ')
+    && /^https:\/\/[a-z0-9.-]+(\.[a-z]{2,})/i.test(url);
+}
+
 async function fetchWithTimeout(url: string, timeoutMs = 5000): Promise<Response | null> {
   try {
     const controller = new AbortController();
@@ -53,18 +62,21 @@ async function fetchWithTimeout(url: string, timeoutMs = 5000): Promise<Response
 }
 
 async function verifyImageResponse(url: string): Promise<boolean> {
-  // First do a HEAD to check availability
-  const headResponse = await fetchWithTimeout(url);
-  if (!headResponse?.ok) return false;
+  if (!isValidLogoUrl(url)) return false;
 
-  // Then do a lightweight GET to verify content type
-  // We only read headers, not the body, to keep it fast
+  // Single GET (HEAD often 405s on logo hosts), then validate the
+  // content-type and that the body is not a trivial placeholder.
   const getResponse = await fetchWithTimeout(url);
   if (!getResponse?.ok) return false;
 
   const contentType = getResponse.headers.get('content-type') || '';
   if (!contentType.startsWith('image/')) {
     return false;
+  }
+
+  const contentLength = Number(getResponse.headers.get('content-length') || 0);
+  if (contentLength > 0 && contentLength < MIN_IMAGE_BYTES) {
+    return false; // looks like a placeholder/empty payload
   }
 
   return true;
