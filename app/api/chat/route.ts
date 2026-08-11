@@ -408,37 +408,42 @@ export async function POST(req: NextRequest) {
     // Run archive intelligence in parallel: RAG search + archive queries
     let ragContext = '';
     let archiveReportStr = '';
+    let similarCases: Array<{ company_name: string; summary: string; slug: string }> | null = null;
+    const wantsSurfaceMeta = req.headers.get('x-ask-surface') === '1';
 
     if (lastMessage) {
+      const embedText = lastMessage.length > 1000
+        ? lastMessage.substring(0, 500) + '\n...\n' + lastMessage.substring(lastMessage.length - 500)
+        : lastMessage;
+
       const [ragResult, archiveResult] = await Promise.all([
         (async () => {
-          const embedText = lastMessage.length > 1000
-            ? lastMessage.substring(0, 500) + '\n...\n' + lastMessage.substring(lastMessage.length - 500)
-            : lastMessage;
-
           const { ai } = await import('@/lib/ai');
 
-          let similarCases = null;
+          let found: Array<{ company_name: string; summary: string; slug: string }> | null = null;
           for (let attempt = 0; attempt < 3; attempt++) {
             try {
-              similarCases = await ai.search(embedText);
-              if (similarCases) break;
+              found = await ai.search(embedText);
+              if (found) break;
             } catch {
               if (attempt < 2) await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
             }
           }
 
-          if (similarCases && similarCases.length > 0) {
-            return `ARCHIVE_FINDINGS: Retrieved ${similarCases.length} case(s) from the archive relevant to this query.
+          if (found && found.length > 0) {
+            return {
+              text: `ARCHIVE_FINDINGS: Retrieved ${found.length} case(s) from the archive relevant to this query.
 
-${similarCases.map((c, i) =>
+${found.map((c, i) =>
   `RELEVANT_CASE_${i + 1}: [[${c.company_name}]]
              SUMMARY: ${c.summary}`
 ).join('\n\n')}
 
-Use these cases as evidence. Present them naturally — never mention the search process or retrieval mechanism. Compare patterns, surface common traits, and connect them to the user's question. Wrap company names in [[ ]].`;
+Use these cases as evidence. Present them naturally — never mention the search process or retrieval mechanism. Compare patterns, surface common traits, and connect them to the user's question. Wrap company names in [[ ]].`,
+              cases: found,
+            };
           }
-          return '';
+          return { text: '', cases: null };
         })(),
         (async () => {
           const { queryArchive } = await import('@/lib/archive/intelligence');
@@ -450,7 +455,8 @@ Use these cases as evidence. Present them naturally — never mention the search
         })(),
       ]);
 
-      ragContext = ragResult;
+      ragContext = ragResult.text;
+      similarCases = ragResult.cases;
       archiveReportStr = archiveResult;
     }
 
@@ -478,6 +484,43 @@ Use these cases as evidence. Present them naturally — never mention the search
       messages: convertUIMessages(messages),
       system: fullSystemPrompt,
     });
+
+    if (wantsSurfaceMeta) {
+      const encoder = new TextEncoder();
+      const meta = JSON.stringify({
+        retrieved: (similarCases ?? []).map((c) => ({
+          name: c.company_name,
+          slug: c.slug,
+          summary: c.summary,
+        })),
+      }) + '\n';
+
+      const body = new ReadableStream<Uint8Array>({
+        async start(controller) {
+          controller.enqueue(encoder.encode(meta));
+          const reader = result.textStream.getReader();
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              controller.enqueue(encoder.encode(value));
+            }
+          } catch (err) {
+            controller.error(err instanceof Error ? err : new Error(String(err)));
+            return;
+          }
+          controller.close();
+        },
+      });
+
+      return new Response(body, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Cache-Control': 'no-cache',
+        },
+      });
+    }
 
     return result.toTextStreamResponse({
       headers: {
