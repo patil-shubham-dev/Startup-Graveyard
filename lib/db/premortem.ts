@@ -11,15 +11,18 @@ interface Question {
 export interface PremortemReport {
   risk_score: number;
   verdict: string;
-  primary_risks: Array<{
-    category: string;
-    description: string;
-    mitigation: string;
+  executive_verdict?: string;
+  startup?: string;
+  risks?: Array<{
+    title: string;
+    score: number;
+    rationale: string;
+    evidence: string;
+    related_cases?: Array<{ name: string; slug?: string; relevance: string }>;
   }>;
-  similar_cases?: Array<{
-    name: string;
-    correlation: string;
-  }>;
+  why_this_could_fail?: string[];
+  what_to_test?: string[];
+  early_warning_signals?: string[];
 }
 
 export interface PremortemSession {
