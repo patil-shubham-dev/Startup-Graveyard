@@ -598,9 +598,31 @@ tokens, or type changes.
   files on record` (N computed from data) with the oxblood square; h1
   `A register of documented failures` at 4xl/6xl; intro paragraph; a
   `Reveal` on the header only. Right side is reserved for an engraved
-  frieze (`public/archive-plate.webp`, 1600×360, 50% opacity + multiply +
-  left fade mask) — auto-mounted server-side via `fs.existsSync`, page is
+  frieze — auto-mounted server-side via `fs.existsSync`, page is
   fully functional text-first without it.
+- **Frontispiece art (2026-08-08):** the right-side frieze is now a
+  commissioned shelves illustration (`public/archive-shelves.webp`,
+  1600×820, ink ≈26% — ChatGPT-derived, converted with sharp q80), not the
+  earlier 1600×360 linework strip. Treatment: `multiply` at 0.65 opacity,
+  leftward mask feather — no blur, no hard edges; the art's ink mass sits
+  in its right ~40% (pixel-verified), so the feather leaves nothing but
+  cream under the copy. The art is **full-bleed right**: viewport-anchored
+  (section-level, not column) with `right:-24px` and `width:min(77%,1113px)`
+  — the drawing runs 24px past the viewport's right edge at every width
+  ≥1152, so there is no right boundary and no empty far-right zone; it
+  reads as printed onto the page, not placed on it. At 1440 the art spans
+  x≈355–1464: shelves mass x≈976–1464 at full strength, ~90px feather into
+  cream, then a 47px moat to the paragraph's last glyph (widest text;
+  Playwright-measured glyph extents, not boxes). Moat/ink per width:
+  1512→81/170, 1440→47/136, 1366→40/124, 1280→31/110, 1200→24/97,
+  1024→42/93 — closer to the copy at laptop widths, comfortable at large.
+  1024–1151 uses `right:0; width:62%` + stops `black 37% → transparent 45%`
+  (the column is full-bleed there; the art ends flush with the viewport
+  edge — still boundaryless). Below 1024px the heading owns the full
+  content width, so the art yields entirely (`display:none` ≤1023px — the
+  honest choice over a meaningless corner sliver). The toolbar result line
+  also lost `whitespace-nowrap` (`lg:min-w-0 lg:text-right`) — it
+  overflowed 50–202px at 1024–1200, unrelated to the art (pre-existing).
 - **Sticky instrument bar** (`position: sticky; top: 4rem` below the h-16
   header): search (`Q.` affix, `type="search"`, commits to
   `/explore?q=…` on submit so queries deep-link), four filter dropdowns
@@ -653,7 +675,7 @@ tokens, or type changes.
   (1600×360, ink coverage ≈3%) and `public/archive-empty.webp` (800×600,
   ink ≈2%). The page mounts them automatically; no changes needed in
   plate/empty-state components.
-- **Follow-up (data-side, done 2026-08-08):** failure-reason labels were
+  - **Follow-up (data-side, done 2026-08-08):** failure-reason labels were
   canonicalized across `data/case-studies/*.json` (near-dupes like
   "Poor Execution" → "Execution", "Regulatory Issues" → "Regulatory",
   "Lack of Traction" → "No Market Need"). The canonical list and map now
@@ -663,3 +685,68 @@ tokens, or type changes.
   clean (audited — no near-dupes), so they were left untouched. Two labels
   are intentionally non-canonical: "Lack of Scalability" and "Insufficient
   Revenue Growth" — distinct semantics, no near-duplicate.
+
+### Archive terminal — /ask (Aug 2026)
+
+The `/ask` research terminal rebuilt as a working instrument, replacing the
+styling-only shell from the previous pass. Same editorial world: catalog
+labels, mono instrument metadata, hairline rows, oxblood accents.
+
+- **Instrument framing:** kicker `THE ARCHIVE · N case files on record`
+  (N from the live ledger), h1 `Ask the archive`, mono subtitle
+  `GRAVEYARD INTELLIGENCE · FORENSIC RESEARCH TERMINAL`, and a
+  paper-2 "research engine, not a chatbot" disclaimer line under the
+  composer. Whole page is a single `<main>`; the terminal sits on the
+  well background with the standard grain.
+- **Composer:** auto-growing textarea (min 26px, scrolls past 6 lines),
+  mono `Q.` affix, Send is an arrow square that enables only with input
+  and shows a spinner while streaming. Four starter suggestions
+  (editorial, e.g. `What killed Quibi?` / `Trace the 2008 crisis`) fill
+  the composer on click — each grounded in real archive subjects.
+- **Context panel:** collapsible `CONTEXT · N retrieved cases` strip under
+  the composer (open by default when a conversation is empty) listing the
+  retrieved case slugs for the current thread; each row links to its
+  dossier. A `Context usage` readout (rough token estimate, ~4 chars/token
+  via `countTokens`) drives a 3px hairline bar — no width transition
+  (impeccable layout-transition finding, removed).
+- **Thread anatomy:** hairline rows with mono left labels — `INQUIRY` for
+  user turns, `GRAVEYARD INTELLIGENCE` for the streamed response. The
+  assistant message streams token-by-token, then collapses to an
+  inset-paper card with the `Retrieved` sources list and `Stopped`
+  annotation when generation is interrupted. Copy affordance appears on
+  the finished message (clipboard permission granted in tests); a
+  `New conversation` button resets to the empty state.
+- **Streaming UX:** `Stop generating` (square) replaces Send during a
+  run; aborting preserves the partial response with a mono
+  `Generation stopped · partial response preserved` note instead of
+  discarding it. No Retry on stopped messages (the partial is the
+  artifact).
+- **Conversation registry (sidebar):** `THE ARCHIVE · N conversations` —
+  hairline list with hover reveal of actions (rename, delete w/
+  confirm, copy). Rename is an inline mono input committed on Enter/blur;
+  delete asks `Delete this conversation?` with destructive and cancel
+  actions. Empty state: `No conversations yet.`. Active conversation
+  marked by an oxblood square; at 1024px+ the sidebar is a fixed rail
+  with a collapse control, below that it becomes a drawer (launcher in
+  the page header).
+- **Persistence:** dual-backend `ChatStorage` — IndexedDB for guests,
+  Supabase for signed-in users, chosen once by `storageFor(userId)`, the
+  UI never decides. 700ms debounced autosave; local conversations migrate
+  into the account on sign-in (`migrateLocalToRemote`, idempotent by
+  conversation id, title collisions get ` (copy)`). Unsigned-in banner:
+  `Conversations are stored on this device. Sign in to sync them across
+  devices.` — dismissible.
+- **Backend:** `POST /api/chat` — zod-validated messages (max 100),
+  `streamText` from the `ai` SDK against the NVIDIA model, RAG context
+  (retrieved case summaries, ≤2000 chars) folded into the system prompt;
+  rate-limited per key (`checkRateLimit`) and gated by
+  `authenticateRequest`. System prompt enforces the forensic persona
+  (evidence over opinion, no speculation beyond the archive).
+- **States:** `loading.tsx` skeleton + `error.tsx` (serif recovery line,
+  Try again / Return home) per the shell convention.
+- **Verification:** Playwright sweep 36/36 — desktop 1440 + mobile 390 +
+  reduced-motion, zero console/page errors, stop-mid-stream preserves
+  partial + note, copy feedback, sidebar collapse/restore, drawer
+  close-after-navigate, delete-requires-confirm, rename persists, and
+  real streamed assistant prose (>60 chars) asserted — not just a
+  spinner. impeccable detector: 0 findings on `app/ask`.
