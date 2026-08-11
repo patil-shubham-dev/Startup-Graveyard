@@ -12,7 +12,13 @@ const HAS_NO_CREDENTIALS = !supabaseUrl || !supabaseAnonKey;
 
 export const isSupabaseConfigured = !HAS_NO_CREDENTIALS && !HAS_PLACEHOLDER_URL && !HAS_PLACEHOLDER_KEY;
 
-const DB_TIMEOUT = parseInt(process.env.SUPABASE_DB_TIMEOUT || '3000', 10);
+// Abort bound for every Supabase fetch. Intentionally a ceiling, not a budget:
+// placeholder/missing credentials fail instantly (DNS/parse), so demo mode is
+// unaffected — this only caps requests that would otherwise hang.
+// 3000ms was empirically below Supabase's managed cold-start ceiling (pooler
+// Lambda + GoTrue first-request can exceed 3s; observed sign-in/session aborts).
+// 10000ms keeps fail-fast behavior while covering the cold path. Env-overridable.
+const DB_TIMEOUT = parseInt(process.env.SUPABASE_DB_TIMEOUT || '10000', 10);
 
 function createTimeoutFetch() {
   return (url: RequestInfo | URL, init?: RequestInit) => {
