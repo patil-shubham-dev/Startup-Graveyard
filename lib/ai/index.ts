@@ -140,15 +140,21 @@ export class AIService {
     }
   }
 
-  async generate<T>(prompt: string, schema: ZodSchema<T>): Promise<T> {
+  async generate<T>(
+    prompt: string,
+    schema: ZodSchema<T>,
+    opts?: { bypassCache?: boolean }
+  ): Promise<T> {
     if (!hasValidKey && !hasOpenAICompatFallback) {
       throw new Error('AI service: no AI provider configured (set NVIDIA_API_KEY, or OPENAI_API_KEY + OPENAI_BASE_URL)');
     }
 
     const cacheKey = `generate:${normalizeQuery(prompt)}`;
-    const cached = responseCache.get(cacheKey);
-    if (cached) {
-      return JSON.parse(cached) as T;
+    if (!opts?.bypassCache) {
+      const cached = responseCache.get(cacheKey);
+      if (cached) {
+        return JSON.parse(cached) as T;
+      }
     }
 
     const controller = new AbortController();
