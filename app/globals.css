@@ -243,6 +243,11 @@
   background-size: 100% 1px;
 }
 
+.link-nav-active,
+.link-nav-active:hover {
+  background-size: 100% 1px;
+}
+
 .field {
   height: 2.75rem;
   border: 1px solid var(--color-line);
