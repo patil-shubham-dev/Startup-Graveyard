@@ -1,0 +1,1727 @@
+/*
+ * insights.module.css — scoped to /insights (research report v2).
+ * Reuses only existing tokens via var(--color-*) / var(--font-*); touches
+ * no global stylesheet, no design-system atoms, no palette.
+ *
+ * Personae per section, all in the paper/ink/oxblood editorial register:
+ *   I   ledger table      · ruled grid
+ *   II  lifespan rail     · printed plotting band
+ *   III specimen plates   · laboratory plates
+ *   IV  shutdown chart    · historical chart with reader card
+ *   V   industry register · catalogue tiles
+ *   VI  capital report    · the dark well, financial
+ *   VII key findings      · margin notes
+ *   VIII failure genome   · engraved SVG plate
+ *   IX  correlations      · cross-tab rows
+ *   X   research notes    · margin quotes
+ *   XI  methodology       · small print
+ */
+
+/* ── Page shell ─────────────────────────────────── */
+
+.page {
+  background: var(--color-paper);
+}
+
+.sectionInner {
+  max-width: 1152px;
+  margin-inline: auto;
+  padding: 4.5rem 1.25rem 5rem;
+}
+
+@media (min-width: 640px) {
+  .sectionInner {
+    padding-inline: 1.5rem;
+  }
+}
+
+/* ── Hero — frontispiece ────────────────────────── */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.heroArt {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  user-select: none;
+  overflow: hidden;
+}
+
+.heroArt img {
+  position: absolute;
+  right: -24px;
+  top: 50%;
+  width: min(72%, 1000px);
+  height: auto;
+  translate: 0 -50%;
+  mix-blend-mode: multiply;
+  opacity: 0.6;
+  mask-image: linear-gradient(to left, black 0%, black 42%, transparent 52%);
+  -webkit-mask-image: linear-gradient(to left, black 0%, black 42%, transparent 52%);
+}
+
+@media (min-width: 1024px) and (max-width: 1151px) {
+  .heroArt img {
+    right: 0;
+    width: 58%;
+    mask-image: linear-gradient(to left, black 0%, black 35%, transparent 45%);
+    -webkit-mask-image: linear-gradient(to left, black 0%, black 35%, transparent 45%);
+  }
+}
+
+.heroBody {
+  position: relative;
+  max-width: 1152px;
+  margin-inline: auto;
+  padding: 5rem 1.25rem 3.75rem;
+}
+
+@media (min-width: 640px) {
+  .heroBody {
+    padding-inline: 1.5rem;
+  }
+}
+
+.heroEyebrow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.heroEyebrowText {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-ink-mute);
+}
+
+.heroTitle {
+  margin-top: 1.75rem;
+  max-width: 12ch;
+  font-size: clamp(2.75rem, 6vw, 4.5rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.04;
+  color: var(--color-ink);
+}
+
+.heroAbstract {
+  margin-top: 1.5rem;
+  max-width: 42rem;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: clamp(1.125rem, 2vw, 1.375rem);
+  line-height: 1.6;
+  color: var(--color-ink-mute);
+}
+
+.heroMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2.75rem;
+  margin-top: 2.75rem;
+  max-width: 52rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-line);
+}
+
+.heroMetaItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.heroMetaValue {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 1.125rem;
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.heroMetaLabel {
+  display: block;
+  margin-top: 0.25rem;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-ink-mute);
+}
+
+/* ── Abstract band ──────────────────────────────── */
+
+.abstractBand {
+  border-top: 1px solid var(--color-line);
+  border-bottom: 1px solid var(--color-line);
+  background: var(--color-paper-2);
+}
+
+.abstractBody {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 3rem;
+  max-width: 1152px;
+  margin-inline: auto;
+  padding: 3.25rem 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .abstractBody {
+    padding-inline: 1.5rem;
+  }
+}
+
+.abstractTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+}
+
+.abstractMark {
+  width: 8px;
+  height: 8px;
+  background: var(--color-accent-deep);
+}
+
+.abstractText {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1.125rem;
+  line-height: 1.7;
+  color: var(--color-ink-mute);
+}
+
+.learnList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.learnItem {
+  display: flex;
+  align-items: baseline;
+  gap: 1.25rem;
+  padding: 0.875rem 0;
+  border-top: 1px solid var(--color-line);
+  font-size: 14px;
+  color: var(--color-ink);
+}
+
+.learnIndex {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--color-ink-mute);
+}
+
+/* ── Section heads ──────────────────────────────── */
+
+.sectionHead {
+  margin-bottom: 2.75rem;
+}
+
+.sectionIndex {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-ink-mute);
+}
+
+.sectionTitle {
+  margin-top: 0.75rem;
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: var(--color-ink);
+}
+
+.sectionLead {
+  margin-top: 1rem;
+  max-width: 40rem;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--color-ink-mute);
+}
+
+.sectionNote {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-top: 1.75rem;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-ink-mute);
+}
+
+/* ── Ornaments (shared) ─────────────────────────── */
+
+.figureLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-ink-mute);
+}
+
+.figureTick {
+  display: inline-block;
+  width: 2.5rem;
+  height: 1px;
+  background: var(--color-ink-mute);
+}
+
+.annotationStamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* ── Chapter I — Stat ledger ────────────────────── */
+
+.statLedger {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-top: 1px solid var(--color-line);
+  border-left: 1px solid var(--color-line);
+  margin: 0;
+}
+
+@media (min-width: 768px) {
+  .statLedger {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.statCell {
+  padding: 1.5rem 1.5rem 1.75rem;
+  border-right: 1px solid var(--color-line);
+  border-bottom: 1px solid var(--color-line);
+}
+
+.statStamp {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-ink-mute);
+}
+
+.statStamp::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  background: var(--color-accent-deep);
+}
+
+.statValue {
+  margin-top: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  letter-spacing: -0.02em;
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.statLabel {
+  margin-top: 0.25rem;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+}
+
+.statContext {
+  margin-top: 0.5rem;
+  max-width: 28ch;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--color-ink-mute);
+}
+
+/* ── Chapter II — Lifespan rail (Fig. 01) ───────── */
+
+.rail {
+  margin-top: 2.5rem;
+}
+
+.railAxis {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--color-ink-mute);
+  font-variant-numeric: tabular-nums;
+}
+
+.railBody {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 0.75rem;
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--color-line);
+  border-bottom: 1px solid var(--color-line);
+  background: var(--color-paper-2);
+}
+
+.railRow {
+  position: relative;
+  height: 5px;
+}
+
+.railBar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: block;
+  min-width: 2px;
+  background: var(--color-line);
+  transition: background-color 150ms ease;
+}
+
+.railFill {
+  position: absolute;
+  inset: 0;
+  background: var(--color-ink);
+  transform-origin: center bottom;
+}
+
+.railBarActive {
+  background: var(--color-accent-deep);
+  z-index: 2;
+}
+
+.railBarActive .railFill {
+  background: var(--color-accent-deep);
+}
+
+.railName {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 6px);
+  translate: -50% 0;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-accent-deep);
+  pointer-events: none;
+}
+
+.railCard {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.75rem 1.5rem;
+  margin-top: 1.25rem;
+  min-height: 3.25rem;
+  padding: 0.875rem 1.25rem;
+  border: 1px solid var(--color-line);
+  border-radius: 2px;
+  background: transparent;
+  transition: border-color 200ms ease;
+}
+
+.railCard[data-empty] {
+  border-style: dashed;
+}
+
+.railCardName {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-ink);
+}
+
+.railCardMeta {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-mute);
+}
+
+.railCardFunding {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.railCardHint {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-ink-mute);
+}
+
+/* ── Chapter III — Failure specimens ────────────── */
+
+.specimenList {
+  border-top: 1px solid var(--color-line);
+}
+
+.specimen {
+  border-bottom: 1px solid var(--color-line);
+}
+
+.specimenPrevalence {
+  height: 2px;
+  background: var(--color-paper-2);
+}
+
+.specimenPrevalence span {
+  display: block;
+  height: 100%;
+  background: var(--color-ink);
+  transition: width 400ms ease;
+}
+
+.specimenHeader {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  width: 100%;
+  padding: 1.375rem 0;
+  background: transparent;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.specimenTitle {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.specimenName {
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--color-ink);
+  transition: color 180ms ease;
+}
+
+.specimenHeader:hover .specimenName,
+.specimenHeader:focus-visible .specimenName {
+  color: var(--color-accent-deep);
+}
+
+.specimenCount {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-mute);
+}
+
+.specimenPeek {
+  margin-left: auto;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-mute);
+  opacity: 0;
+  translate: 0 2px;
+  transition: opacity 180ms ease, translate 180ms ease;
+}
+
+.specimenHeader:hover .specimenPeek,
+.specimenHeader:focus-visible .specimenPeek,
+.specimenHeader[aria-expanded="true"] .specimenPeek {
+  opacity: 1;
+  translate: 0 0;
+}
+
+.specimenChevron {
+  flex: none;
+  color: var(--color-ink-mute);
+  transition: transform 200ms ease;
+}
+
+.specimenChevronOpen {
+  transform: rotate(180deg);
+}
+
+.specimenPanel {
+  overflow: hidden;
+}
+
+.specimenRecord {
+  padding: 0 0 1.75rem 4.5rem;
+}
+
+.specimenMeta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: 1px solid var(--color-line);
+  border-radius: 2px;
+  margin: 0;
+}
+
+@media (min-width: 768px) {
+  .specimenMeta {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.specimenMeta div {
+  min-width: 0;
+  padding: 0.875rem 1rem;
+  border-left: 1px solid var(--color-line);
+}
+
+.specimenMeta div:first-child {
+  border-left: 0;
+}
+
+.specimenMeta dt {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-mute);
+}
+
+.specimenMeta dd {
+  margin-top: 0.375rem;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.specimenCases {
+  list-style: none;
+  margin: 1.25rem 0 0;
+  padding: 0;
+}
+
+.specimenCaseLink {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.625rem 0.5rem;
+  transition: background-color 150ms ease;
+}
+
+.specimenCaseLink:hover {
+  background: var(--color-paper-2);
+}
+
+@media (min-width: 640px) {
+  .specimenCaseLink {
+    padding-inline: 1rem;
+  }
+}
+
+.specimenCaseName {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-ink);
+  transition: color 150ms ease;
+}
+
+.specimenCaseLink:hover .specimenCaseName {
+  color: var(--color-accent-deep);
+}
+
+.specimenCaseMeta {
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-mute);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Chapter IV — Shutdown timeline (Fig. 02) ───── */
+
+.timeline {
+  margin-top: 2.5rem;
+}
+
+.timelinePlot {
+  position: relative;
+  height: 280px;
+}
+
+.timelineRows {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.timelineRowLine {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  height: 0;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--color-ink-mute);
+  font-variant-numeric: tabular-nums;
+}
+
+.timelineRowLine::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid var(--color-line);
+}
+
+.timelineBars {
+  position: absolute;
+  inset: 0 0 0 2.25rem;
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+}
+
+.timelineCol {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.timelineBar {
+  position: relative;
+  display: block;
+  width: min(26px, 72%);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.timelineFill {
+  position: absolute;
+  inset: 0;
+  background: var(--color-ink);
+  opacity: 0.85;
+  transform-origin: bottom center;
+  transition: background-color 150ms ease, opacity 150ms ease;
+}
+
+.timelineCol:hover .timelineFill,
+.timelineBarActive .timelineFill {
+  background: var(--color-accent-deep);
+  opacity: 1;
+}
+
+.timelineYear {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--color-ink-mute);
+  font-variant-numeric: tabular-nums;
+  transition: color 150ms ease;
+}
+
+.timelineYearActive {
+  color: var(--color-ink);
+}
+
+.timelineBase {
+  position: absolute;
+  left: 2.25rem;
+  right: 0;
+  bottom: 1.125rem;
+  border-top: 1px solid var(--color-ink);
+}
+
+.timelineCard {
+  margin-top: 1.5rem;
+  min-height: 4.25rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--color-line);
+  border-radius: 2px;
+  background: transparent;
+  transition: border-color 200ms ease;
+}
+
+.timelineCard[data-empty] {
+  border-style: dashed;
+}
+
+.timelineCardHead {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+}
+
+.timelineCard[data-empty] .timelineCardHead {
+  color: var(--color-ink-mute);
+}
+
+.timelineCardCases {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+}
+
+.timelineCaseLink {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--color-line);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-ink);
+  transition: color 150ms ease;
+}
+
+.timelineCaseLink:hover {
+  color: var(--color-accent-deep);
+}
+
+.timelineCaseIndustry {
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-mute);
+}
+
+/* ── Chapter V — Industry register ──────────────── */
+
+.industryGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .industryGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.industryCell {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: 1px solid var(--color-line);
+  border-radius: 2px;
+  background: transparent;
+  transition: border-color 200ms ease;
+}
+
+.industryCell:hover {
+  border-color: var(--color-ink-mute);
+}
+
+.industryTop {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.industryName {
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--color-ink);
+}
+
+.industryMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-mute);
+  font-variant-numeric: tabular-nums;
+}
+
+.industryCauses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.industryCause {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--color-line);
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-ink-mute);
+}
+
+.industryCases {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  font-size: 12px;
+  color: var(--color-ink-mute);
+}
+
+.industryCase {
+  transition: color 150ms ease;
+}
+
+.industryCase:hover {
+  color: var(--color-accent-deep);
+}
+
+/* ── Chapter VI — Capital ledger (well) ─────────── */
+
+.sectionInnerWell {
+  max-width: 1152px;
+  margin-inline: auto;
+  padding: 4.5rem 1.25rem 5rem;
+}
+
+@media (min-width: 640px) {
+  .sectionInnerWell {
+    padding-inline: 1.5rem;
+  }
+}
+
+.sectionInnerWell .sectionIndex {
+  color: var(--color-well-mute);
+}
+
+.sectionInnerWell .sectionTitle {
+  color: var(--color-well-ink);
+}
+
+.sectionInnerWell .sectionLead {
+  color: var(--color-well-mute);
+}
+
+.sectionInnerWell .sectionNote {
+  color: var(--color-well-mute);
+}
+
+.sectionInnerWell .figureLabel {
+  color: var(--color-well-mute);
+}
+
+.sectionInnerWell .figureTick {
+  background: var(--color-well-mute);
+}
+
+.sectionInnerWell .barLabel {
+  color: var(--color-well-ink);
+}
+
+.sectionInnerWell .barSub,
+.sectionInnerWell .barUnit {
+  color: var(--color-well-mute);
+}
+
+.sectionInnerWell .barValue {
+  color: var(--color-well-ink);
+}
+
+.sectionInnerWell .barRow {
+  border-bottom-color: var(--color-well-line);
+}
+
+.ledger {
+  list-style: none;
+  margin: 2.25rem 0 0;
+  padding: 0;
+}
+
+.ledgerRow {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.125rem 0;
+  border-bottom: 1px solid var(--color-well-line);
+  color: var(--color-well-ink);
+}
+
+.ledgerRow:first-child {
+  border-top: 1px solid var(--color-well-line);
+}
+
+.ledgerRank {
+  flex: none;
+  width: 2ch;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--color-well-mute);
+  font-variant-numeric: tabular-nums;
+}
+
+.ledgerBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.ledgerHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.ledgerName {
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--color-well-ink);
+  transition: color 180ms ease;
+}
+
+.ledgerRow:hover .ledgerName,
+.ledgerRow:focus-visible .ledgerName {
+  color: #ffffff;
+}
+
+.ledgerMeta {
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-well-mute);
+}
+
+.ledgerTrack {
+  display: block;
+  margin-top: 0.5rem;
+  height: 2px;
+  background: var(--color-well-line);
+}
+
+.ledgerFill {
+  display: block;
+  height: 100%;
+  background: var(--color-well-ink);
+  opacity: 0.8;
+  transition: background-color 180ms ease, opacity 180ms ease;
+}
+
+.ledgerRow:hover .ledgerFill,
+.ledgerRow:focus-visible .ledgerFill {
+  background: #ffffff;
+  opacity: 1;
+}
+
+.ledgerDetail {
+  display: block;
+  margin-top: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-well-mute);
+  opacity: 0;
+  translate: 0 2px;
+  transition: opacity 180ms ease, translate 180ms ease;
+}
+
+.ledgerRow:hover .ledgerDetail,
+.ledgerRow:focus-visible .ledgerDetail {
+  opacity: 1;
+  translate: 0 0;
+}
+
+.ledgerAmount {
+  flex: none;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  color: var(--color-well-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Bar plates (pace, well or paper tone) ──────── */
+
+.barPlate {
+  margin-top: 2rem;
+}
+
+.paceBlock {
+  margin-top: 3.5rem;
+  padding-top: 2.5rem;
+  border-top: 1px solid var(--color-well-line);
+}
+
+.barRow {
+  display: grid;
+  grid-template-columns: minmax(9rem, 1fr) minmax(4rem, 2fr) auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.625rem 0;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.barHead {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.barLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-ink);
+}
+
+.barSub {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-mute);
+}
+
+.barTrack {
+  position: relative;
+  height: 4px;
+  background: var(--color-line);
+}
+
+.barTrackWell {
+  position: relative;
+  height: 4px;
+  background: var(--color-well-line);
+}
+
+.barFill {
+  position: absolute;
+  inset: 0;
+  background: var(--color-accent-deep);
+  transform-origin: left center;
+}
+
+.barValue {
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.barUnit {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-mute);
+}
+
+/* ── Chapter VII — Key findings ─────────────────── */
+
+.findingsList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.finding {
+  padding: 1.5rem;
+  border: 1px solid var(--color-line);
+  border-radius: 2px;
+  background: transparent;
+  transition: border-color 200ms ease;
+}
+
+.finding:hover {
+  border-color: var(--color-ink-mute);
+}
+
+.findingIndex {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--color-ink-mute);
+}
+
+.findingLabel {
+  display: block;
+  margin-top: 0.875rem;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-accent-deep);
+}
+
+.findingFigure {
+  display: block;
+  margin-top: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  letter-spacing: -0.02em;
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.findingCompany {
+  display: block;
+  margin-top: 0.75rem;
+  font-size: 1.125rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--color-ink);
+}
+
+.findingDetail {
+  margin-top: 0.375rem;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--color-ink-mute);
+}
+
+.findingLink {
+  display: inline-block;
+  margin-top: 0.875rem;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-accent-deep);
+  transition: color 150ms ease;
+}
+
+.findingLink:hover {
+  color: var(--color-accent-deeper);
+}
+
+/* ── Chapter IX — Correlations (Fig. 03) ────────── */
+
+.corrGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem 2rem;
+}
+
+@media (min-width: 768px) {
+  .corrGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.corrRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-line);
+}
+
+.corrPair {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.corrReason {
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-ink);
+}
+
+.corrIndustry {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-mute);
+}
+
+.corrCount {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--color-accent-deep);
+  font-variant-numeric: tabular-nums;
+}
+
+.corrCases {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.corrCase {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--color-line);
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-ink-mute);
+  transition: border-color 150ms ease, color 150ms ease;
+}
+
+.corrCase:hover {
+  border-color: var(--color-accent-deep);
+  color: var(--color-accent-deep);
+}
+
+/* ── Chapter VIII — Failure genome plate ────────── */
+
+.genomeFrame {
+  position: relative;
+  margin-top: 2.5rem;
+  padding: 2rem;
+  border: 1px solid var(--color-line);
+  border-radius: 2px;
+  background: var(--color-paper);
+}
+
+.genomeScroll {
+  overflow-x: auto;
+}
+
+.genome {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.genomeNode {
+  cursor: pointer;
+}
+
+.genomeNode:focus-visible {
+  outline: 1px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.genomeLabel {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.genomeCount {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+
+.genomeCaption {
+  margin-top: 1.25rem;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-mute);
+}
+
+/* ── Chapter X — Research notes ─────────────────── */
+
+.notesList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.note {
+  display: flex;
+  flex-direction: column;
+  padding: 1.75rem;
+  border: 1px solid var(--color-line);
+  border-radius: 2px;
+  background: transparent;
+  transition: border-color 200ms ease;
+}
+
+.note:hover {
+  border-color: var(--color-ink-mute);
+}
+
+.noteQuote {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1.125rem;
+  line-height: 1.6;
+  color: var(--color-ink);
+}
+
+.noteMeta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.noteAuthor {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-ink);
+}
+
+.noteRole {
+  display: block;
+  margin-top: 0.125rem;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-mute);
+}
+
+.noteFile {
+  flex: none;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-accent-deep);
+}
+
+/* ── Chapter XI — Methodology ───────────────────── */
+
+.methodList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--color-line);
+}
+
+.methodItem {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.methodIndex {
+  flex: none;
+  padding-top: 0.125rem;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--color-ink-mute);
+}
+
+.methodTitle {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-ink);
+}
+
+.methodText {
+  margin-top: 0.375rem;
+  max-width: 44rem;
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--color-ink-mute);
+}
+
+/* ── Recent accessions (Fig. 04) ────────────────── */
+
+.accessionList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--color-line);
+}
+
+.accessionRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.accessionName {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-ink);
+  transition: color 150ms ease;
+}
+
+.accessionRow:hover .accessionName {
+  color: var(--color-accent-deep);
+}
+
+.accessionMeta {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-mute);
+}
+
+.accessionDate {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-ink-mute);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Closing CTA (well) ─────────────────────────── */
+
+.ctaBand {
+  background: var(--color-well);
+  color: var(--color-well-ink);
+}
+
+.ctaInner {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 3rem;
+  align-items: center;
+  max-width: 1152px;
+  margin-inline: auto;
+  padding: 5rem 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .ctaInner {
+    padding-inline: 1.5rem;
+  }
+}
+
+.ctaTitle {
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.ctaText {
+  margin-top: 1rem;
+  max-width: 34rem;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--color-well-mute);
+}
+
+.ctaActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 2rem;
+}
+
+.ctaNote {
+  margin-top: 2rem;
+  max-width: 32rem;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  line-height: 1.8;
+  text-transform: uppercase;
+  color: var(--color-well-mute);
+}
+
+.ctaAside {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 2.5rem 0;
+  border: 1px solid var(--color-well-line);
+  border-radius: 2px;
+}
+
+.ctaAsideText {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-well-mute);
+  text-align: center;
+}
+
+/* ── Colophon ───────────────────────────────────── */
+
+.colophon {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1.5rem;
+  max-width: 1152px;
+  margin-inline: auto;
+  padding: 2rem 1.25rem 3rem;
+  border-top: 1px solid var(--color-line);
+}
+
+@media (min-width: 640px) {
+  .colophon {
+    padding-inline: 1.5rem;
+  }
+}
+
+.colophonText {
+  max-width: 40rem;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  line-height: 1.8;
+  text-transform: uppercase;
+  color: var(--color-ink-mute);
+}
+
+/* ── Micro-interactions — motion off ────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .heroArt img,
+  .specimenHeader,
+  .specimenPeek,
+  .specimenChevron,
+  .specimenPrevalence span,
+  .specimenCaseLink,
+  .specimenCaseName,
+  .ledgerRow,
+  .ledgerFill,
+  .ledgerDetail,
+  .industryCell,
+  .finding,
+  .note,
+  .timelineFill,
+  .timelineYear,
+  .timelineCard,
+  .corrCase,
+  .accessionRow,
+  .accessionName,
+  .barFill,
+  .railCard,
+  .railFill {
+    transition: none;
+  }
+}
+
+/* ── Responsive ─────────────────────────────────── */
+
+@media (max-width: 1023px) {
+  .heroArt {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .abstractBody {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .specimenPeek {
+    display: none;
+  }
+
+  .specimenRecord {
+    padding-left: 0;
+  }
+
+  .specimenMeta div:nth-child(n + 3) {
+    border-top: 1px solid var(--color-line);
+  }
+
+  .specimenMeta div:nth-child(odd) {
+    border-left: 0;
+  }
+
+  .ledgerDetail {
+    opacity: 1;
+    translate: 0 0;
+  }
+
+  .findingsList {
+    grid-template-columns: 1fr;
+  }
+
+  .corrGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .notesList {
+    grid-template-columns: 1fr;
+  }
+
+  .ctaInner {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding-block: 3.5rem;
+  }
+
+  .barRow {
+    grid-template-columns: 1fr auto;
+  }
+
+  .barTrack,
+  .barTrackWell {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}

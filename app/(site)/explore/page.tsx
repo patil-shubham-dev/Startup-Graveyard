@@ -30,7 +30,7 @@ export default async function ExplorePage({
       <ExploreClient
         initialCases={inAccessionOrder}
         initialSearch={q}
-        plateArt={existsSync(path.join(pubDir, "archive-plate.webp"))}
+        heroArt={existsSync(path.join(pubDir, "archive-shelves.webp"))}
         emptyArt={existsSync(path.join(pubDir, "archive-empty.webp"))}
       />
     </div>

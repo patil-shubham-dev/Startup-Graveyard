@@ -1,14 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { createClient } from "@supabase/supabase-js"
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
-const supabase =
-  supabaseUrl && supabaseAnonKey
-    ? createClient(supabaseUrl, supabaseAnonKey)
-    : null
+import { supabase, isSupabaseConfigured } from "@/lib/db/config"
 
 export default function AuthPage() {
   const [email, setEmail] = useState("")
@@ -20,7 +13,7 @@ export default function AuthPage() {
     e.preventDefault()
     setMessage(null)
 
-    if (!supabase) {
+    if (!isSupabaseConfigured) {
       setMessage({
         text: "Auth is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.",
         isError: true,

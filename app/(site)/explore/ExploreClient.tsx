@@ -57,7 +57,7 @@ const FUNDING_BUCKETS: Array<{ value: string; label: string; test: (cents: numbe
 interface ExploreClientProps {
   initialCases: CaseStudy[];
   initialSearch?: string;
-  plateArt?: boolean;
+  heroArt?: boolean;
   emptyArt?: boolean;
 }
 
@@ -71,7 +71,7 @@ function riskScoreOf(study: CaseStudy): number {
 export function ExploreClient({
   initialCases,
   initialSearch = "",
-  plateArt = false,
+  heroArt = false,
   emptyArt = false,
 }: ExploreClientProps) {
   const router = useRouter();
@@ -270,15 +270,15 @@ export function ExploreClient({
     <div>
       {/* ── Frontispiece band ── */}
       <section className="texture-paper relative">
-        {plateArt && (
+        {heroArt && (
           <div aria-hidden className={styles.frontispieceArt}>
             <Image
-              src="/archive-plate.webp"
+              src="/archive-shelves.webp"
               alt=""
               width={1600}
-              height={360}
+              height={820}
               priority
-              sizes="(min-width: 768px) 780px, 0px"
+              sizes="(min-width: 1024px) 1113px, 0px"
             />
           </div>
         )}
@@ -371,7 +371,7 @@ export function ExploreClient({
 
               <p
                 aria-live="polite"
-                className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-mute lg:ml-auto lg:whitespace-nowrap"
+                className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-mute lg:ml-auto lg:min-w-0 lg:text-right"
               >
                 {hasFilters
                   ? `${filtered.length} of ${initialCases.length} records match`
