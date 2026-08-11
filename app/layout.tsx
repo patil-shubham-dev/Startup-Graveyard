@@ -3,6 +3,7 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
+import { AppFooter } from "@/components/site/AppFooter";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -45,7 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </a>
         <Header />
         <main id="main">{children}</main>
-        <Footer />
+        <AppFooter footer={<Footer />} />
       </body>
     </html>
   );
